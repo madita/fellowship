@@ -288,11 +288,11 @@ describe('post-import steps', () => {
 describe('buildGuideSteps', () => {
     it('marks the first unfinished step as the current one', () => {
         const steps = buildGuideSteps({ sourceCount: 1 });
-        expect(steps.map(step => step.key)).toEqual(['source', 'mappings', 'imports', 'post', 'legacy']);
+        expect(steps.map(step => step.key)).toEqual(['source', 'mappings', 'imports', 'post', 'legacy', 'links']);
         expect(steps[0].done).toBe(true);
         expect(steps[1].current).toBe(true);
         expect(steps.filter(step => step.current)).toHaveLength(1);
-        expect(steps.map(step => step.number)).toEqual([1, 2, 3, 4, 5]);
+        expect(steps.map(step => step.number)).toEqual([1, 2, 3, 4, 5, 6]);
     });
 
     it('starts on the source step when nothing exists yet', () => {
@@ -328,6 +328,21 @@ describe('buildGuideSteps', () => {
 
     it('points every step at the tab that handles it', () => {
         expect(buildGuideSteps().map(step => step.tab))
-            .toEqual(['sources', 'mappings', 'mappings', 'runs', 'legacyUsers']);
+            .toEqual(['sources', 'mappings', 'mappings', 'runs', 'legacyUsers', 'links']);
+    });
+
+    it('finishes the link step once the content was read, broken links or not', () => {
+        expect(buildGuideSteps({ importsRun: true })[5].done).toBe(false);
+        expect(buildGuideSteps({ importsRun: true })[5].blocked).toBe(false);
+
+        // Half of a dead link's problem is a site that no longer exists
+        // to be fixed, so a report with broken links in it is still a
+        // step somebody has done
+        const scanned = buildGuideSteps({ importsRun: true, linksScanned: true, brokenLinks: 12 })[5];
+        expect(scanned.done).toBe(true);
+        expect(scanned.stat).toEqual({ scanned: true, broken: 12 });
+
+        // &and there is nothing to read before anything was imported
+        expect(buildGuideSteps({ importsRun: false })[5].blocked).toBe(true);
     });
 });

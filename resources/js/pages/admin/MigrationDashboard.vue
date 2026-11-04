@@ -58,6 +58,10 @@
                     <v-icon start>mdi-account-convert</v-icon>
                     <span class="font-weight-bold me-1">4.</span>{{ $t('migrationTool.tabLegacyUsers') }}
                 </v-tab>
+                <v-tab value="links">
+                    <v-icon start>mdi-link-variant</v-icon>
+                    <span class="font-weight-bold me-1">5.</span>{{ $t('migrationTool.tabLinks') }}
+                </v-tab>
             </v-tabs>
         </page-header>
 
@@ -195,6 +199,10 @@
 
         <v-window-item value="legacyUsers">
             <migration-legacy-users :initial-search="legacyUsersSearch" @notify="onNotify" @changed="fetchOverview" />
+        </v-window-item>
+
+        <v-window-item value="links">
+            <migration-links @notify="onNotify" />
         </v-window-item>
 
         <v-window-item value="runs">
@@ -489,6 +497,7 @@ import axios from 'axios';
 import MigrationSources from '@/components/admin/migration/MigrationSources.vue';
 import MigrationMappings from '@/components/admin/migration/MigrationMappings.vue';
 import MigrationLegacyUsers from '@/components/admin/migration/MigrationLegacyUsers.vue';
+import MigrationLinks from '@/components/admin/migration/MigrationLinks.vue';
 import PageHeader from '../../components/common/PageHeader.vue';
 import EmptyState from '../../components/common/EmptyState.vue';
 import { useDialog } from '@/composables/useDialog.js';
@@ -551,6 +560,9 @@ const mappings = ref([]);
 const legacyUsers = ref([]);
 const sourceTested = ref(false);
 const importsRunFlag = ref(null);
+// Counted by the overview request, so the guide can say how the link
+// report stands without loading the report itself
+const linkReport = ref({ scanned: false, broken: 0 });
 const ranPostKeys = ref([]);
 
 const GUIDE_STORAGE_KEY = 'migrationGuideOpen';
@@ -562,6 +574,7 @@ const stepTitleKeys = {
     imports: 'stepImportsTitle',
     post: 'stepPostTitle',
     legacy: 'stepLegacyTitle',
+    links: 'stepLinksTitle',
 };
 
 const snackbar = reactive({
@@ -619,6 +632,8 @@ const guideSteps = computed(() => buildGuideSteps({
     postDone: postStepsDone(migrations.value, ranPostKeys.value),
     legacyUserCount: legacyUsers.value.length,
     unassignedLegacyUsers: legacyUsers.value.filter(row => !row.assigned_user).length,
+    linksScanned: linkReport.value.scanned,
+    brokenLinks: linkReport.value.broken,
 }));
 
 const stepState = (step) => {
@@ -645,6 +660,12 @@ const stepState = (step) => {
             return step.stat.open
                 ? key('stepLegacyTodo', { count: step.stat.open })
                 : key('stepLegacyDone', { count: step.stat.total });
+        case 'links':
+            if (step.blocked) return key('stepLinksBlocked');
+            if (!step.stat.scanned) return key('stepLinksTodo');
+            return step.stat.broken
+                ? key('stepLinksBroken', { count: step.stat.broken })
+                : key('stepLinksDone');
         default:
             return '';
     }
@@ -695,6 +716,10 @@ const fetchMigrations = async () => {
         migrations.value = response.data.migrations;
         groups.value = response.data.groups;
         importsRunFlag.value = response.data.imports_run ?? null;
+        linkReport.value = {
+            scanned: !!response.data.links?.scanned,
+            broken: response.data.links?.broken || 0,
+        };
 
         // If there's an active batch, resume polling
         if (response.data.activeBatches?.length > 0) {
