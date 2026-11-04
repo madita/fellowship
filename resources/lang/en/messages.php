@@ -286,6 +286,8 @@ return [
         'claim_created'         => 'Claim submitted — an admin will review it and assign your old content',
         'forum_archive_nothing' => 'No imported forum content found to archive',
         'forum_archived'        => 'Imported forum moved into ":category"',
+        'links_scanned'         => 'Found :links links in :records pieces of content',
+        'links_cleared'         => 'Link report cleared (:count links)',
     ],
 
     // Discord webhooks

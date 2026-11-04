@@ -779,6 +779,14 @@ Route::group(['prefix' => 'admin', 'middleware' => ['auth:sanctum', 'admin']], f
         Route::post('/migrations/forum/archive', 'App\Http\Controllers\Admin\MigrationController@archiveForumImport');
         Route::post('/migrations/legacy-users/assign', 'App\Http\Controllers\Admin\MigrationController@assignLegacyUser');
         Route::post('/migrations/legacy-users/delete', 'App\Http\Controllers\Admin\MigrationController@deleteLegacyUsers');
+        // What the imported content links to, and whether it still leads
+        // anywhere. Declared above /mappings/{mapping} for the same
+        // reason as the rest: a literal path must not be read as an id.
+        Route::get('/migrations/links', 'App\Http\Controllers\Admin\MigrationController@links');
+        Route::post('/migrations/links/scan', 'App\Http\Controllers\Admin\MigrationController@scanLinks');
+        Route::post('/migrations/links/check', 'App\Http\Controllers\Admin\MigrationController@checkLinks');
+        Route::delete('/migrations/links', 'App\Http\Controllers\Admin\MigrationController@clearLinks');
+
         Route::get('/migrations/mappings', 'App\Http\Controllers\Admin\MigrationController@mappings');
         Route::get('/migrations/mappings/export', 'App\Http\Controllers\Admin\MigrationController@exportMappings');
         Route::post('/migrations/mappings/import', 'App\Http\Controllers\Admin\MigrationController@importMappings');

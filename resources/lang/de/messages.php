@@ -228,6 +228,8 @@ return [
         'claim_exists'          => 'Du hast bereits eine offene Anfrage für dieses alte Konto',
         'claim_created'         => 'Anfrage eingereicht — ein Admin prüft sie und weist dir deine alten Inhalte zu',
         'forum_archive_nothing' => 'Keine importierten Foreninhalte zum Archivieren gefunden',
+        'links_scanned'         => ':links Links in :records Inhalten gefunden',
+        'links_cleared'         => 'Linkbericht geleert (:count Links)',
         'forum_archived'        => 'Importiertes Forum nach „:category" verschoben',
     ],
 

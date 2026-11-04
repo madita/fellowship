@@ -12,6 +12,7 @@ use App\Models\Forum\ForumThread;
 use App\Models\Migration\MigrationAttribution;
 use App\Models\Migration\MigrationIdMap;
 use App\Models\Migration\MigrationLegacyUser;
+use App\Models\Migration\MigrationLink;
 use App\Models\Migration\MigrationLog;
 use App\Models\Migration\MigrationMapping;
 use App\Models\Migration\MigrationSource;
@@ -19,6 +20,7 @@ use App\Models\Tag\Taxonomy;
 use App\Models\Tag\Term;
 use App\Models\Ticket\Ticket;
 use App\Models\User;
+use App\Services\Migration\LinkAudit;
 use App\Services\Migration\MigrationTargets;
 use App\Services\Migration\RowMapper;
 use App\Services\Migration\SourceQuery;
@@ -33,6 +35,22 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 class MigrationController extends Controller
 {
+    /**
+     * How many link rows the report hands over. The numbers above the
+     * table are counted in the database and stay complete; the rows
+     * themselves are capped, because nobody reads the twenty-thousandth
+     * one and sending it costs the same as the first.
+     */
+    public const LINK_PAGE = 2000;
+
+    public const LINK_STATUSES = [
+        MigrationLink::STATUS_PENDING,
+        MigrationLink::STATUS_OK,
+        MigrationLink::STATUS_BROKEN,
+        MigrationLink::STATUS_UNSURE,
+        MigrationLink::STATUS_SKIPPED,
+    ];
+
     /**
      * Post-import steps: source-independent jobs that run over already
      * imported data. Row imports themselves are driven by the stored
@@ -107,6 +125,13 @@ class MigrationController extends Controller
             ],
             'activeBatches' => $activeBatches,
             'imports_run'   => $importsRun,
+            // How the link report stands, counted here so the guide can
+            // say so without pulling the report itself across
+            'links' => [
+                'scanned' => MigrationLink::query()->exists(),
+                'links'   => MigrationLink::query()->count(),
+                'broken'  => MigrationLink::query()->broken()->count(),
+            ],
         ]);
     }
 
@@ -625,6 +650,145 @@ class MigrationController extends Controller
             'message' => __('messages.migrations.queued_all'),
             'batchId' => $batchId,
             'count'   => 1,
+        ]);
+    }
+
+    // ------------------------------------------------------------------
+    // Link report: what the imported content points at, and whether any
+    // of it is still there (LinkAudit). Scanning is a database walk and
+    // runs in one request; checking asks other people's servers, so it
+    // is handed out in batches the browser works through.
+    // ------------------------------------------------------------------
+
+    public function links(Request $request, LinkAudit $audit): JsonResponse
+    {
+        $validated = $request->validate([
+            'scope'  => ['nullable', 'string', Rule::in([MigrationLink::SCOPE_INTERNAL, MigrationLink::SCOPE_LEGACY, MigrationLink::SCOPE_EXTERNAL])],
+            'status' => ['nullable', 'string', Rule::in(self::LINK_STATUSES)],
+            'host'   => ['nullable', 'string', 'max:255'],
+            'search' => ['nullable', 'string', 'max:255'],
+        ]);
+
+        $query = MigrationLink::query()
+            ->when($validated['scope'] ?? null, fn ($q, $scope) => $q->where('scope', $scope))
+            ->when($validated['status'] ?? null, fn ($q, $status) => $q->where('status', $status))
+            ->when($validated['host'] ?? null, fn ($q, $host) => $q->where('host', $host))
+            ->when($validated['search'] ?? null, fn ($q, $search) => $q->where('url', 'like', '%' . $search . '%'));
+
+        $matching = (clone $query)->count();
+
+        $links = $query
+            // Worst first: a report is read from the top, and what is
+            // broken and used everywhere belongs there
+            ->orderByRaw(sprintf(
+                "case status when '%s' then 0 when '%s' then 1 when '%s' then 2 else 3 end",
+                MigrationLink::STATUS_BROKEN,
+                MigrationLink::STATUS_UNSURE,
+                MigrationLink::STATUS_PENDING
+            ))
+            ->orderByDesc('occurrence_count')
+            ->orderBy('id')
+            ->limit(self::LINK_PAGE)
+            ->get()
+            ->map(fn (MigrationLink $link) => [
+                'id'           => $link->id,
+                'url'          => $link->url,
+                'host'         => $link->host,
+                'scope'        => $link->scope,
+                'kind'         => $link->kind,
+                'status'       => $link->status,
+                'http_status'  => $link->http_status,
+                'redirect_url' => $link->redirect_url,
+                'reason'       => $link->reason,
+                'uses'         => $link->occurrence_count,
+                'occurrences'  => $link->occurrences ?: [],
+                'checked_at'   => $link->checked_at?->toIso8601String(),
+            ]);
+
+        return response()->json([
+            'links'    => $links,
+            'matching' => $matching,
+            // The table is capped; the numbers never are
+            'limit'        => self::LINK_PAGE,
+            'summary'      => $audit->summary(),
+            'hosts'        => $audit->hosts(),
+            'legacy_hosts' => $audit->legacyHosts(),
+            'places'       => collect($audit->places())->map(fn ($place, $key) => [
+                'key'   => $key,
+                'label' => $place['label'],
+            ])->values(),
+        ]);
+    }
+
+    /**
+     * Read the content again and write down every link in it.
+     */
+    public function scanLinks(Request $request, LinkAudit $audit): JsonResponse
+    {
+        $validated = $request->validate([
+            'legacy_hosts'   => ['nullable', 'array'],
+            'legacy_hosts.*' => ['nullable', 'string', 'max:255'],
+        ]);
+
+        // Saved before the scan, because it is what decides whether a
+        // link counts as pointing at the old site or at the wider web
+        if (array_key_exists('legacy_hosts', $validated)) {
+            $audit->setLegacyHosts($validated['legacy_hosts'] ?? []);
+        }
+
+        $result = $audit->scan();
+
+        return response()->json([
+            'message' => __('messages.migrations.links_scanned', [
+                'links'   => $result['links'],
+                'records' => $result['records'],
+            ]),
+            'result'       => $result,
+            'summary'      => $audit->summary(),
+            'legacy_hosts' => $audit->legacyHosts(),
+        ]);
+    }
+
+    /**
+     * Ask about one batch of links.
+     *
+     * The browser calls this until nothing is left, which is what keeps
+     * a report over a few thousand links inside request timeouts the
+     * same way the big imports stay out of them.
+     */
+    public function checkLinks(Request $request, LinkAudit $audit): JsonResponse
+    {
+        $validated = $request->validate([
+            'limit'    => ['nullable', 'integer', 'min:1', 'max:50'],
+            'scopes'   => ['nullable', 'array'],
+            'scopes.*' => ['string', Rule::in([MigrationLink::SCOPE_INTERNAL, MigrationLink::SCOPE_LEGACY, MigrationLink::SCOPE_EXTERNAL])],
+            // Only ever sent on the first call of a run: it puts the
+            // verdicts back to pending, and sending it on every call
+            // would keep the browser checking the same links forever
+            'reset' => ['nullable', 'boolean'],
+        ]);
+
+        $scopes = $validated['scopes'] ?? LinkAudit::CHECKED_SCOPES;
+        $reset  = 0;
+
+        if ($validated['reset'] ?? false) {
+            $reset = $audit->reset($scopes);
+        }
+
+        $result = $audit->check($scopes, (int) ($validated['limit'] ?? 10));
+
+        return response()->json([
+            'result'  => $result + ['reset' => $reset],
+            'summary' => $audit->summary(),
+        ]);
+    }
+
+    public function clearLinks(): JsonResponse
+    {
+        $removed = MigrationLink::query()->delete();
+
+        return response()->json([
+            'message' => __('messages.migrations.links_cleared', ['count' => $removed]),
         ]);
     }
 

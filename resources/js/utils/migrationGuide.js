@@ -225,7 +225,7 @@ export const sortByOrder = (migrations = []) =>
         return left - right;
     });
 
-// The five guide steps with their live state. `done` marks a finished
+// The six guide steps with their live state. `done` marks a finished
 // step, `current` the one to work on next and `blocked` a step that
 // cannot start yet.
 export const buildGuideSteps = ({
@@ -238,6 +238,8 @@ export const buildGuideSteps = ({
     postDone = false,
     legacyUserCount = 0,
     unassignedLegacyUsers = 0,
+    linksScanned = false,
+    brokenLinks = 0,
 } = {}) => {
     const steps = [
         {
@@ -277,6 +279,19 @@ export const buildGuideSteps = ({
             done: legacyUserCount > 0 && unassignedLegacyUsers === 0,
             blocked: legacyUserCount === 0,
             stat: { open: unassignedLegacyUsers, total: legacyUserCount },
+        },
+        {
+            key: 'links',
+            tab: 'links',
+            icon: 'mdi-link-variant',
+            // Having read the content is what finishes this step. Not
+            // every dead link can be fixed - half of them point at
+            // sites that no longer exist to be fixed - so a report that
+            // still lists broken links is a finished step, and the
+            // number of them is what the line underneath says.
+            done: !!linksScanned,
+            blocked: !importsRun,
+            stat: { scanned: !!linksScanned, broken: brokenLinks },
         },
     ];
 
