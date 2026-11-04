@@ -44,16 +44,16 @@ class Audience
     public static function rules(string $prefix = 'audience'): array
     {
         return [
-            $prefix                   => ['required', 'array'],
-            $prefix . '.type'         => ['required', 'string', 'in:' . implode(',', self::TYPES)],
-            $prefix . '.roles'        => ['array'],
-            $prefix . '.roles.*'      => ['string', 'exists:roles,name'],
-            $prefix . '.user_ids'     => ['array'],
-            $prefix . '.user_ids.*'   => ['integer', 'exists:users,id'],
+            $prefix                     => ['required', 'array'],
+            $prefix . '.type'           => ['required', 'string', 'in:' . implode(',', self::TYPES)],
+            $prefix . '.roles'          => ['array'],
+            $prefix . '.roles.*'        => ['string', 'exists:roles,name'],
+            $prefix . '.user_ids'       => ['array'],
+            $prefix . '.user_ids.*'     => ['integer', 'exists:users,id'],
             $prefix . '.achievement_id' => ['nullable', 'integer', 'exists:achievements,id'],
-            $prefix . '.locales'      => ['array'],
-            $prefix . '.locales.*'    => ['string', 'max:10'],
-            $prefix . '.verified_only' => ['boolean'],
+            $prefix . '.locales'        => ['array'],
+            $prefix . '.locales.*'      => ['string', 'max:10'],
+            $prefix . '.verified_only'  => ['boolean'],
         ];
     }
 

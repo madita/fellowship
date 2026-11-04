@@ -215,15 +215,6 @@ class MailPreferences
         return $this->url('/api/mail/unsubscribe/', $user, $category);
     }
 
-    private function url(string $path, User $user, ?MailCategory $category): string
-    {
-        $url = rtrim((string) config('app.url'), '/') . $path . $this->token($user);
-
-        return $category && ! $category->is_mandatory
-            ? $url . '?category=' . urlencode($category->key)
-            : $url;
-    }
-
     /**
      * The member a token belongs to, or null - which is what an expired
      * bookmark or a guess gets.
@@ -235,6 +226,15 @@ class MailPreferences
         }
 
         return User::where('mail_token', $token)->first();
+    }
+
+    private function url(string $path, User $user, ?MailCategory $category): string
+    {
+        $url = rtrim((string) config('app.url'), '/') . $path . $this->token($user);
+
+        return $category && ! $category->is_mandatory
+            ? $url . '?category=' . urlencode($category->key)
+            : $url;
     }
 
     private function resolve(MailCategory|string|null $category): ?MailCategory
