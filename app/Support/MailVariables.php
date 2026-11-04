@@ -37,6 +37,12 @@ class MailVariables
     ];
 
     /**
+     * `{{ name }}`, `{{name}}` and `{{  NAME  }}` are the same thing -
+     * whoever writes a template should not have to count spaces.
+     */
+    private const PATTERN = '/\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/';
+
+    /**
      * What one recipient's mail is filled with, before whatever the
      * sender adds on top.
      *
@@ -140,12 +146,6 @@ class MailVariables
 
         return array_values(array_unique(array_map('strtolower', $found)));
     }
-
-    /**
-     * `{{ name }}`, `{{name}}` and `{{  NAME  }}` are the same thing -
-     * whoever writes a template should not have to count spaces.
-     */
-    private const PATTERN = '/\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/';
 
     private static function replace(?string $text, array $variables, bool $escape): string
     {
