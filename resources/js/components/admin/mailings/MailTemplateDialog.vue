@@ -66,6 +66,25 @@
                     {{ $t('mailings.templates.disabledHint') }}
                 </div>
 
+                <!-- What this wording is about, when it is about
+                     something already on the site. Saying so here is
+                     what puts the picker in front of whoever writes the
+                     mailing, and these placeholders within their reach. -->
+                <v-select
+                    v-if="sourceItems.length"
+                    v-model="sourceType"
+                    :items="sourceItems"
+                    item-title="label"
+                    item-value="value"
+                    :label="$t('mailings.source.about')"
+                    :hint="$t('mailings.source.aboutHint')"
+                    persistent-hint
+                    clearable
+                    variant="outlined"
+                    density="comfortable"
+                    class="mb-4"
+                />
+
                 <!-- One tab per language. The fallback one has to be
                      filled in; the rest may be left empty, and an empty
                      one is cleared rather than kept. -->
@@ -228,6 +247,10 @@ export default {
             form: { key: '', mail_category_id: null, is_enabled: true, action_label: '', action_url: '', translations: {} },
             locale: null,
             errors: {},
+            // What this wording is about, when it is about something
+            // already on the site. Read back off the placeholders it
+            // declares rather than stored twice.
+            sourceType: null,
             preview: null,
             previewing: false,
         };
@@ -241,12 +264,35 @@ export default {
                 this.$emit('update:modelValue', value);
             },
         },
+        sourceItems() {
+            return Object.keys(this.store.sourceTypes).map((type) => ({
+                value: type,
+                label: this.$t(`mailings.source.pick.${type}`),
+            }));
+        },
+        /**
+         * What this template says it is handed, which is what gets
+         * saved: whatever it already asked for, minus the names of a
+         * source it is no longer about, plus those of the one it is.
+         *
+         * Names belonging to no source at all - `awarded_by`, `note` -
+         * are kept, because the code that sends that template fills them
+         * and the preview reads this list to decide what it cannot fill.
+         */
+        declaredVariables() {
+            const ofAnySource = Object.values(this.store.sourceTypes)
+                .flatMap((definition) => definition.variables || []);
+
+            const kept = (this.template?.variables || []).filter((name) => !ofAnySource.includes(name));
+
+            return [...new Set([...kept, ...this.store.sourceVariables(this.sourceType)])];
+        },
         /**
          * What may be written in this one: the names every mail gets,
          * plus whatever this template is handed on top.
          */
         allVariables() {
-            const own = this.template?.variables || [];
+            const own = this.declaredVariables;
             return [...this.store.baseVariables, ...own.filter((name) => !this.store.baseVariables.includes(name))];
         },
     },
@@ -263,6 +309,9 @@ export default {
             this.errors = {};
             this.preview = null;
             this.locale = this.store.defaultLocale;
+            // Read back off the placeholders it declares, so an existing
+            // template shows what it is about without storing it twice
+            this.sourceType = this.store.sourceForVariables(this.template?.variables);
 
             const translations = {};
 
@@ -315,7 +364,7 @@ export default {
                     is_enabled: this.form.is_enabled,
                     action_label: this.form.action_label || null,
                     action_url: this.form.action_url || null,
-                    variables: this.template?.variables || [],
+                    variables: this.declaredVariables,
                     translations: this.form.translations,
                 });
 

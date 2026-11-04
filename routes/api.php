@@ -527,9 +527,14 @@ Route::middleware(['auth:sanctum', 'permission.any:manage-mailings'])
         Route::get('/mailings', 'App\Http\Controllers\Admin\MailingController@index');
         Route::post('/mailings', 'App\Http\Controllers\Admin\MailingController@store');
         // Declared above /mailings/{mailing}, which would otherwise read
-        // "estimate" and "options" as the id of a mailing
+        // "estimate", "options" and "fill" as the id of a mailing
         Route::post('/mailings/estimate', 'App\Http\Controllers\Admin\MailingController@estimate');
         Route::get('/mailings/options', 'App\Http\Controllers\Admin\MailingController@options');
+        // What a mailing can be filled in from - the events there are,
+        // the articles, the achievements - and one record's values put
+        // into the wording being written
+        Route::get('/mailings/sources/{type}', 'App\Http\Controllers\Admin\MailingController@sourceOptions');
+        Route::post('/mailings/fill', 'App\Http\Controllers\Admin\MailingController@fill');
         Route::get('/mailings/{mailing}', 'App\Http\Controllers\Admin\MailingController@show');
         Route::patch('/mailings/{mailing}', 'App\Http\Controllers\Admin\MailingController@update');
         Route::delete('/mailings/{mailing}', 'App\Http\Controllers\Admin\MailingController@destroy');

@@ -86,6 +86,44 @@ class MailVariables
     }
 
     /**
+     * Swap only the placeholders there is a value for, and leave every
+     * other one standing exactly as it was written.
+     *
+     * This is the one used while a mailing is still being written. An
+     * event's title can go in now - it is the same for everybody - but
+     * `{{ name }}` has to stay a placeholder until the mail is actually
+     * addressed to somebody, and blanking it here would quietly turn a
+     * greeting into "Hello ,".
+     */
+    public static function fill(?string $text, array $variables, bool $escape = true): string
+    {
+        if ($text === null || $text === '') {
+            return '';
+        }
+
+        $lookup = [];
+
+        foreach ($variables as $key => $value) {
+            $lookup[strtolower((string) $key)] = static::stringify($value);
+        }
+
+        return (string) preg_replace_callback(
+            static::PATTERN,
+            function (array $match) use ($lookup, $escape): string {
+                $name = strtolower($match[1]);
+
+                // Nothing to put here yet - hand back the placeholder
+                if ( ! array_key_exists($name, $lookup)) {
+                    return $match[0];
+                }
+
+                return $escape ? e($lookup[$name]) : $lookup[$name];
+            },
+            $text
+        );
+    }
+
+    /**
      * Every placeholder a piece of text asks for, whether or not anybody
      * can fill it. What the editor uses to warn about a typo.
      *

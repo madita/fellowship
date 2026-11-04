@@ -111,6 +111,44 @@ describe('the mailing store', () => {
 
         expect(store.mailings.map(row => row.id)).toEqual([2]);
     });
+
+    it('knows what each kind of mail can be filled in from', () => {
+        store.categories = [
+            { id: 1, key: 'account', is_mandatory: true },
+            { id: 2, key: 'newsletter', is_mandatory: false },
+            { id: 4, key: 'events', is_mandatory: false },
+        ];
+        store.sourceCategories = { events: 'event', newsletter: 'post' };
+
+        expect(store.sourceForCategory(4)).toBe('event');
+        expect(store.sourceForCategory(2)).toBe('post');
+        // The mail that gets somebody back into their account is about
+        // the member, not about anything on the site
+        expect(store.sourceForCategory(1)).toBe(null);
+    });
+
+    it('reads what a template is about off the placeholders it declares', () => {
+        store.sourceTypes = {
+            event: { variables: ['event_title', 'event_date'] },
+            achievement: { variables: ['achievement', 'points'] },
+            rank: { variables: ['rank', 'points'] },
+        };
+
+        expect(store.sourceForVariables(['name', 'event_title'])).toBe('event');
+        expect(store.sourceForVariables(['achievement', 'points'])).toBe('achievement');
+        // Both of those fill in `points`, so the closest match has to
+        // win  otherwise a rank mail offers achievements to pick from
+        expect(store.sourceForVariables(['rank', 'points'])).toBe('rank');
+        expect(store.sourceForVariables(['name'])).toBe(null);
+    });
+
+    it('stops counting as filling once a fill fails', async () => {
+        axios.post.mockRejectedValue(new Error('network'));
+
+        await expect(store.fillFromSource({ source_type: 'event', source_id: 1 })).rejects.toThrow();
+
+        expect(store.filling).toBe(false);
+    });
 });
 
 describe('who can see the mailing screens', () => {

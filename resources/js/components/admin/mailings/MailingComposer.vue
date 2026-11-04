@@ -76,6 +76,84 @@
                     {{ $t('mailings.composer.useTemplate') }}
                 </v-btn>
 
+                <!-- Fill the wording in from something already on the
+                     site. The point is the date: typed from memory it is
+                     wrong often enough, and four hundred people get it. -->
+                <v-sheet v-if="sourceType && editable" class="mb-4 pa-3" rounded="lg" border>
+                    <div class="d-flex align-center mb-2">
+                        <v-icon size="18" class="mr-2" color="primary">mdi-database-arrow-right-outline</v-icon>
+                        <span class="text-subtitle-2">{{ $t(`mailings.source.title.${sourceType}`) }}</span>
+                    </div>
+
+                    <v-row dense align="center">
+                        <v-col cols="12" md="8">
+                            <v-autocomplete
+                                v-model="sourceId"
+                                v-model:search="sourceSearch"
+                                :items="store.sourceOptions"
+                                :loading="store.loadingSources"
+                                item-title="label"
+                                item-value="id"
+                                :label="$t(`mailings.source.pick.${sourceType}`)"
+                                :no-data-text="$t('mailings.source.nothing')"
+                                hide-details="auto"
+                                clearable
+                                variant="outlined"
+                                density="comfortable"
+                            >
+                                <template #item="{ props, item }">
+                                    <v-list-item
+                                        v-bind="props"
+                                        :prepend-icon="item.raw.icon"
+                                        :subtitle="item.raw.hint"
+                                    />
+                                </template>
+                            </v-autocomplete>
+                        </v-col>
+                        <v-col cols="12" md="4">
+                            <v-btn
+                                block
+                                variant="tonal"
+                                color="primary"
+                                prepend-icon="mdi-form-textbox"
+                                :loading="store.filling"
+                                :disabled="!sourceId || store.filling"
+                                @click="fillFromSource"
+                            >
+                                {{ $t('mailings.source.fill') }}
+                            </v-btn>
+                        </v-col>
+                    </v-row>
+
+                    <!-- What this one fills in. Green once it has. -->
+                    <div class="d-flex flex-wrap align-center ga-1 mt-2">
+                        <v-chip
+                            v-for="name in store.sourceVariables(sourceType)"
+                            :key="name"
+                            size="x-small"
+                            variant="tonal"
+                            :color="filledNames.includes(name) ? 'success' : undefined"
+                            :title="$t('mailings.fields.copyPlaceholder')"
+                            @click="copyPlaceholder(name)"
+                        >
+                            {{ placeholder(name) }}
+                        </v-chip>
+                    </div>
+
+                    <!-- Said inline rather than in a dialog: whoever
+                         pressed the button is looking straight at this,
+                         and a form being filled in is no place for one. -->
+                    <div
+                        v-if="fillTried"
+                        class="text-caption mt-2"
+                        :class="filledNames.length ? 'text-success' : 'text-warning'"
+                    >
+                        {{ filledNames.length
+                            ? $t('mailings.source.filled', { label: sourceLabel, names: filledNames.join(', ') })
+                            : $t('mailings.source.nonePresent') }}
+                    </div>
+                </v-sheet>
+
                 <v-text-field
                     v-model="form.subject"
                     :label="$t('mailings.fields.subject')"
@@ -366,6 +444,7 @@ import SimpleEditor from '@/components/common/tiptap/SimpleEditor.vue';
 
 const COUNT_DEBOUNCE_MS = 400;
 const USER_SEARCH_DEBOUNCE_MS = 300;
+const SOURCE_SEARCH_DEBOUNCE_MS = 300;
 
 /**
  * Writing a mailing: what it says, who it is for, and when it goes.
@@ -408,6 +487,13 @@ export default {
             userResults: [],
             searchingUsers: false,
             userSearchTimer: null,
+            // What the wording is being filled in from
+            sourceId: null,
+            sourceSearch: '',
+            sourceSearchTimer: null,
+            sourceLabel: '',
+            filledNames: [],
+            fillTried: false,
         };
     },
     computed: {
@@ -444,6 +530,21 @@ export default {
             }));
         },
         /**
+         * What this mailing can be filled in from, if anything.
+         *
+         * The template decides it when one is loaded - a template asking
+         * for an event's placeholders is about an event, wherever
+         * somebody filed it - and otherwise the kind of mail does.
+         */
+        sourceType() {
+            const template = this.form.mail_template_id
+                ? this.store.templates.find((row) => row.id === this.form.mail_template_id)
+                : null;
+
+            return this.store.sourceForVariables(template?.variables)
+                || this.store.sourceForCategory(this.form.mail_category_id);
+        },
+        /**
          * What a count depends on. Watched as one value so a change of
          * audience type and a change of category do not fire two
          * requests.
@@ -464,6 +565,35 @@ export default {
             if (!value || value.length < 2) return;
             this.userSearchTimer = setTimeout(() => this.searchUsers(value), USER_SEARCH_DEBOUNCE_MS);
         },
+        /**
+         * A different kind of thing to fill in from means the one picked
+         * no longer applies, and a fresh list to choose from.
+         */
+        sourceType(type, previous) {
+            if (type === previous) return;
+
+            this.sourceId = null;
+            this.sourceSearch = '';
+            this.filledNames = [];
+            this.fillTried = false;
+            this.store.sourceOptions = [];
+
+            if (type) this.loadSourceOptions();
+        },
+        sourceSearch(value) {
+            clearTimeout(this.sourceSearchTimer);
+
+            // Clearing the box asks for the list again rather than
+            // leaving whatever the last search found
+            if (!value) {
+                this.sourceSearchTimer = setTimeout(() => this.loadSourceOptions(), SOURCE_SEARCH_DEBOUNCE_MS);
+                return;
+            }
+
+            if (value.length < 2) return;
+
+            this.sourceSearchTimer = setTimeout(() => this.loadSourceOptions(value), SOURCE_SEARCH_DEBOUNCE_MS);
+        },
     },
     mounted() {
         if (this.modelValue) this.reset();
@@ -471,6 +601,7 @@ export default {
     beforeUnmount() {
         clearTimeout(this.countTimer);
         clearTimeout(this.userSearchTimer);
+        clearTimeout(this.sourceSearchTimer);
     },
     methods: {
         blank() {
@@ -491,6 +622,11 @@ export default {
             this.preview = null;
             this.previewOpen = false;
             this.templateId = null;
+            this.sourceId = null;
+            this.sourceSearch = '';
+            this.sourceLabel = '';
+            this.filledNames = [];
+            this.fillTried = false;
             this.templateLocale = this.store.defaultLocale;
             this.scheduledFor = '';
             this.store.estimate = null;
@@ -570,7 +706,13 @@ export default {
             if (!this.templateId || this.loadingTemplate) return;
             this.loadingTemplate = true;
             try {
-                const draft = await this.store.draftFromTemplate(this.templateId, this.templateLocale);
+                const draft = await this.store.draftFromTemplate(
+                    this.templateId,
+                    this.templateLocale,
+                    // Something already picked comes across filled in,
+                    // so this is one press instead of two
+                    this.sourceId && this.sourceType ? { type: this.sourceType, id: this.sourceId } : null
+                );
 
                 this.form.mail_category_id = draft.mail_category_id;
                 this.form.mail_template_id = draft.mail_template_id;
@@ -578,10 +720,59 @@ export default {
                 this.form.body = draft.body;
                 this.form.action_label = draft.action_label || '';
                 this.form.action_url = draft.action_url || '';
+
+                if (draft.filled) {
+                    this.filledNames = draft.filled;
+                    this.sourceLabel = draft.source?.label || '';
+                    this.fillTried = true;
+                }
             } catch (error) {
                 this.$dialog.requestError(error);
             } finally {
                 this.loadingTemplate = false;
+            }
+        },
+
+        async loadSourceOptions(search = null) {
+            if (!this.sourceType) return;
+
+            try {
+                await this.store.fetchSourceOptions(this.sourceType, search);
+            } catch (error) {
+                this.$dialog.requestError(error);
+            }
+        },
+
+        /**
+         * Put the picked record's values into the wording.
+         *
+         * What comes back is the wording with the source's placeholders
+         * replaced and everybody else's left standing, so this can be
+         * pressed again after a different event is picked.
+         */
+        async fillFromSource() {
+            if (!this.sourceId || !this.sourceType) return;
+
+            try {
+                const result = await this.store.fillFromSource({
+                    source_type: this.sourceType,
+                    source_id: this.sourceId,
+                    locale: this.templateLocale || this.store.defaultLocale,
+                    subject: this.form.subject,
+                    body: this.form.body,
+                    action_label: this.form.action_label || null,
+                    action_url: this.form.action_url || null,
+                });
+
+                this.form.subject = result.subject;
+                this.form.body = result.body;
+                this.form.action_label = result.action_label || '';
+                this.form.action_url = result.action_url || '';
+                this.filledNames = result.filled || [];
+                this.sourceLabel = result.source?.label || '';
+                this.fillTried = true;
+            } catch (error) {
+                this.$dialog.requestError(error);
             }
         },
 

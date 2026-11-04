@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Mail\MailTemplate;
+use App\Services\Mail\MailSources;
 use App\Services\Mail\TemplatedMailer;
 use App\Support\Locales;
 use App\Support\MailVariables;
@@ -29,7 +30,7 @@ use Illuminate\Support\Str;
  */
 class MailTemplateController extends Controller
 {
-    public function __construct(private TemplatedMailer $mailer)
+    public function __construct(private TemplatedMailer $mailer, private MailSources $sources)
     {
     }
 
@@ -47,6 +48,12 @@ class MailTemplateController extends Controller
             // What may be written in a body, so the editor can offer them
             // as chips rather than asking somebody to remember the names
             'base_variables' => MailVariables::BASE,
+            // And what a template can say it is about, which is what
+            // puts a picker in front of whoever writes the mailing
+            'sources' => [
+                'categories' => $this->sources->categories(),
+                'types'      => $this->sources->types(),
+            ],
         ]);
     }
 

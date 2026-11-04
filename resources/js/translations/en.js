@@ -7063,6 +7063,26 @@ export default {
             'scheduledFor': 'Send at',
             'scheduledForHint': 'Leave empty to send as soon as you press send'
         },
+        'source': {
+            'title': {
+                'event': 'Fill in from an event',
+                'post': 'Fill in from an article',
+                'achievement': 'Fill in from an achievement',
+                'rank': 'Fill in from a rank'
+            },
+            'pick': {
+                'event': 'Event',
+                'post': 'Article',
+                'achievement': 'Achievement',
+                'rank': 'Rank'
+            },
+            'about': 'What this is about',
+            'aboutHint': 'Pick one, and whoever writes a mailing from this template gets a picker for it',
+            'fill': 'Fill in',
+            'nothing': 'Type to search',
+            'filled': 'Filled in from {label}: {names}',
+            'nonePresent': 'This wording has none of these placeholders in it. Put one in and press Fill in again.'
+        },
         'composer': {
             'title': 'Write a mailing',
             'editTitle': 'Mailing',

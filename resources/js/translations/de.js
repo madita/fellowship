@@ -7238,6 +7238,26 @@ export default {
             'scheduledFor': 'Senden am',
             'scheduledForHint': 'Leer lassen, um beim Druck auf Senden sofort zu senden'
         },
+        'source': {
+            'title': {
+                'event': 'Aus einer Veranstaltung übernehmen',
+                'post': 'Aus einem Beitrag übernehmen',
+                'achievement': 'Aus einer Auszeichnung übernehmen',
+                'rank': 'Aus einem Rang übernehmen'
+            },
+            'pick': {
+                'event': 'Veranstaltung',
+                'post': 'Beitrag',
+                'achievement': 'Auszeichnung',
+                'rank': 'Rang'
+            },
+            'about': 'Worum es geht',
+            'aboutHint': 'Wähl eins, dann bekommt eine Mail aus dieser Vorlage dafür eine Auswahl',
+            'fill': 'Übernehmen',
+            'nothing': 'Tippen, um zu suchen',
+            'filled': 'Aus {label} übernommen: {names}',
+            'nonePresent': 'In diesem Text steht keiner dieser Platzhalter. Setz einen ein und drück noch einmal auf Übernehmen.'
+        },
         'composer': {
             'title': 'Mailing schreiben',
             'editTitle': 'Mailing',

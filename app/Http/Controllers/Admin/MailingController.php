@@ -9,8 +9,11 @@ use App\Models\Mail\Mailing;
 use App\Models\Mail\MailTemplate;
 use App\Services\Mail\Audience;
 use App\Services\Mail\MailingService;
+use App\Services\Mail\MailSources;
 use App\Support\Locales;
+use App\Support\MailVariables;
 use App\Support\RichText;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Spatie\Permission\Models\Role;
@@ -29,8 +32,11 @@ use Spatie\Permission\Models\Role;
  */
 class MailingController extends Controller
 {
-    public function __construct(private MailingService $mailings, private Audience $audience)
-    {
+    public function __construct(
+        private MailingService $mailings,
+        private Audience $audience,
+        private MailSources $sources
+    ) {
     }
 
     public function index(Request $request): JsonResponse
@@ -103,9 +109,83 @@ class MailingController extends Controller
                     'name' => $achievement->name,
                     'icon' => $achievement->icon,
                 ]),
+            // What a mailing of each kind can be filled in from, so the
+            // composer knows when to offer a picker and which
+            // placeholders that picker fills
+            'sources' => [
+                'categories' => $this->sources->categories(),
+                'types'      => $this->sources->types(),
+            ],
             'locales' => Locales::all(),
             'default' => Locales::fallback(),
         ]);
+    }
+
+    /**
+     * The things of one kind a mailing can be filled in from - the
+     * events there are, the articles, the achievements.
+     *
+     * Searched rather than listed in full: a site with four hundred
+     * events should not send all of them to a dropdown.
+     */
+    public function sourceOptions(Request $request, string $type): JsonResponse
+    {
+        if ( ! $this->sources->has($type)) {
+            return response()->json(['message' => __('messages.mailings.unknown_source')], 422);
+        }
+
+        $validated = $request->validate([
+            'search' => ['nullable', 'string', 'max:100'],
+            'locale' => ['nullable', 'string', 'max:10'],
+        ]);
+
+        return response()->json([
+            'type'      => $type,
+            'variables' => $this->sources->variableNames($type),
+            'options'   => $this->sources->options(
+                $type,
+                $validated['search'] ?? null,
+                25,
+                $validated['locale'] ?? null
+            ),
+        ]);
+    }
+
+    /**
+     * Put one record's values into the wording being written.
+     *
+     * The composer sends what is in the form and gets it back filled in,
+     * so the date in the mail is the date on the event rather than
+     * whatever somebody typed from memory.
+     */
+    public function fill(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'source_type'  => ['required', 'string', 'max:40'],
+            'source_id'    => ['required', 'integer', 'min:1'],
+            'locale'       => ['nullable', 'string', 'max:10'],
+            'subject'      => ['nullable', 'string', 'max:255'],
+            'body'         => ['nullable', 'string'],
+            'action_label' => ['nullable', 'string', 'max:80'],
+            'action_url'   => ['nullable', 'string', 'max:500'],
+        ]);
+
+        if ( ! $this->sources->has($validated['source_type'])) {
+            return response()->json(['message' => __('messages.mailings.unknown_source')], 422);
+        }
+
+        try {
+            $filled = $this->fillWording(
+                $validated['source_type'],
+                (int) $validated['source_id'],
+                $validated['locale'] ?? null,
+                $validated
+            );
+        } catch (ModelNotFoundException $e) {
+            return response()->json(['message' => __('messages.mailings.source_gone')], 404);
+        }
+
+        return response()->json($filled);
     }
 
     /**
@@ -255,13 +335,15 @@ class MailingController extends Controller
     public function fromTemplate(Request $request, MailTemplate $template): JsonResponse
     {
         $validated = $request->validate([
-            'locale' => ['nullable', 'string', 'max:10'],
+            'locale'      => ['nullable', 'string', 'max:10'],
+            'source_type' => ['nullable', 'string', 'max:40'],
+            'source_id'   => ['nullable', 'integer', 'min:1'],
         ]);
 
         $locale      = $validated['locale'] ?? app()->getLocale();
         $translation = $template->translateOrDefault($locale);
 
-        return response()->json([
+        $draft = [
             'mail_category_id' => $template->mail_category_id,
             'mail_template_id' => $template->id,
             'subject'          => (string) $translation?->subject,
@@ -269,7 +351,70 @@ class MailingController extends Controller
             'action_label'     => $template->action_label,
             'action_url'       => $template->action_url,
             'variables'        => $template->variables ?: [],
-        ]);
+            // What this wording is about, so the composer can offer the
+            // picker the moment the template is loaded
+            'source_type' => $this->sources->forTemplate($template->loadMissing('category')),
+        ];
+
+        $sourceType = $validated['source_type'] ?? null;
+        $sourceId   = $validated['source_id'] ?? null;
+
+        // A record already picked goes in straight away, so loading the
+        // wording and filling it in are one press rather than two
+        if (filled($sourceType) && filled($sourceId) && $this->sources->has($sourceType)) {
+            try {
+                $draft = array_merge($draft, $this->fillWording($sourceType, (int) $sourceId, $locale, $draft));
+            } catch (ModelNotFoundException $e) {
+                // Gone since it was picked. The wording still arrives,
+                // with its placeholders left standing.
+            }
+        }
+
+        return response()->json($draft);
+    }
+
+    /**
+     * One record's values put into a piece of wording.
+     *
+     * Only the source's own placeholders are filled. {{ name }} and the
+     * rest belong to whoever the mail is eventually addressed to, and
+     * have to come through this untouched - filling them in now would
+     * send four hundred people the name of the person who wrote it.
+     *
+     * @param  array<string, mixed>  $wording
+     * @return array<string, mixed>
+     */
+    private function fillWording(string $type, int $id, ?string $locale, array $wording): array
+    {
+        $values = $this->sources->variables($type, $id, $locale);
+
+        $subject = (string) ($wording['subject'] ?? '');
+        $body    = (string) ($wording['body'] ?? '');
+        $label   = (string) ($wording['action_label'] ?? '');
+        $url     = (string) ($wording['action_url'] ?? '');
+
+        return [
+            // A subject is a header the mailer encodes itself, so it is
+            // filled as plain text. A body is HTML, so what goes into it
+            // is escaped.
+            'subject'      => MailVariables::fill($subject, $values, false),
+            'body'         => MailVariables::fill($body, $values, true),
+            'action_label' => MailVariables::fill($label, $values, false) ?: null,
+            'action_url'   => MailVariables::fill($url, $values, false) ?: null,
+            'variables'    => $values,
+            // Which of them the wording actually asked for. Worth saying
+            // out loud: picking an event and finding nothing filled in
+            // means the template has no event placeholders in it.
+            'filled' => array_values(array_intersect(
+                MailVariables::used($subject, $body, $label, $url),
+                array_keys($values)
+            )),
+            'source' => [
+                'type'  => $type,
+                'id'    => $id,
+                'label' => $this->sources->describe($values),
+            ],
+        ];
     }
 
     /**

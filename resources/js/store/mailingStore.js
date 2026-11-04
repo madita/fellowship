@@ -39,6 +39,15 @@ export const useMailingStore = defineStore({
         // The placeholders every mail can use, whatever it is about
         baseVariables: [],
 
+        // What a mailing can be filled in from. `sourceCategories` maps
+        // a category key to the kind of record that fills it in;
+        // `sourceTypes` says which placeholders each kind fills.
+        sourceCategories: {},
+        sourceTypes: {},
+        sourceOptions: [],
+        loadingSources: false,
+        filling: false,
+
         // What the audience picker offers: the roles there are, and the
         // achievements whose holders can be written to
         roles: [],
@@ -79,6 +88,46 @@ export const useMailingStore = defineStore({
          * something to start a mailing from.
          */
         usableTemplates: (state) => state.templates.filter((template) => template.is_enabled),
+
+        /**
+         * What a mailing of this kind can be filled in from, or null
+         * when there is nothing on the site to fill it from - a password
+         * reset is about the member, not about anything else.
+         */
+        sourceForCategory: (state) => (categoryId) => {
+            const category = state.categories.find((row) => row.id === categoryId);
+
+            return category ? (state.sourceCategories[category.key] || null) : null;
+        },
+
+        /**
+         * The placeholders one kind of record fills in.
+         */
+        sourceVariables: (state) => (type) => state.sourceTypes[type]?.variables || [],
+
+        /**
+         * What a set of declared placeholders says a template is about.
+         *
+         * The closest match wins rather than the first one tried:
+         * `points` belongs to an achievement and to a rank alike, and a
+         * rank template asking for both is about the rank.
+         */
+        sourceForVariables: (state) => (names) => {
+            let best = null;
+            let score = 0;
+
+            for (const [type, definition] of Object.entries(state.sourceTypes)) {
+                const overlap = (names || [])
+                    .filter((name) => (definition.variables || []).includes(name)).length;
+
+                if (overlap > score) {
+                    best = type;
+                    score = overlap;
+                }
+            }
+
+            return best;
+        },
     },
 
     actions: {
@@ -143,8 +192,47 @@ export const useMailingStore = defineStore({
                 this.achievements = data.achievements || [];
                 this.locales = data.locales || this.locales;
                 this.defaultLocale = data.default || this.defaultLocale;
+                this.sourceCategories = data.sources?.categories || {};
+                this.sourceTypes = data.sources?.types || {};
             } finally {
                 this.loadingOptions = false;
+            }
+        },
+
+        /**
+         * The records of one kind to choose from, narrowed by what has
+         * been typed. Kept on the store rather than returned, for the
+         * same reason the head count is: the next keystroke would race
+         * with a local variable.
+         */
+        async fetchSourceOptions(type, search = null) {
+            this.loadingSources = true;
+            try {
+                const { data } = await axios.get(`/api/admin/mailings/sources/${type}`, {
+                    params: search ? { search } : {},
+                });
+                this.sourceOptions = data.options || [];
+                return this.sourceOptions;
+            } finally {
+                this.loadingSources = false;
+            }
+        },
+
+        /**
+         * One record's values put into the wording being written.
+         *
+         * The server does the substituting, so the date reads the way
+         * the recipient's language writes it and only the source's own
+         * placeholders are touched - {{ name }} has to survive until the
+         * mail is addressed to somebody.
+         */
+        async fillFromSource(payload) {
+            this.filling = true;
+            try {
+                const { data } = await axios.post('/api/admin/mailings/fill', payload);
+                return data;
+            } finally {
+                this.filling = false;
             }
         },
 
@@ -209,6 +297,8 @@ export const useMailingStore = defineStore({
                 this.locales = data.locales || [];
                 this.defaultLocale = data.default || 'en';
                 this.baseVariables = data.base_variables || [];
+                this.sourceCategories = data.sources?.categories || this.sourceCategories;
+                this.sourceTypes = data.sources?.types || this.sourceTypes;
                 return this.templates;
             } finally {
                 this.loadingTemplates = false;
@@ -252,8 +342,15 @@ export const useMailingStore = defineStore({
          * template, and the template changing later never rewrites a
          * mailing that has gone out.
          */
-        async draftFromTemplate(id, locale = null) {
-            const { data } = await axios.post(`/api/admin/mail-templates/${id}/draft`, { locale });
+        async draftFromTemplate(id, locale = null, source = null) {
+            const { data } = await axios.post(`/api/admin/mail-templates/${id}/draft`, {
+                locale,
+                // Already picked something to fill it in from? Then the
+                // wording arrives filled, and loading plus filling in is
+                // one press rather than two.
+                source_type: source?.type || null,
+                source_id: source?.id || null,
+            });
             return data;
         },
 

@@ -382,6 +382,10 @@ return [
         'category_deleted'  => 'Die Kategorie wurde gelöscht.',
         'category_locked'   => 'Diese Kategorie bleibt — Mitglieder müssen wieder in ihr Konto kommen können.',
         'category_in_use'   => 'Zu dieser Kategorie gehört eine Vorlage, die die Seite selbst verschickt. Verschiebe sie erst.',
+        'unknown_source'    => 'Davon gibt es nichts, womit eine Mail gefüllt werden könnte.',
+        'source_gone'       => 'Das gibt es nicht mehr, es konnte nichts eingesetzt werden.',
+        'source_draft'      => 'noch nicht veröffentlicht',
+        'source_points'     => ':points Punkte',
         'reordered'         => 'Die Reihenfolge wurde gespeichert.',
     ],
 

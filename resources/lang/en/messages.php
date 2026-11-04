@@ -376,6 +376,10 @@ return [
         'category_deleted'   => 'The category was deleted.',
         'category_locked'    => 'This category cannot be removed — members have to be able to get back into their accounts.',
         'category_in_use'    => 'A template the site sends itself belongs to this category. Move it first.',
+        'unknown_source'     => 'There is nothing of that kind to fill a mailing in from.',
+        'source_gone'        => 'That is no longer there, so nothing could be filled in.',
+        'source_draft'       => 'not published yet',
+        'source_points'      => ':points points',
         'reordered'          => 'The order was saved.',
     ],
 
