@@ -12,12 +12,12 @@ use Illuminate\Support\Facades\Auth;
 class MenuController extends Controller
 {
     /**
-     * Public read endpoints are open; write/admin endpoints require the
-     * project's standard admin middleware.
+     * Reading a menu is open - every page draws one. Changing them is
+     * the navigation's own permission.
      */
     public function __construct()
     {
-        $this->middleware('admin')->only([
+        $this->middleware('permission.any:manage-menu')->only([
             'index', 'store', 'update', 'destroy',
             'getItems', 'addItem', 'updateItem', 'deleteItem', 'reorderItems',
         ]);

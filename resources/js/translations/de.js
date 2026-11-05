@@ -3919,6 +3919,18 @@ export default {
             'scrollToTop': 'Nach oben scrollen'
         }
     },
+    'access': {
+        'manage': 'Rollen und Rechte',
+        'title': 'Was {name} darf',
+        'intro': 'Eine Rolle ist ein Satz Rechte mit einem Namen, und der bessere Weg: „Moderator“ sagt, warum jemand etwas darf, eine Liste von Rechten nicht. Einzelne Rechte sind für den Ausnahmefall.',
+        'roles': 'Rollen',
+        'permissions': 'Eigene Rechte',
+        'permissionsHint': 'Zusätzlich zu allem, was die Rollen schon mitbringen',
+        'roleBeyondYou': 'Diese Rolle bringt Rechte mit, die du selbst nicht hast',
+        'effective': 'Insgesamt {count} Rechte, Rollen eingerechnet',
+        'otherGroup': 'Alles andere',
+        'notYourOwn': 'Die eigenen Rechte lassen sich hier nicht ändern. Frag einen anderen Admin — eine Tür, die sich von innen öffnen lässt, ist keine.',
+    },
     'accessibility': {
         'skipToMain': 'Zum Hauptinhalt springen',
         'openMenu': 'Menü öffnen',

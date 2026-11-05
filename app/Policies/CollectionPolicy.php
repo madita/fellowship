@@ -6,6 +6,15 @@ use App\Models\Collection;
 use App\Models\User;
 use Illuminate\Auth\Access\HandlesAuthorization;
 
+/**
+ * Who may do what with an album.
+ *
+ * Whoever made it, and whoever looks after the gallery. The second half
+ * used to name "manage-posts", a permission that has never existed -
+ * the real one is singular, and the gallery has its own now, so the
+ * check was false for everybody and an album could only ever be touched
+ * by the member who made it.
+ */
 class CollectionPolicy
 {
     use HandlesAuthorization;
@@ -39,8 +48,8 @@ class CollectionPolicy
      */
     public function update(User $user, Collection $collection): bool
     {
-        // Owner or admin can update
-        return $user->id === $collection->user_id || $user->can('manage-posts');
+        // Whoever made it, or whoever looks after the gallery
+        return $user->id === $collection->user_id || $user->can('manage-gallery');
     }
 
     /**
@@ -48,8 +57,7 @@ class CollectionPolicy
      */
     public function delete(User $user, Collection $collection): bool
     {
-        // Owner or admin can delete
-        return $user->id === $collection->user_id || $user->can('manage-posts');
+        return $user->id === $collection->user_id || $user->can('manage-gallery');
     }
 
     /**
@@ -57,7 +65,6 @@ class CollectionPolicy
      */
     public function uploadMedia(User $user, Collection $collection): bool
     {
-        // Owner or admin can upload media
-        return $user->id === $collection->user_id || $user->can('manage-posts');
+        return $user->id === $collection->user_id || $user->can('manage-gallery');
     }
 }

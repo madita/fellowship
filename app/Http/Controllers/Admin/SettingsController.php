@@ -19,7 +19,7 @@ class SettingsController extends Controller
     public function __construct()
     {
         $this->middleware(['auth:sanctum'])->except(['public', 'getEnabledOAuthProviders', 'performanceSettings']);
-        $this->middleware(['admin'])->except(['public', 'getEnabledOAuthProviders', 'performanceSettings']);
+        $this->middleware(['permission.any:manage-setting'])->except(['public', 'getEnabledOAuthProviders', 'performanceSettings']);
     }
 
     /**

@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\MigrationController;
+use App\Support\FeaturePermissions;
 use App\Http\Controllers\CollectionController;
 use App\Http\Controllers\CommonController;
 use App\Http\Controllers\RelateableController;
@@ -332,14 +333,23 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
 });
 
 // Collections (Photo Gallery)
+// Albums are public to look at; the forum is read without signing in and
+// so are the pictures.
 Route::get('/collections/recent', [CollectionController::class, 'recent']); // Newest albums (dashboard widget)
 Route::get('/collections', [CollectionController::class, 'index']); // Fetch all collections
 Route::get('/collections/{collection}', [CollectionController::class, 'show']); // Fetch media for a specific collection
-Route::post('/collections', [CollectionController::class, 'store']); // Create a new collection
-Route::post('/collections/{collection}', [CollectionController::class, 'uploadMedia']); // Upload media to collection
-Route::patch('/media/{media}/caption', [CollectionController::class, 'updateMediaCaption']); // Update caption for a media item
-Route::delete('/collections/{collection}', [CollectionController::class, 'destroy']); // Delete collection (fixed method name)
-Route::delete('/media/{media}', [CollectionController::class, 'deleteMedia']); // Delete a media item
+
+// Changing one is not. These carried no middleware at all, which left
+// deleting an album - and deleting any uploaded file - open to anyone
+// who knew the URL. Who may do what to which album is CollectionPolicy's
+// to say: whoever made it, or whoever looks after the gallery.
+Route::middleware('auth:sanctum')->group(function () {
+    Route::post('/collections', [CollectionController::class, 'store']); // Create a new collection
+    Route::post('/collections/{collection}', [CollectionController::class, 'uploadMedia']); // Upload media to collection
+    Route::patch('/media/{media}/caption', [CollectionController::class, 'updateMediaCaption']); // Update caption for a media item
+    Route::delete('/collections/{collection}', [CollectionController::class, 'destroy']); // Delete collection
+    Route::delete('/media/{media}', [CollectionController::class, 'deleteMedia']); // Delete a media item
+});
 
 Route::group(['middleware' => ['auth:sanctum']], function () {
     // Each table needs the permission its admin screen already requires;
@@ -365,6 +375,12 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
         Route::get('datatable/pages/{id}/history/{revision}', 'App\Http\Controllers\DataTable\\PageController@historyRevision')
             ->whereNumber('revision');
         Route::resource('datatable/pages', 'App\Http\Controllers\DataTable\\PageController');
+    });
+
+    // The vocabularies content is filed under. Their own feature, rather
+    // than the pages' - the forum and the gallery file things under them
+    // as much as the wiki does.
+    Route::middleware('permission.any:manage-taxonomy')->group(function () {
         Route::resource('datatable/taxonomies', 'App\Http\Controllers\DataTable\\TaxonomyController');
         Route::resource('datatable/terms', 'App\Http\Controllers\DataTable\\TermController');
     });
@@ -374,7 +390,12 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     // admin-area permission while changing them needs manage-role. These come
     // after the resources on purpose: a later route with the same URI replaces
     // the earlier one, so registering them last keeps their own middleware.
-    Route::middleware('permission.any:manage-role,manage-post,manage-page')->group(function () {
+    //
+    // "Any admin-area permission" is now a list rather than three names:
+    // the screens that read these belong to features of their own, and a
+    // forum moderator holding manage-forum needs the role names as much
+    // as whoever holds manage-page ever did.
+    Route::middleware('permission.any:' . implode(',', FeaturePermissions::names()))->group(function () {
         Route::get('datatable/roles', 'App\Http\Controllers\DataTable\\RoleController@index');
         Route::get('datatable/permissions/roles', 'App\Http\Controllers\DataTable\\PermissionController@roles');
         Route::get('datatable/permissions/permissions', 'App\Http\Controllers\DataTable\\PermissionController@permissions');
@@ -385,6 +406,11 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
         Route::get('datatable/posts/{id}/history/{revision}', 'App\Http\Controllers\DataTable\\PostController@historyRevision')
             ->whereNumber('revision');
         Route::resource('datatable/posts', 'App\Http\Controllers\DataTable\\PostController');
+    });
+
+    // The calendar, the kinds of event, and the forms members fill in
+    // when they answer one
+    Route::middleware('permission.any:manage-event')->group(function () {
         Route::resource('datatable/events', 'App\Http\Controllers\DataTable\\EventController');
         Route::resource('datatable/event-types', 'App\Http\Controllers\DataTable\\EventTypeController');
         Route::resource('datatable/event-profiles', 'App\Http\Controllers\DataTable\\EventProfileController');
@@ -597,230 +623,277 @@ Route::group(['prefix' => 'v1', 'middleware' => ['api.key', 'api.rate']], functi
 });
 
 // Admin Settings Routes
-// Being an admin is asked for once, here, rather than route by route: the
-// group used to require only a signed-in user and each route was expected to
-// add the admin middleware for itself, which several dozen never did.
-Route::group(['prefix' => 'admin', 'middleware' => ['auth:sanctum', 'admin']], function () {
-    // Admin overview
-    Route::get('/dashboard', 'App\Http\Controllers\Admin\AdminDashboardController@index');
+//
+// Every route in here is behind the permission named after its feature,
+// and EnsureUserHasPermission lets admins through all of them - so the
+// group asks for a signed-in member and leaves the rest to the gates.
+// It used to ask for the admin role as a whole, which meant a member
+// handed one feature was refused before their own gate was reached.
+//
+// That makes the gates load-bearing: a route added in here without one
+// would be open to any signed-in member. FeaturePermissionTest walks the
+// routes and fails if one has no permission on it.
+Route::group(['prefix' => 'admin', 'middleware' => ['auth:sanctum']], function () {
+    Route::middleware('permission.any:manage-user')->group(function () {
+        // Admin overview
+        Route::get('/dashboard', 'App\Http\Controllers\Admin\AdminDashboardController@index');
 
-    // Achievements. Setting them up is an admin's job; handing one out for
-    // something that happened in the real world can be delegated with the
-    // award-achievements permission.
-    Route::get('/achievements', 'App\Http\Controllers\Admin\AchievementAdminController@index');
-    Route::get('/achievements/stats', 'App\Http\Controllers\Admin\AchievementAdminController@stats');
-    Route::post('/achievements', 'App\Http\Controllers\Admin\AchievementAdminController@store');
-    Route::patch('/achievements/{achievement}', 'App\Http\Controllers\Admin\AchievementAdminController@update');
-    Route::delete('/achievements/{achievement}', 'App\Http\Controllers\Admin\AchievementAdminController@destroy');
-    Route::get('/achievements/{achievement}/holders', 'App\Http\Controllers\Admin\AchievementAdminController@holders');
-    // Kinds of achievement, kept as a taxonomy so one can be added without
-    // a deploy and its name is translated
-    Route::post('/achievement-types', 'App\Http\Controllers\Admin\AchievementAdminController@storeType');
-    Route::delete('/achievement-types/{taxonomy}', 'App\Http\Controllers\Admin\AchievementAdminController@destroyType');
+        // What one member is allowed, and changing it - from the members
+        // table or from their profile. The controller holds the rules
+        // about what the person doing it may hand out; "access" is
+        // declared above "{user}" so the literal path is not read as an
+        // id.
+        Route::get('/users/access/catalogue', 'App\Http\Controllers\Admin\UserAccessController@catalogue');
+        Route::get('/users/{user}/access', 'App\Http\Controllers\Admin\UserAccessController@show');
+        Route::put('/users/{user}/access', 'App\Http\Controllers\Admin\UserAccessController@update');
+    });
 
-    // Help & Tours: the walkthroughs and the hints an admin writes for a
-    // page. A tour and its steps are saved in one request — see the
-    // controller for why.
-    Route::get('/help-tours', 'App\Http\Controllers\Help\HelpTourManageController@index');
-    Route::post('/help-tours', 'App\Http\Controllers\Help\HelpTourManageController@store');
-    Route::patch('/help-tours/{tour}', 'App\Http\Controllers\Help\HelpTourManageController@update');
-    Route::delete('/help-tours/{tour}', 'App\Http\Controllers\Help\HelpTourManageController@destroy');
-    Route::post('/help-tours/{tour}/duplicate', 'App\Http\Controllers\Help\HelpTourManageController@duplicate');
+    Route::middleware('permission.any:manage-achievement')->group(function () {
+        // Achievements. Setting them up is an admin's job; handing one out for
+        // something that happened in the real world can be delegated with the
+        // award-achievements permission.
+        Route::get('/achievements', 'App\Http\Controllers\Admin\AchievementAdminController@index');
+        Route::get('/achievements/stats', 'App\Http\Controllers\Admin\AchievementAdminController@stats');
+        Route::post('/achievements', 'App\Http\Controllers\Admin\AchievementAdminController@store');
+        Route::patch('/achievements/{achievement}', 'App\Http\Controllers\Admin\AchievementAdminController@update');
+        Route::delete('/achievements/{achievement}', 'App\Http\Controllers\Admin\AchievementAdminController@destroy');
+        Route::get('/achievements/{achievement}/holders', 'App\Http\Controllers\Admin\AchievementAdminController@holders');
+        // Kinds of achievement, kept as a taxonomy so one can be added without
+        // a deploy and its name is translated
+        Route::post('/achievement-types', 'App\Http\Controllers\Admin\AchievementAdminController@storeType');
+        Route::delete('/achievement-types/{taxonomy}', 'App\Http\Controllers\Admin\AchievementAdminController@destroyType');
 
-    // Ranks: the ladder members climb with their points
-    Route::get('/ranks', 'App\Http\Controllers\Admin\RankAdminController@index');
-    Route::post('/ranks', 'App\Http\Controllers\Admin\RankAdminController@store');
-    Route::patch('/ranks/{rank}', 'App\Http\Controllers\Admin\RankAdminController@update');
-    Route::delete('/ranks/{rank}', 'App\Http\Controllers\Admin\RankAdminController@destroy');
-    Route::post('/ranks/{rank}/image', 'App\Http\Controllers\Admin\RankAdminController@uploadImage');
-    Route::delete('/ranks/{rank}/image', 'App\Http\Controllers\Admin\RankAdminController@deleteImage');
-    // A badge can wear a picture instead of one of the built-in icons
-    Route::post('/achievements/{achievement}/badge', 'App\Http\Controllers\Admin\AchievementAdminController@uploadBadge');
-    Route::delete('/achievements/{achievement}/badge', 'App\Http\Controllers\Admin\AchievementAdminController@deleteBadge');
+        // A badge can wear a picture instead of one of the built-in icons
+        Route::post('/achievements/{achievement}/badge', 'App\Http\Controllers\Admin\AchievementAdminController@uploadBadge');
+        Route::delete('/achievements/{achievement}/badge', 'App\Http\Controllers\Admin\AchievementAdminController@deleteBadge');
+    });
 
-    // Podcast: shows, their episodes, and the audio for each.
-    // Reachable with the feature switched off on purpose — an admin has
-    // to be able to get at the episodes to switch it back on.
-    Route::get('/podcasts', 'App\Http\Controllers\Podcast\PodcastManageController@index');
-    Route::get('/podcasts/stats', 'App\Http\Controllers\Podcast\PodcastManageController@stats');
-    Route::post('/podcasts', 'App\Http\Controllers\Podcast\PodcastManageController@store');
-    Route::patch('/podcasts/{podcast}', 'App\Http\Controllers\Podcast\PodcastManageController@update');
-    Route::delete('/podcasts/{podcast}', 'App\Http\Controllers\Podcast\PodcastManageController@destroy');
-    Route::post('/podcasts/{podcast}/cover', 'App\Http\Controllers\Podcast\PodcastManageController@uploadCover');
-    Route::get('/podcasts/{podcast}/episodes', 'App\Http\Controllers\Podcast\PodcastManageController@episodes');
-    Route::post('/podcasts/{podcast}/episodes', 'App\Http\Controllers\Podcast\PodcastManageController@storeEpisode');
-    Route::patch('/podcasts/{podcast}/episodes/{episode}', 'App\Http\Controllers\Podcast\PodcastManageController@updateEpisode');
-    Route::delete('/podcasts/{podcast}/episodes/{episode}', 'App\Http\Controllers\Podcast\PodcastManageController@destroyEpisode');
-    Route::post('/podcasts/{podcast}/episodes/{episode}/audio', 'App\Http\Controllers\Podcast\PodcastManageController@uploadAudio');
-    Route::delete('/podcasts/{podcast}/episodes/{episode}/audio', 'App\Http\Controllers\Podcast\PodcastManageController@deleteAudio');
+    Route::middleware('permission.any:manage-help')->group(function () {
+        // Help & Tours: the walkthroughs and the hints an admin writes for a
+        // page. A tour and its steps are saved in one request — see the
+        // controller for why.
+        Route::get('/help-tours', 'App\Http\Controllers\Help\HelpTourManageController@index');
+        Route::post('/help-tours', 'App\Http\Controllers\Help\HelpTourManageController@store');
+        Route::patch('/help-tours/{tour}', 'App\Http\Controllers\Help\HelpTourManageController@update');
+        Route::delete('/help-tours/{tour}', 'App\Http\Controllers\Help\HelpTourManageController@destroy');
+        Route::post('/help-tours/{tour}/duplicate', 'App\Http\Controllers\Help\HelpTourManageController@duplicate');
+    });
 
-    // Tickets
-    Route::get('/tickets/stats', 'App\Http\Controllers\Admin\TicketAdminController@stats');
+    Route::middleware('permission.any:manage-rank')->group(function () {
+        // Ranks: the ladder members climb with their points
+        Route::get('/ranks', 'App\Http\Controllers\Admin\RankAdminController@index');
+        Route::post('/ranks', 'App\Http\Controllers\Admin\RankAdminController@store');
+        Route::patch('/ranks/{rank}', 'App\Http\Controllers\Admin\RankAdminController@update');
+        Route::delete('/ranks/{rank}', 'App\Http\Controllers\Admin\RankAdminController@destroy');
+        Route::post('/ranks/{rank}/image', 'App\Http\Controllers\Admin\RankAdminController@uploadImage');
+        Route::delete('/ranks/{rank}/image', 'App\Http\Controllers\Admin\RankAdminController@deleteImage');
+    });
 
-    // Discord webhooks
-    Route::get('/discord-webhooks', 'App\Http\Controllers\Admin\DiscordWebhookController@index');
-    Route::post('/discord-webhooks', 'App\Http\Controllers\Admin\DiscordWebhookController@store');
-    Route::patch('/discord-webhooks/{discordWebhook}', 'App\Http\Controllers\Admin\DiscordWebhookController@update');
-    Route::delete('/discord-webhooks/{discordWebhook}', 'App\Http\Controllers\Admin\DiscordWebhookController@destroy');
-    Route::post('/discord-webhooks/{discordWebhook}/test', 'App\Http\Controllers\Admin\DiscordWebhookController@test');
+    Route::middleware('permission.any:manage-podcast')->group(function () {
+        // Podcast: shows, their episodes, and the audio for each.
+        // Reachable with the feature switched off on purpose — an admin has
+        // to be able to get at the episodes to switch it back on.
+        Route::get('/podcasts', 'App\Http\Controllers\Podcast\PodcastManageController@index');
+        Route::get('/podcasts/stats', 'App\Http\Controllers\Podcast\PodcastManageController@stats');
+        Route::post('/podcasts', 'App\Http\Controllers\Podcast\PodcastManageController@store');
+        Route::patch('/podcasts/{podcast}', 'App\Http\Controllers\Podcast\PodcastManageController@update');
+        Route::delete('/podcasts/{podcast}', 'App\Http\Controllers\Podcast\PodcastManageController@destroy');
+        Route::post('/podcasts/{podcast}/cover', 'App\Http\Controllers\Podcast\PodcastManageController@uploadCover');
+        Route::get('/podcasts/{podcast}/episodes', 'App\Http\Controllers\Podcast\PodcastManageController@episodes');
+        Route::post('/podcasts/{podcast}/episodes', 'App\Http\Controllers\Podcast\PodcastManageController@storeEpisode');
+        Route::patch('/podcasts/{podcast}/episodes/{episode}', 'App\Http\Controllers\Podcast\PodcastManageController@updateEpisode');
+        Route::delete('/podcasts/{podcast}/episodes/{episode}', 'App\Http\Controllers\Podcast\PodcastManageController@destroyEpisode');
+        Route::post('/podcasts/{podcast}/episodes/{episode}/audio', 'App\Http\Controllers\Podcast\PodcastManageController@uploadAudio');
+        Route::delete('/podcasts/{podcast}/episodes/{episode}/audio', 'App\Http\Controllers\Podcast\PodcastManageController@deleteAudio');
+    });
 
-    // Polls
-    Route::get('/polls', 'App\Http\Controllers\Admin\PollAdminController@index');
-    Route::get('/polls/stats', 'App\Http\Controllers\Admin\PollAdminController@stats');
-    Route::patch('/polls/{poll}/close', 'App\Http\Controllers\Admin\PollAdminController@close');
-    Route::patch('/polls/{poll}/reopen', 'App\Http\Controllers\Admin\PollAdminController@reopen');
-    Route::delete('/polls/{poll}', 'App\Http\Controllers\Admin\PollAdminController@destroy');
+    Route::middleware('permission.any:manage-ticket')->group(function () {
+        // Tickets
+        Route::get('/tickets/stats', 'App\Http\Controllers\Admin\TicketAdminController@stats');
+    });
 
-    // Related content
-    Route::get('/relations', 'App\Http\Controllers\Admin\RelationAdminController@index');
-    Route::get('/relations/stats', 'App\Http\Controllers\Admin\RelationAdminController@stats');
-    Route::delete('/relations', 'App\Http\Controllers\Admin\RelationAdminController@destroy');
+    Route::middleware('permission.any:manage-discord')->group(function () {
+        // Discord webhooks
+        Route::get('/discord-webhooks', 'App\Http\Controllers\Admin\DiscordWebhookController@index');
+        Route::post('/discord-webhooks', 'App\Http\Controllers\Admin\DiscordWebhookController@store');
+        Route::patch('/discord-webhooks/{discordWebhook}', 'App\Http\Controllers\Admin\DiscordWebhookController@update');
+        Route::delete('/discord-webhooks/{discordWebhook}', 'App\Http\Controllers\Admin\DiscordWebhookController@destroy');
+        Route::post('/discord-webhooks/{discordWebhook}/test', 'App\Http\Controllers\Admin\DiscordWebhookController@test');
+    });
 
-    // Settings
-    Route::get('/settings', 'App\Http\Controllers\Admin\SettingsController@index');
-    Route::post('/settings', 'App\Http\Controllers\Admin\SettingsController@update');
-    Route::get('/settings/server-info', 'App\Http\Controllers\Admin\SettingsController@serverInfo');
-    Route::post('/settings/logo', 'App\Http\Controllers\Admin\SettingsController@uploadLogo');
-    Route::delete('/settings/logo', 'App\Http\Controllers\Admin\SettingsController@deleteLogo');
-    Route::post('/settings/image', 'App\Http\Controllers\Admin\SettingsController@uploadImage');
-    Route::delete('/settings/image', 'App\Http\Controllers\Admin\SettingsController@deleteImage');
-    Route::post('/settings/test-email', 'App\Http\Controllers\Admin\SettingsController@testEmail');
-    Route::get('/settings/cache-status', 'App\Http\Controllers\Admin\SettingsController@cacheStatus');
-    Route::post('/settings/clear-cache', 'App\Http\Controllers\Admin\SettingsController@clearCache');
+    Route::middleware('permission.any:manage-poll')->group(function () {
+        // Polls
+        Route::get('/polls', 'App\Http\Controllers\Admin\PollAdminController@index');
+        Route::get('/polls/stats', 'App\Http\Controllers\Admin\PollAdminController@stats');
+        Route::patch('/polls/{poll}/close', 'App\Http\Controllers\Admin\PollAdminController@close');
+        Route::patch('/polls/{poll}/reopen', 'App\Http\Controllers\Admin\PollAdminController@reopen');
+        Route::delete('/polls/{poll}', 'App\Http\Controllers\Admin\PollAdminController@destroy');
+    });
 
-    // Menu Management
-    Route::get('/menus', 'App\Http\Controllers\Menu\MenuController@index');
-    Route::post('/menus', 'App\Http\Controllers\Menu\MenuController@store');
-    Route::patch('/menus/{menu}', 'App\Http\Controllers\Menu\MenuController@update');
-    Route::delete('/menus/{menu}', 'App\Http\Controllers\Menu\MenuController@destroy');
-    Route::get('/menus/{menu}/items', 'App\Http\Controllers\Menu\MenuController@getItems');
-    Route::post('/menus/{menu}/items', 'App\Http\Controllers\Menu\MenuController@addItem');
-    Route::patch('/menu-items/{item}', 'App\Http\Controllers\Menu\MenuController@updateItem');
-    Route::delete('/menu-items/{item}', 'App\Http\Controllers\Menu\MenuController@deleteItem');
-    Route::post('/menus/{menu}/reorder', 'App\Http\Controllers\Menu\MenuController@reorderItems');
+    Route::middleware('permission.any:manage-relation')->group(function () {
+        // Related content
+        Route::get('/relations', 'App\Http\Controllers\Admin\RelationAdminController@index');
+        Route::get('/relations/stats', 'App\Http\Controllers\Admin\RelationAdminController@stats');
+        Route::delete('/relations', 'App\Http\Controllers\Admin\RelationAdminController@destroy');
+    });
 
-    // Homepage Widgets
-    Route::get('/homepage/widgets', 'App\Http\Controllers\Admin\HomepageWidgetController@index');
-    Route::post('/homepage/widgets', 'App\Http\Controllers\Admin\HomepageWidgetController@store');
-    Route::patch('/homepage/widgets/{id}', 'App\Http\Controllers\Admin\HomepageWidgetController@update');
-    Route::delete('/homepage/widgets/{id}', 'App\Http\Controllers\Admin\HomepageWidgetController@destroy');
-    Route::post('/homepage/widgets/reorder', 'App\Http\Controllers\Admin\HomepageWidgetController@updateOrder');
-    Route::post('/homepage/widgets/{id}/toggle', 'App\Http\Controllers\Admin\HomepageWidgetController@toggle');
-    Route::post('/homepage/widgets/{id}/duplicate', 'App\Http\Controllers\Admin\HomepageWidgetController@duplicate');
+    Route::middleware('permission.any:manage-setting')->group(function () {
+        // Settings
+        Route::get('/settings', 'App\Http\Controllers\Admin\SettingsController@index');
+        Route::post('/settings', 'App\Http\Controllers\Admin\SettingsController@update');
+        Route::get('/settings/server-info', 'App\Http\Controllers\Admin\SettingsController@serverInfo');
+        Route::post('/settings/logo', 'App\Http\Controllers\Admin\SettingsController@uploadLogo');
+        Route::delete('/settings/logo', 'App\Http\Controllers\Admin\SettingsController@deleteLogo');
+        Route::post('/settings/image', 'App\Http\Controllers\Admin\SettingsController@uploadImage');
+        Route::delete('/settings/image', 'App\Http\Controllers\Admin\SettingsController@deleteImage');
+        Route::post('/settings/test-email', 'App\Http\Controllers\Admin\SettingsController@testEmail');
+        Route::get('/settings/cache-status', 'App\Http\Controllers\Admin\SettingsController@cacheStatus');
+        Route::post('/settings/clear-cache', 'App\Http\Controllers\Admin\SettingsController@clearCache');
+    });
 
-    // Homepage Menu
-    Route::get('/homepage/menu', 'App\Http\Controllers\Admin\HomepageMenuController@index');
-    Route::post('/homepage/menu', 'App\Http\Controllers\Admin\HomepageMenuController@store');
-    Route::patch('/homepage/menu/{id}', 'App\Http\Controllers\Admin\HomepageMenuController@update');
-    Route::delete('/homepage/menu/{id}', 'App\Http\Controllers\Admin\HomepageMenuController@destroy');
-    Route::post('/homepage/menu/reorder', 'App\Http\Controllers\Admin\HomepageMenuController@updateOrder');
+    Route::middleware('permission.any:manage-menu')->group(function () {
+        // Menu Management
+        Route::get('/menus', 'App\Http\Controllers\Menu\MenuController@index');
+        Route::post('/menus', 'App\Http\Controllers\Menu\MenuController@store');
+        Route::patch('/menus/{menu}', 'App\Http\Controllers\Menu\MenuController@update');
+        Route::delete('/menus/{menu}', 'App\Http\Controllers\Menu\MenuController@destroy');
+        Route::get('/menus/{menu}/items', 'App\Http\Controllers\Menu\MenuController@getItems');
+        Route::post('/menus/{menu}/items', 'App\Http\Controllers\Menu\MenuController@addItem');
+        Route::patch('/menu-items/{item}', 'App\Http\Controllers\Menu\MenuController@updateItem');
+        Route::delete('/menu-items/{item}', 'App\Http\Controllers\Menu\MenuController@deleteItem');
+        Route::post('/menus/{menu}/reorder', 'App\Http\Controllers\Menu\MenuController@reorderItems');
+    });
 
-    // Homepage Sections
-    Route::get('/homepage/sections', 'App\Http\Controllers\Admin\HomepageSectionController@index');
-    Route::post('/homepage/sections', 'App\Http\Controllers\Admin\HomepageSectionController@store');
-    Route::patch('/homepage/sections/{id}', 'App\Http\Controllers\Admin\HomepageSectionController@update');
-    Route::delete('/homepage/sections/{id}', 'App\Http\Controllers\Admin\HomepageSectionController@destroy');
-    Route::post('/homepage/sections/reorder', 'App\Http\Controllers\Admin\HomepageSectionController@updateOrder');
-    Route::post('/homepage/sections/{id}/toggle', 'App\Http\Controllers\Admin\HomepageSectionController@toggle');
+    Route::middleware('permission.any:manage-homepage')->group(function () {
+        // Homepage Widgets
+        Route::get('/homepage/widgets', 'App\Http\Controllers\Admin\HomepageWidgetController@index');
+        Route::post('/homepage/widgets', 'App\Http\Controllers\Admin\HomepageWidgetController@store');
+        Route::patch('/homepage/widgets/{id}', 'App\Http\Controllers\Admin\HomepageWidgetController@update');
+        Route::delete('/homepage/widgets/{id}', 'App\Http\Controllers\Admin\HomepageWidgetController@destroy');
+        Route::post('/homepage/widgets/reorder', 'App\Http\Controllers\Admin\HomepageWidgetController@updateOrder');
+        Route::post('/homepage/widgets/{id}/toggle', 'App\Http\Controllers\Admin\HomepageWidgetController@toggle');
+        Route::post('/homepage/widgets/{id}/duplicate', 'App\Http\Controllers\Admin\HomepageWidgetController@duplicate');
 
-    // Homepage Image Upload
-    Route::post('/homepage/upload-image', 'App\Http\Controllers\Admin\HomepageImageController@upload');
-    Route::delete('/homepage/delete-image', 'App\Http\Controllers\Admin\HomepageImageController@delete');
+        // Homepage Menu
+        Route::get('/homepage/menu', 'App\Http\Controllers\Admin\HomepageMenuController@index');
+        Route::post('/homepage/menu', 'App\Http\Controllers\Admin\HomepageMenuController@store');
+        Route::patch('/homepage/menu/{id}', 'App\Http\Controllers\Admin\HomepageMenuController@update');
+        Route::delete('/homepage/menu/{id}', 'App\Http\Controllers\Admin\HomepageMenuController@destroy');
+        Route::post('/homepage/menu/reorder', 'App\Http\Controllers\Admin\HomepageMenuController@updateOrder');
 
-    // Footer Widgets
-    Route::get('/footer/widgets', 'App\Http\Controllers\Admin\FooterWidgetController@index');
-    Route::post('/footer/widgets', 'App\Http\Controllers\Admin\FooterWidgetController@store');
-    Route::patch('/footer/widgets/{id}', 'App\Http\Controllers\Admin\FooterWidgetController@update');
-    Route::delete('/footer/widgets/{id}', 'App\Http\Controllers\Admin\FooterWidgetController@destroy');
-    Route::post('/footer/widgets/reorder', 'App\Http\Controllers\Admin\FooterWidgetController@updateOrder');
-    Route::post('/footer/widgets/{id}/toggle', 'App\Http\Controllers\Admin\FooterWidgetController@toggle');
+        // Homepage Sections
+        Route::get('/homepage/sections', 'App\Http\Controllers\Admin\HomepageSectionController@index');
+        Route::post('/homepage/sections', 'App\Http\Controllers\Admin\HomepageSectionController@store');
+        Route::patch('/homepage/sections/{id}', 'App\Http\Controllers\Admin\HomepageSectionController@update');
+        Route::delete('/homepage/sections/{id}', 'App\Http\Controllers\Admin\HomepageSectionController@destroy');
+        Route::post('/homepage/sections/reorder', 'App\Http\Controllers\Admin\HomepageSectionController@updateOrder');
+        Route::post('/homepage/sections/{id}/toggle', 'App\Http\Controllers\Admin\HomepageSectionController@toggle');
 
-    // Footer Sections
-    Route::get('/footer/sections', 'App\Http\Controllers\Admin\FooterSectionController@index');
-    Route::post('/footer/sections', 'App\Http\Controllers\Admin\FooterSectionController@store');
-    Route::patch('/footer/sections/{id}', 'App\Http\Controllers\Admin\FooterSectionController@update');
-    Route::delete('/footer/sections/{id}', 'App\Http\Controllers\Admin\FooterSectionController@destroy');
-    Route::post('/footer/sections/reorder', 'App\Http\Controllers\Admin\FooterSectionController@updateOrder');
-    Route::post('/footer/sections/{id}/toggle', 'App\Http\Controllers\Admin\FooterSectionController@toggle');
+        // Homepage Image Upload
+        Route::post('/homepage/upload-image', 'App\Http\Controllers\Admin\HomepageImageController@upload');
+        Route::delete('/homepage/delete-image', 'App\Http\Controllers\Admin\HomepageImageController@delete');
 
-    // Media Center
-    Route::get('/media', 'App\Http\Controllers\Admin\MediaController@index');
-    Route::get('/media/folders', 'App\Http\Controllers\Admin\MediaController@folders');
-    Route::get('/media/model-items', 'App\Http\Controllers\Admin\MediaController@modelItems');
-    Route::get('/media/stats', 'App\Http\Controllers\Admin\MediaController@stats');
-    Route::get('/media/contexts', 'App\Http\Controllers\Admin\MediaController@contexts');
-    Route::get('/media/library', 'App\Http\Controllers\Admin\MediaController@libraryImages');
-    Route::post('/media/upload', 'App\Http\Controllers\Admin\MediaController@upload');
-    Route::get('/media/{media}', 'App\Http\Controllers\Admin\MediaController@show');
-    Route::delete('/media/{media}', 'App\Http\Controllers\Admin\MediaController@destroy');
-    Route::post('/media/bulk-delete', 'App\Http\Controllers\Admin\MediaController@bulkDestroy');
+        // Footer Widgets
+        Route::get('/footer/widgets', 'App\Http\Controllers\Admin\FooterWidgetController@index');
+        Route::post('/footer/widgets', 'App\Http\Controllers\Admin\FooterWidgetController@store');
+        Route::patch('/footer/widgets/{id}', 'App\Http\Controllers\Admin\FooterWidgetController@update');
+        Route::delete('/footer/widgets/{id}', 'App\Http\Controllers\Admin\FooterWidgetController@destroy');
+        Route::post('/footer/widgets/reorder', 'App\Http\Controllers\Admin\FooterWidgetController@updateOrder');
+        Route::post('/footer/widgets/{id}/toggle', 'App\Http\Controllers\Admin\FooterWidgetController@toggle');
+
+        // Footer Sections
+        Route::get('/footer/sections', 'App\Http\Controllers\Admin\FooterSectionController@index');
+        Route::post('/footer/sections', 'App\Http\Controllers\Admin\FooterSectionController@store');
+        Route::patch('/footer/sections/{id}', 'App\Http\Controllers\Admin\FooterSectionController@update');
+        Route::delete('/footer/sections/{id}', 'App\Http\Controllers\Admin\FooterSectionController@destroy');
+        Route::post('/footer/sections/reorder', 'App\Http\Controllers\Admin\FooterSectionController@updateOrder');
+        Route::post('/footer/sections/{id}/toggle', 'App\Http\Controllers\Admin\FooterSectionController@toggle');
+    });
+
+    Route::middleware('permission.any:manage-media')->group(function () {
+        // Media Center
+        Route::get('/media', 'App\Http\Controllers\Admin\MediaController@index');
+        Route::get('/media/folders', 'App\Http\Controllers\Admin\MediaController@folders');
+        Route::get('/media/model-items', 'App\Http\Controllers\Admin\MediaController@modelItems');
+        Route::get('/media/stats', 'App\Http\Controllers\Admin\MediaController@stats');
+        Route::get('/media/contexts', 'App\Http\Controllers\Admin\MediaController@contexts');
+        Route::get('/media/library', 'App\Http\Controllers\Admin\MediaController@libraryImages');
+        Route::post('/media/upload', 'App\Http\Controllers\Admin\MediaController@upload');
+        Route::get('/media/{media}', 'App\Http\Controllers\Admin\MediaController@show');
+        Route::delete('/media/{media}', 'App\Http\Controllers\Admin\MediaController@destroy');
+        Route::post('/media/bulk-delete', 'App\Http\Controllers\Admin\MediaController@bulkDestroy');
+    });
 
     // Migration Dashboard — the controller and its jobs are intentionally
     // not in the repo yet; only register the routes where they exist.
     if (class_exists(MigrationController::class)) {
-        Route::get('/migrations', 'App\Http\Controllers\Admin\MigrationController@index');
-        Route::post('/migrations/start', 'App\Http\Controllers\Admin\MigrationController@start');
-        Route::get('/migrations/status/{batchId}', 'App\Http\Controllers\Admin\MigrationController@status');
-        Route::get('/migrations/logs/{batchId}/{migrationKey}', 'App\Http\Controllers\Admin\MigrationController@logs');
-        Route::post('/migrations/cancel/{batchId}', 'App\Http\Controllers\Admin\MigrationController@cancel');
-        Route::get('/migrations/history', 'App\Http\Controllers\Admin\MigrationController@history');
-        Route::delete('/migrations/history', 'App\Http\Controllers\Admin\MigrationController@clearHistory');
+        Route::middleware('permission.any:manage-migration')->group(function () {
+            Route::get('/migrations', 'App\Http\Controllers\Admin\MigrationController@index');
+            Route::post('/migrations/start', 'App\Http\Controllers\Admin\MigrationController@start');
+            Route::get('/migrations/status/{batchId}', 'App\Http\Controllers\Admin\MigrationController@status');
+            Route::get('/migrations/logs/{batchId}/{migrationKey}', 'App\Http\Controllers\Admin\MigrationController@logs');
+            Route::post('/migrations/cancel/{batchId}', 'App\Http\Controllers\Admin\MigrationController@cancel');
+            Route::get('/migrations/history', 'App\Http\Controllers\Admin\MigrationController@history');
+            Route::delete('/migrations/history', 'App\Http\Controllers\Admin\MigrationController@clearHistory');
 
-        // Generic migration tool: sources, schema introspection, mappings
-        Route::get('/migrations/sources', 'App\Http\Controllers\Admin\MigrationController@sources');
-        Route::post('/migrations/sources', 'App\Http\Controllers\Admin\MigrationController@storeSource');
-        Route::patch('/migrations/sources/{source}', 'App\Http\Controllers\Admin\MigrationController@updateSource');
-        Route::delete('/migrations/sources/{source}', 'App\Http\Controllers\Admin\MigrationController@deleteSource');
-        Route::post('/migrations/sources/{source}/test', 'App\Http\Controllers\Admin\MigrationController@testSource');
-        Route::get('/migrations/sources/{source}/tables', 'App\Http\Controllers\Admin\MigrationController@sourceTables');
-        Route::get('/migrations/sources/{source}/tables/{table}/columns', 'App\Http\Controllers\Admin\MigrationController@sourceColumns');
-        Route::get('/migrations/targets', 'App\Http\Controllers\Admin\MigrationController@targets');
-        Route::get('/migrations/legacy-users', 'App\Http\Controllers\Admin\MigrationController@legacyUsers');
-        Route::post('/migrations/forum/archive', 'App\Http\Controllers\Admin\MigrationController@archiveForumImport');
-        Route::post('/migrations/legacy-users/assign', 'App\Http\Controllers\Admin\MigrationController@assignLegacyUser');
-        Route::post('/migrations/legacy-users/delete', 'App\Http\Controllers\Admin\MigrationController@deleteLegacyUsers');
-        // What the imported content links to, and whether it still leads
-        // anywhere. Declared above /mappings/{mapping} for the same
-        // reason as the rest: a literal path must not be read as an id.
-        Route::get('/migrations/links', 'App\Http\Controllers\Admin\MigrationController@links');
-        Route::post('/migrations/links/scan', 'App\Http\Controllers\Admin\MigrationController@scanLinks');
-        Route::post('/migrations/links/check', 'App\Http\Controllers\Admin\MigrationController@checkLinks');
-        Route::delete('/migrations/links', 'App\Http\Controllers\Admin\MigrationController@clearLinks');
+            // Generic migration tool: sources, schema introspection, mappings
+            Route::get('/migrations/sources', 'App\Http\Controllers\Admin\MigrationController@sources');
+            Route::post('/migrations/sources', 'App\Http\Controllers\Admin\MigrationController@storeSource');
+            Route::patch('/migrations/sources/{source}', 'App\Http\Controllers\Admin\MigrationController@updateSource');
+            Route::delete('/migrations/sources/{source}', 'App\Http\Controllers\Admin\MigrationController@deleteSource');
+            Route::post('/migrations/sources/{source}/test', 'App\Http\Controllers\Admin\MigrationController@testSource');
+            Route::get('/migrations/sources/{source}/tables', 'App\Http\Controllers\Admin\MigrationController@sourceTables');
+            Route::get('/migrations/sources/{source}/tables/{table}/columns', 'App\Http\Controllers\Admin\MigrationController@sourceColumns');
+            Route::get('/migrations/targets', 'App\Http\Controllers\Admin\MigrationController@targets');
+            Route::get('/migrations/legacy-users', 'App\Http\Controllers\Admin\MigrationController@legacyUsers');
+            Route::post('/migrations/forum/archive', 'App\Http\Controllers\Admin\MigrationController@archiveForumImport');
+            Route::post('/migrations/legacy-users/assign', 'App\Http\Controllers\Admin\MigrationController@assignLegacyUser');
+            Route::post('/migrations/legacy-users/delete', 'App\Http\Controllers\Admin\MigrationController@deleteLegacyUsers');
+            // What the imported content links to, and whether it still leads
+            // anywhere. Declared above /mappings/{mapping} for the same
+            // reason as the rest: a literal path must not be read as an id.
+            Route::get('/migrations/links', 'App\Http\Controllers\Admin\MigrationController@links');
+            Route::post('/migrations/links/scan', 'App\Http\Controllers\Admin\MigrationController@scanLinks');
+            Route::post('/migrations/links/check', 'App\Http\Controllers\Admin\MigrationController@checkLinks');
+            Route::delete('/migrations/links', 'App\Http\Controllers\Admin\MigrationController@clearLinks');
 
-        Route::get('/migrations/mappings', 'App\Http\Controllers\Admin\MigrationController@mappings');
-        Route::get('/migrations/mappings/export', 'App\Http\Controllers\Admin\MigrationController@exportMappings');
-        Route::post('/migrations/mappings/import', 'App\Http\Controllers\Admin\MigrationController@importMappings');
-        Route::post('/migrations/mappings', 'App\Http\Controllers\Admin\MigrationController@storeMapping');
-        Route::patch('/migrations/mappings/{mapping}', 'App\Http\Controllers\Admin\MigrationController@updateMapping');
-        Route::delete('/migrations/mappings/{mapping}', 'App\Http\Controllers\Admin\MigrationController@deleteMapping');
-        Route::post('/migrations/mappings/{mapping}/preview', 'App\Http\Controllers\Admin\MigrationController@previewMapping');
-        Route::post('/migrations/mappings/{mapping}/run', 'App\Http\Controllers\Admin\MigrationController@runMapping');
+            Route::get('/migrations/mappings', 'App\Http\Controllers\Admin\MigrationController@mappings');
+            Route::get('/migrations/mappings/export', 'App\Http\Controllers\Admin\MigrationController@exportMappings');
+            Route::post('/migrations/mappings/import', 'App\Http\Controllers\Admin\MigrationController@importMappings');
+            Route::post('/migrations/mappings', 'App\Http\Controllers\Admin\MigrationController@storeMapping');
+            Route::patch('/migrations/mappings/{mapping}', 'App\Http\Controllers\Admin\MigrationController@updateMapping');
+            Route::delete('/migrations/mappings/{mapping}', 'App\Http\Controllers\Admin\MigrationController@deleteMapping');
+            Route::post('/migrations/mappings/{mapping}/preview', 'App\Http\Controllers\Admin\MigrationController@previewMapping');
+            Route::post('/migrations/mappings/{mapping}/run', 'App\Http\Controllers\Admin\MigrationController@runMapping');
+        });
     }
 
-    // Translation Management
-    Route::get('/translations/locales', 'App\Http\Controllers\Admin\TranslationController@locales');
-    Route::get('/translations/js/{locale}', 'App\Http\Controllers\Admin\TranslationController@getJsTranslations');
-    Route::put('/translations/js/{locale}', 'App\Http\Controllers\Admin\TranslationController@updateJsTranslations');
-    Route::get('/translations/php/{locale}/{file?}', 'App\Http\Controllers\Admin\TranslationController@getPhpTranslations');
-    Route::put('/translations/php/{locale}/{file}', 'App\Http\Controllers\Admin\TranslationController@updatePhpTranslations');
-    Route::post('/translations/locales', 'App\Http\Controllers\Admin\TranslationController@createLocale');
-    Route::post('/translations/keys', 'App\Http\Controllers\Admin\TranslationController@addKey');
-    Route::delete('/translations/keys', 'App\Http\Controllers\Admin\TranslationController@deleteKey');
-    Route::get('/translations/scan', 'App\Http\Controllers\Admin\TranslationController@scanMissing');
-    Route::get('/translations/report', 'App\Http\Controllers\Admin\TranslationController@generateReport');
-    Route::get('/translations/compare', 'App\Http\Controllers\Admin\TranslationController@compareLocales');
+    Route::middleware('permission.any:manage-translation')->group(function () {
+        // Translation Management
+        Route::get('/translations/locales', 'App\Http\Controllers\Admin\TranslationController@locales');
+        Route::get('/translations/js/{locale}', 'App\Http\Controllers\Admin\TranslationController@getJsTranslations');
+        Route::put('/translations/js/{locale}', 'App\Http\Controllers\Admin\TranslationController@updateJsTranslations');
+        Route::get('/translations/php/{locale}/{file?}', 'App\Http\Controllers\Admin\TranslationController@getPhpTranslations');
+        Route::put('/translations/php/{locale}/{file}', 'App\Http\Controllers\Admin\TranslationController@updatePhpTranslations');
+        Route::post('/translations/locales', 'App\Http\Controllers\Admin\TranslationController@createLocale');
+        Route::post('/translations/keys', 'App\Http\Controllers\Admin\TranslationController@addKey');
+        Route::delete('/translations/keys', 'App\Http\Controllers\Admin\TranslationController@deleteKey');
+        Route::get('/translations/scan', 'App\Http\Controllers\Admin\TranslationController@scanMissing');
+        Route::get('/translations/report', 'App\Http\Controllers\Admin\TranslationController@generateReport');
+        Route::get('/translations/compare', 'App\Http\Controllers\Admin\TranslationController@compareLocales');
 
-    // Model Translations Management
-    Route::get('/model-translations', 'App\Http\Controllers\Admin\ModelTranslationController@index');
-    Route::get('/model-translations/stats', 'App\Http\Controllers\Admin\ModelTranslationController@stats');
-    Route::get('/model-translations/missing/{locale}', 'App\Http\Controllers\Admin\ModelTranslationController@missing');
-    Route::get('/model-translations/{modelType}', 'App\Http\Controllers\Admin\ModelTranslationController@listItems');
-    Route::get('/model-translations/{modelType}/{id}', 'App\Http\Controllers\Admin\ModelTranslationController@show');
-    Route::put('/model-translations/{modelType}/{id}', 'App\Http\Controllers\Admin\ModelTranslationController@update');
-    Route::put('/model-translations/{modelType}/bulk', 'App\Http\Controllers\Admin\ModelTranslationController@bulkUpdate');
+        // Model Translations Management
+        Route::get('/model-translations', 'App\Http\Controllers\Admin\ModelTranslationController@index');
+        Route::get('/model-translations/stats', 'App\Http\Controllers\Admin\ModelTranslationController@stats');
+        Route::get('/model-translations/missing/{locale}', 'App\Http\Controllers\Admin\ModelTranslationController@missing');
+        Route::get('/model-translations/{modelType}', 'App\Http\Controllers\Admin\ModelTranslationController@listItems');
+        Route::get('/model-translations/{modelType}/{id}', 'App\Http\Controllers\Admin\ModelTranslationController@show');
+        Route::put('/model-translations/{modelType}/{id}', 'App\Http\Controllers\Admin\ModelTranslationController@update');
+        Route::put('/model-translations/{modelType}/bulk', 'App\Http\Controllers\Admin\ModelTranslationController@bulkUpdate');
+    });
 
     // IRC Admin
-    Route::prefix('irc')->group(function () {
+    Route::prefix('irc')->middleware('permission.any:manage-irc')->group(function () {
         Route::get('/servers', 'App\Http\Controllers\Admin\IrcAdminController@getServers');
         Route::post('/servers', 'App\Http\Controllers\Admin\IrcAdminController@storeServer');
         Route::patch('/servers/{server}', 'App\Http\Controllers\Admin\IrcAdminController@updateServer');
@@ -832,14 +905,12 @@ Route::group(['prefix' => 'admin', 'middleware' => ['auth:sanctum', 'admin']], f
         Route::get('/daemon/status', 'App\Http\Controllers\Admin\IrcAdminController@getDaemonStatus');
         Route::get('/stats', 'App\Http\Controllers\Admin\IrcAdminController@getStats');
 
-        // The comic chat character creator. The /admin prefix only requires
-        // a signed-in user, so being an admin is asked for here.
-        Route::middleware('admin')->group(function () {
-            Route::get('/comic-characters', 'App\Http\Controllers\Admin\IrcComicCharacterController@index');
-            Route::post('/comic-characters', 'App\Http\Controllers\Admin\IrcComicCharacterController@store');
-            Route::patch('/comic-characters/{character}', 'App\Http\Controllers\Admin\IrcComicCharacterController@update');
-            Route::delete('/comic-characters/{character}', 'App\Http\Controllers\Admin\IrcComicCharacterController@destroy');
-        });
+        // The comic chat character creator, which is part of looking
+        // after IRC - the permission on the group above covers it.
+        Route::get('/comic-characters', 'App\Http\Controllers\Admin\IrcComicCharacterController@index');
+        Route::post('/comic-characters', 'App\Http\Controllers\Admin\IrcComicCharacterController@store');
+        Route::patch('/comic-characters/{character}', 'App\Http\Controllers\Admin\IrcComicCharacterController@update');
+        Route::delete('/comic-characters/{character}', 'App\Http\Controllers\Admin\IrcComicCharacterController@destroy');
     });
 });
 

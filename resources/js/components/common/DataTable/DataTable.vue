@@ -340,6 +340,10 @@
 
                     <template #item.actions="{ item }">
                         <div class="d-flex align-center justify-end ga-1" @click.stop>
+                            <!-- Whatever this particular table can do with a
+                                 row that no other table can. The members
+                                 table puts "who may do what" here. -->
+                            <slot name="row-actions" :item="item" :busy="isRowBusy(item)" />
                             <v-btn
                                 icon="mdi-pencil-outline"
                                 variant="text"

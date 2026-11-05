@@ -24,34 +24,34 @@ export default {
             key: 'menu.admin',
             role: 'admin',
             items: [
-                {icon: 'mdi-view-dashboard-outline', key: 'menu.adminDashboard', text: 'Dashboard', link: '/admin/dashboard'},
-                {icon: 'mdi-account-group-outline', key: 'menu.adminUsers', text: 'Users', link: '/admin/users'},
-                {icon: 'mdi-file-document-outline', key: 'menu.adminPages', text: 'Pages', link: '/admin/pages'},
-                {icon: 'mdi-post-outline', key: 'menu.adminPosts', text: 'Posts', link: '/admin/posts'},
+                {icon: 'mdi-view-dashboard-outline', key: 'menu.adminDashboard', text: 'Dashboard', link: '/admin/dashboard', permission: 'manage-user'},
+                {icon: 'mdi-account-group-outline', key: 'menu.adminUsers', text: 'Users', link: '/admin/users', permission: 'manage-user'},
+                {icon: 'mdi-file-document-outline', key: 'menu.adminPages', text: 'Pages', link: '/admin/pages', permission: 'manage-page'},
+                {icon: 'mdi-post-outline', key: 'menu.adminPosts', text: 'Posts', link: '/admin/posts', permission: 'manage-post'},
                 {
                     icon: 'mdi-calendar-text',
                     key: 'menu.adminEvents',
                     text: 'Events',
                     link: '/admin/events',
+                    permission: 'manage-event',
                     items: [
-                        {icon: 'mdi-calendar-star', key: 'menu.adminEventsList', text: 'List', link: '/admin/events'},
-                        {icon: 'mdi-calendar-alert-outline', key: 'menu.adminEventsTypes', text: 'Types', link: '/admin/events/types'},
-                        {icon: 'mdi-calendar-account-outline', key: 'menu.adminEventsProfiles', text: 'Profiles', link: '/admin/events/profiles'}
+                        {icon: 'mdi-calendar-star', key: 'menu.adminEventsList', text: 'List', link: '/admin/events', permission: 'manage-event'},
+                        {icon: 'mdi-calendar-alert-outline', key: 'menu.adminEventsTypes', text: 'Types', link: '/admin/events/types', permission: 'manage-event'},
+                        {icon: 'mdi-calendar-account-outline', key: 'menu.adminEventsProfiles', text: 'Profiles', link: '/admin/events/profiles', permission: 'manage-event'}
                     ]
                 },
-                {icon: 'mdi-podcast', key: 'menu.adminPodcast', text: 'Podcast', link: '/admin/podcast'},
-                {icon: 'mdi-folder-multiple-image', key: 'menu.adminMedia', text: 'Media Center', link: '/admin/media'},
-                {icon: 'mdi-ticket-outline', key: 'menu.adminTickets', text: 'Tickets', link: '/admin/tickets'},
-                {icon: 'mdi-poll', key: 'menu.adminPolls', text: 'Polls', link: '/admin/polls'},
-                {icon: 'mdi-link-variant', key: 'menu.adminRelations', text: 'Related Content', link: '/admin/related-content'},
-                {icon: 'mdi-bullhorn-outline', key: 'menu.adminAnnouncement', text: 'Announcement', link: '/admin/announcements'},
-                // Writing to the members by mail. Gated by its own
-                // permission rather than by the section's role, so an
-                // admin can hand the newsletter to whoever writes it —
-                // see sectionVisible in utils/permission.js.
+                {icon: 'mdi-podcast', key: 'menu.adminPodcast', text: 'Podcast', link: '/admin/podcast', permission: 'manage-podcast'},
+                {icon: 'mdi-folder-multiple-image', key: 'menu.adminMedia', text: 'Media Center', link: '/admin/media', permission: 'manage-media'},
+                {icon: 'mdi-ticket-outline', key: 'menu.adminTickets', text: 'Tickets', link: '/admin/tickets', permission: 'manage-ticket'},
+                {icon: 'mdi-poll', key: 'menu.adminPolls', text: 'Polls', link: '/admin/polls', permission: 'manage-poll'},
+                {icon: 'mdi-link-variant', key: 'menu.adminRelations', text: 'Related Content', link: '/admin/related-content', permission: 'manage-relation'},
+                {icon: 'mdi-bullhorn-outline', key: 'menu.adminAnnouncement', text: 'Announcement', link: '/admin/announcements', permission: 'manage-announcement'},
+                // Writing to the members by mail. The first entry that
+                // was gated by its own permission rather than by the
+                // section's role; now they all are.
                 {icon: 'mdi-email-multiple-outline', key: 'menu.adminMailings', text: 'Mailings', link: '/admin/mailings', permission: 'manage-mailings'},
                 // Roles, permissions, taxonomies, forum categories, translations and the migration tool live in the settings overview.
-                {icon: 'mdi-cog-outline', key: 'menu.adminSettings', text: 'Settings', link: '/admin/settings'},
+                {icon: 'mdi-cog-outline', key: 'menu.adminSettings', text: 'Settings', link: '/admin/settings', permission: 'manage-setting'},
             ]
         }
     ],

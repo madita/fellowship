@@ -137,7 +137,7 @@ describe('the mailing store', () => {
         expect(store.sourceForVariables(['name', 'event_title'])).toBe('event');
         expect(store.sourceForVariables(['achievement', 'points'])).toBe('achievement');
         // Both of those fill in `points`, so the closest match has to
-        // win  otherwise a rank mail offers achievements to pick from
+        // win — otherwise a rank mail offers achievements to pick from
         expect(store.sourceForVariables(['rank', 'points'])).toBe('rank');
         expect(store.sourceForVariables(['name'])).toBe(null);
     });
@@ -191,15 +191,18 @@ describe('who can see the mailing screens', () => {
         users.roles = ['user'];
         users.permissions = [];
 
-        // Every other Administration item has no permission of its own,
-        // and none of them may open an admin-only section. Carrying the
-        // section's own gate across is the point: without it there is
-        // nothing to get past.
-        const ungated = administration.items.filter(item => !item.permission);
+        // Carrying the section's own gate across is the point: an item
+        // with no permission of its own has nothing for a member to get
+        // past, so it must not open an admin-only section. Every real
+        // Administration item names its feature's permission now, so
+        // this is asked of one made up for the purpose.
+        expect(administration.items.every(item => item.permission)).toBe(true);
 
-        expect(ungated.length).toBeGreaterThan(0);
         expect(
-            ungated.some(item => permission.sectionVisible({ role: 'admin', items: [item] }))
+            permission.sectionVisible({
+                role: 'admin',
+                items: [{ key: 'menu.whatever', link: '/admin/whatever' }],
+            })
         ).toBe(false);
     });
 });

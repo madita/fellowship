@@ -208,7 +208,7 @@ class ForumController extends Controller
      */
     public function store(Request $request): JsonResponse
     {
-        $this->authorize('admin');
+        $this->authorize('manage-forum');
 
         $validated = $request->validate([
             'name'             => 'required|string|max:255',
@@ -269,7 +269,7 @@ class ForumController extends Controller
      */
     public function update(Request $request, int $id): JsonResponse
     {
-        $this->authorize('admin');
+        $this->authorize('manage-forum');
 
         $taxonomy = Taxonomy::taxonomy('forum_cat')->findOrFail($id);
 
@@ -351,7 +351,7 @@ class ForumController extends Controller
      */
     public function destroy(int $id): JsonResponse
     {
-        $this->authorize('admin');
+        $this->authorize('manage-forum');
 
         $taxonomy = Taxonomy::taxonomy('forum_cat')->findOrFail($id);
         $taxonomy->delete();

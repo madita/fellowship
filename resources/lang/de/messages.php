@@ -233,6 +233,16 @@ return [
         'forum_archived'        => 'Importiertes Forum nach „:category" verschoben',
     ],
 
+    // Rollen und Rechte eines einzelnen Mitglieds
+    'access' => [
+        'saved'                => 'Gespeichert, was :name darf',
+        'not_your_own'         => 'Die eigenen Rechte lassen sich hier nicht ändern. Frag einen anderen Admin.',
+        'admin_role_denied'    => 'Nur ein Admin kann die Admin-Rolle vergeben oder entziehen',
+        'last_admin'           => 'Das ist der letzte Admin, und eine Seite, die niemand verwalten kann, lässt sich von innen nicht mehr richten',
+        'beyond_your_own'      => 'Du kannst nur weitergeben, was du selbst hast, und dazu gehört nicht: :names',
+        'role_beyond_your_own' => 'Die Rolle „:role“ bringt Rechte mit, die du selbst nicht hast: :names',
+    ],
+
     // Discord-Webhooks
     'discord' => [
         'fields' => [

@@ -252,9 +252,9 @@ class ForumThreadController extends Controller
             'is_locked' => 'boolean',
         ]);
 
-        // Only admins can pin/lock
+        // Pinning and locking is moderation, not writing
         if (isset($validated['is_pinned']) || isset($validated['is_locked'])) {
-            $this->authorize('admin');
+            $this->authorize('manage-forum');
         }
 
         if (isset($validated['body'])) {

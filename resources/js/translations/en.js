@@ -3760,6 +3760,18 @@ export default {
             'scrollToTop': 'Scroll to top'
         }
     },
+    'access': {
+        'manage': 'Roles and permissions',
+        'title': 'What {name} is allowed',
+        'intro': 'A role is a set of permissions with a name, and is the better way: "moderator" says why somebody has what they have, where a list of permissions does not. Handing one straight over is for the exception.',
+        'roles': 'Roles',
+        'permissions': 'Permissions of their own',
+        'permissionsHint': 'On top of whatever their roles already bring',
+        'roleBeyondYou': 'This role carries permissions you do not hold yourself',
+        'effective': '{count} permissions in all, roles included',
+        'otherGroup': 'Everything else',
+        'notYourOwn': 'Your own access cannot be changed from here. Ask another admin — a door that can be opened from the inside is not a door.',
+    },
     'accessibility': {
         'skipToMain': 'Skip to main content',
         'openMenu': 'Open menu',

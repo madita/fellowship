@@ -54,7 +54,7 @@ export const settingsCategories = [
         settings: [
             { id: 'regional', title: 'Regional Settings', description: 'Language, timezone, date/time formats', icon: 'mdi-map-clock-outline', component: 'RegionalSettingsPage' },
             { id: 'language-options', title: 'Language Options', description: 'User language preferences', icon: 'mdi-translate', component: 'LanguageOptionsPage' },
-            { id: 'translations', title: 'Translation Manager', description: 'Edit the interface texts of every locale', icon: 'mdi-translate-variant', routeName: 'admin-translations' },
+            { id: 'translations', permission: 'manage-translation', title: 'Translation Manager', description: 'Edit the interface texts of every locale', icon: 'mdi-translate-variant', routeName: 'admin-translations' },
         ]
     },
     {
@@ -64,7 +64,7 @@ export const settingsCategories = [
         icon: 'mdi-page-layout-body',
         color: 'green',
         settings: [
-            { id: 'menus', title: 'Menu Manager', description: 'Create and edit menus, items, and ordering', icon: 'mdi-menu', routeName: 'admin-settings-menus' },
+            { id: 'menus', permission: 'manage-menu', title: 'Menu Manager', description: 'Create and edit menus, items, and ordering', icon: 'mdi-menu', routeName: 'admin-settings-menus' },
             { id: 'breadcrumbs', title: 'Breadcrumbs', description: 'The trail above a page title, and where it starts', icon: 'mdi-chevron-right', component: 'BreadcrumbsPage', standalone: true },
             { id: 'homepage-sections', title: 'Homepage Sections', description: 'The sections and grid of the homepage', icon: 'mdi-view-grid-outline', component: 'SectionsPage' },
             { id: 'homepage-widgets', title: 'Homepage Widgets', description: 'Configure homepage widgets', icon: 'mdi-widgets-outline', component: 'WidgetsPage' },
@@ -81,12 +81,12 @@ export const settingsCategories = [
         icon: 'mdi-account-group-outline',
         color: 'amber',
         settings: [
-            { id: 'forum-categories', title: 'Forum Categories', description: 'Create, order, lock and hide the forum categories', icon: 'mdi-forum', routeName: 'admin-forums' },
-            { id: 'taxonomies', title: 'Taxonomies', description: 'Vocabularies such as tags, categories and forum sections', icon: 'mdi-file-tree', routeName: 'admin-taxonomie' },
-            { id: 'terms', title: 'Terms', description: 'The entries of each taxonomy', icon: 'mdi-tag-multiple', routeName: 'admin-terms' },
-            { id: 'achievements', title: 'Achievements', description: 'Set up achievements and award them', icon: 'mdi-trophy-outline', component: 'AchievementsSettingsPage' },
-            { id: 'ranks', title: 'Ranks', description: 'The ladder members climb with their points', icon: 'mdi-shield-star-outline', component: 'RanksSettingsPage' },
-            { id: 'tours', title: 'Tours & Hints', description: 'Walk members through a page, or put a hint beside the things on it', icon: 'mdi-map-marker-path', component: 'HelpToursPage' },
+            { id: 'forum-categories', permission: 'manage-forum', title: 'Forum Categories', description: 'Create, order, lock and hide the forum categories', icon: 'mdi-forum', routeName: 'admin-forums' },
+            { id: 'taxonomies', permission: 'manage-taxonomy', title: 'Taxonomies', description: 'Vocabularies such as tags, categories and forum sections', icon: 'mdi-file-tree', routeName: 'admin-taxonomie' },
+            { id: 'terms', permission: 'manage-taxonomy', title: 'Terms', description: 'The entries of each taxonomy', icon: 'mdi-tag-multiple', routeName: 'admin-terms' },
+            { id: 'achievements', permission: 'manage-achievement', title: 'Achievements', description: 'Set up achievements and award them', icon: 'mdi-trophy-outline', component: 'AchievementsSettingsPage' },
+            { id: 'ranks', permission: 'manage-rank', title: 'Ranks', description: 'The ladder members climb with their points', icon: 'mdi-shield-star-outline', component: 'RanksSettingsPage' },
+            { id: 'tours', permission: 'manage-help', title: 'Tours & Hints', description: 'Walk members through a page, or put a hint beside the things on it', icon: 'mdi-map-marker-path', component: 'HelpToursPage' },
         ]
     },
     {
@@ -96,9 +96,9 @@ export const settingsCategories = [
         icon: 'mdi-shield-account-outline',
         color: 'red',
         settings: [
-            { id: 'roles', title: 'Roles', description: 'Create roles and assign them to users', icon: 'mdi-shield-account', routeName: 'admin-roles' },
-            { id: 'permissions', title: 'Permissions', description: 'Which role may do what', icon: 'mdi-shield-key-outline', routeName: 'admin-permissions' },
-            { id: 'auto-approval', title: 'Content Auto-Approval', description: 'Which roles may post without waiting for approval', icon: 'mdi-shield-check', component: 'AutoApprovalPage' },
+            { id: 'roles', permission: 'manage-role', title: 'Roles', description: 'Create roles and assign them to users', icon: 'mdi-shield-account', routeName: 'admin-roles' },
+            { id: 'permissions', permission: 'manage-role', title: 'Permissions', description: 'Which role may do what', icon: 'mdi-shield-key-outline', routeName: 'admin-permissions' },
+            { id: 'auto-approval', permission: 'manage-role', title: 'Content Auto-Approval', description: 'Which roles may post without waiting for approval', icon: 'mdi-shield-check', component: 'AutoApprovalPage' },
         ]
     },
     {
@@ -135,12 +135,12 @@ export const settingsCategories = [
         icon: 'mdi-chat-processing-outline',
         color: 'indigo',
         settings: [
-            { id: 'client', title: 'Client Settings', description: 'Comic chat and client options', icon: 'mdi-tune', component: 'IrcClientSettingsPage' },
-            { id: 'event-channels', title: 'Event Channels', description: 'Channels suggested when an event is held on IRC', icon: 'mdi-pound', component: 'IrcEventChannelsPage' },
-            { id: 'characters', title: 'Character Creator', description: 'Build the comic chat characters members pick from', icon: 'mdi-account-edit-outline', component: 'IrcCharactersPage' },
-            { id: 'dashboard', title: 'Dashboard', description: 'Daemon status, stats, and monitoring', icon: 'mdi-monitor-dashboard', component: 'IrcDashboardPage' },
-            { id: 'servers', title: 'Servers', description: 'Manage IRC servers', icon: 'mdi-server-network', component: 'IrcServersPage' },
-            { id: 'connections', title: 'Connections', description: 'Active user connections', icon: 'mdi-connection', component: 'IrcConnectionsPage' },
+            { id: 'client', permission: 'manage-irc', title: 'Client Settings', description: 'Comic chat and client options', icon: 'mdi-tune', component: 'IrcClientSettingsPage' },
+            { id: 'event-channels', permission: 'manage-irc', title: 'Event Channels', description: 'Channels suggested when an event is held on IRC', icon: 'mdi-pound', component: 'IrcEventChannelsPage' },
+            { id: 'characters', permission: 'manage-irc', title: 'Character Creator', description: 'Build the comic chat characters members pick from', icon: 'mdi-account-edit-outline', component: 'IrcCharactersPage' },
+            { id: 'dashboard', permission: 'manage-irc', title: 'Dashboard', description: 'Daemon status, stats, and monitoring', icon: 'mdi-monitor-dashboard', component: 'IrcDashboardPage' },
+            { id: 'servers', permission: 'manage-irc', title: 'Servers', description: 'Manage IRC servers', icon: 'mdi-server-network', component: 'IrcServersPage' },
+            { id: 'connections', permission: 'manage-irc', title: 'Connections', description: 'Active user connections', icon: 'mdi-connection', component: 'IrcConnectionsPage' },
         ]
     },
     {
@@ -163,12 +163,12 @@ export const settingsCategories = [
         icon: 'mdi-transit-connection-variant',
         color: 'blue-grey',
         settings: [
-            { id: 'discord-webhooks', title: 'Discord Webhooks', description: 'Post new wiki pages, tickets and more into Discord channels', icon: 'mdi-discord', routeName: 'admin-settings-discord' },
+            { id: 'discord-webhooks', permission: 'manage-discord', title: 'Discord Webhooks', description: 'Post new wiki pages, tickets and more into Discord channels', icon: 'mdi-discord', routeName: 'admin-settings-discord' },
             // The site's own mail. Listed here as well as in the menu
             // because "newsletter" below is the other thing entirely —
             // handing an address to an outside provider.
-            { id: 'mailings', title: 'Mailings', description: 'Write to the members, the templates the site sends, and the kinds of mail they can refuse', icon: 'mdi-email-multiple-outline', routeName: 'admin-mailings' },
-            { id: 'migrations', title: 'Migration Tool', description: 'Import content and users from legacy databases', icon: 'mdi-database-arrow-right-outline', routeName: 'admin-migrations' },
+            { id: 'mailings', permission: 'manage-mailings', title: 'Mailings', description: 'Write to the members, the templates the site sends, and the kinds of mail they can refuse', icon: 'mdi-email-multiple-outline', routeName: 'admin-mailings' },
+            { id: 'migrations', permission: 'manage-migration', title: 'Migration Tool', description: 'Import content and users from legacy databases', icon: 'mdi-database-arrow-right-outline', routeName: 'admin-migrations' },
         ]
     },
     {
@@ -198,6 +198,44 @@ export const settingsCategories = [
  * written down before that - a bookmark, a mail, a note in a ticket -
  * is sent on rather than met with "not found".
  */
+/**
+ * Which permission reaches one entry, and one category.
+ *
+ * Most of the settings are the site itself and belong to whoever looks
+ * after it. The rest are doors into a feature of its own - the
+ * translations, the menus, the forum categories - and those say so on
+ * the entry, so a member handed that feature is shown the way in and
+ * nothing else.
+ */
+export const SETTINGS_PERMISSION = 'manage-setting';
+
+export const settingPermission = (setting) => setting?.permission || SETTINGS_PERMISSION;
+
+export const categoryPermissions = (category) => [
+    ...new Set((category?.settings || []).map(settingPermission)),
+];
+
+/**
+ * Every permission that reaches anything in here, which is what the
+ * settings routes have to accept: gating the overview on one of them
+ * would shut the rest out of their own screens.
+ */
+export const settingsPermissions = () => [
+    ...new Set(settingsCategories.flatMap(categoryPermissions)),
+];
+
+/**
+ * The categories and entries this member may touch. `can` is passed in
+ * rather than read from the store, so this stays testable.
+ */
+export const allowedSettings = (category, can) =>
+    (category?.settings || []).filter(setting => can(settingPermission(setting)));
+
+export const allowedCategories = (can) =>
+    settingsCategories
+        .map(category => ({ ...category, settings: allowedSettings(category, can) }))
+        .filter(category => category.settings.length > 0);
+
 export const movedSettings = {
     'features/toggles': 'general/toggles',
     'branding/logos-icons': 'appearance/logos-icons',
