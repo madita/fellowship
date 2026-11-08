@@ -520,7 +520,12 @@ class DataTableTest extends TestCase
     private function seedEveryTable(): void
     {
         $this->makeRole('editor');
-        Permission::create(['name' => 'edit-wiki', 'guard_name' => 'api', 'display_name' => 'Edit wiki']);
+        // firstOrCreate: edit-wiki is a real permission now that each
+        // feature is split by action, so the seeded set already has it
+        Permission::firstOrCreate(
+            ['name' => 'edit-wiki', 'guard_name' => 'api'],
+            ['display_name' => 'Edit wiki']
+        );
         $this->makePage('A page', 'a-page');
         $this->makePost('A post', 'a-post');
 

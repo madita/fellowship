@@ -63,25 +63,42 @@ Route::get('/activity', 'App\Http\Controllers\ActivityController@index');
 // Podcast: a show is public by nature, so none of this asks for a
 // sign-in. The feature gate does apply — switching the podcast off in
 // Admin → Settings → Features closes these, not just the menu entry.
-// Running a show without the admin panel. Anyone holding manage-podcast
-// does this from the podcast's own pages, the way the wiki is written
-// from the wiki; admins pass too (see EnsureUserHasPermission). Declared
-// above the public routes because /podcasts/manage would otherwise be
-// read as a show whose slug is "manage".
-Route::middleware(['auth:sanctum', 'feature.enabled:podcast', 'permission.any:manage-podcast'])
+// Running a show without the admin panel, from the podcast's own pages,
+// the way the wiki is written from the wiki. Declared above the public
+// routes because /podcasts/manage would otherwise be read as a show
+// whose slug is "manage".
+//
+// Split by what is being done rather than gated on manage-podcast as a
+// whole: a member trusted to record a show of their own holds
+// create-podcast and nothing else, and what they make waits for
+// approve-podcast before anybody hears it. Holding manage-podcast
+// satisfies every one of these, so whoever ran the podcast yesterday
+// runs it today (see EnsureUserHasPermission), and admins pass as ever.
+//
+// Which show, as opposed to whether any, is the controller's:
+// PodcastManageController::mayWorkOn() keeps somebody with
+// create-podcast to their own shows.
+Route::middleware(['auth:sanctum', 'feature.enabled:podcast'])
     ->prefix('podcasts/manage')
     ->group(function () {
-        Route::get('/', 'App\Http\Controllers\Podcast\PodcastManageController@index');
-        Route::post('/', 'App\Http\Controllers\Podcast\PodcastManageController@store');
-        Route::patch('/{podcast}', 'App\Http\Controllers\Podcast\PodcastManageController@update');
-        Route::delete('/{podcast}', 'App\Http\Controllers\Podcast\PodcastManageController@destroy');
-        Route::post('/{podcast}/cover', 'App\Http\Controllers\Podcast\PodcastManageController@uploadCover');
-        Route::get('/{podcast}/episodes', 'App\Http\Controllers\Podcast\PodcastManageController@episodes');
-        Route::post('/{podcast}/episodes', 'App\Http\Controllers\Podcast\PodcastManageController@storeEpisode');
-        Route::patch('/{podcast}/episodes/{episode}', 'App\Http\Controllers\Podcast\PodcastManageController@updateEpisode');
-        Route::delete('/{podcast}/episodes/{episode}', 'App\Http\Controllers\Podcast\PodcastManageController@destroyEpisode');
-        Route::post('/{podcast}/episodes/{episode}/audio', 'App\Http\Controllers\Podcast\PodcastManageController@uploadAudio');
-        Route::delete('/{podcast}/episodes/{episode}/audio', 'App\Http\Controllers\Podcast\PodcastManageController@deleteAudio');
+        Route::get('/', 'App\Http\Controllers\Podcast\PodcastManageController@index')
+            ->middleware('permission.any:view-podcast,create-podcast,edit-podcast');
+        Route::post('/', 'App\Http\Controllers\Podcast\PodcastManageController@store')
+            ->middleware('permission.any:create-podcast');
+
+        Route::middleware('permission.any:edit-podcast,create-podcast')->group(function () {
+            Route::patch('/{podcast}', 'App\Http\Controllers\Podcast\PodcastManageController@update');
+            Route::post('/{podcast}/cover', 'App\Http\Controllers\Podcast\PodcastManageController@uploadCover');
+            Route::get('/{podcast}/episodes', 'App\Http\Controllers\Podcast\PodcastManageController@episodes');
+            Route::post('/{podcast}/episodes', 'App\Http\Controllers\Podcast\PodcastManageController@storeEpisode');
+            Route::patch('/{podcast}/episodes/{episode}', 'App\Http\Controllers\Podcast\PodcastManageController@updateEpisode');
+            Route::delete('/{podcast}/episodes/{episode}', 'App\Http\Controllers\Podcast\PodcastManageController@destroyEpisode');
+            Route::post('/{podcast}/episodes/{episode}/audio', 'App\Http\Controllers\Podcast\PodcastManageController@uploadAudio');
+            Route::delete('/{podcast}/episodes/{episode}/audio', 'App\Http\Controllers\Podcast\PodcastManageController@deleteAudio');
+        });
+
+        Route::delete('/{podcast}', 'App\Http\Controllers\Podcast\PodcastManageController@destroy')
+            ->middleware('permission.any:delete-podcast,create-podcast');
     });
 
 Route::middleware(['feature.enabled:podcast'])->group(function () {
@@ -157,8 +174,10 @@ Route::resource('wiki', "\App\Http\Controllers\WikiController")->only(['store', 
 Route::post('wiki/category', "\App\Http\Controllers\WikiController@storeCategory");
 Route::patch('wiki/category/{slug}', "\App\Http\Controllers\WikiController@updateCategory");
 
-// Wiki approval (admin only, requires auth)
-Route::group(['middleware' => ['auth:sanctum']], function () {
+// Letting a page out, or sending it back. Whoever holds approve-wiki
+// rather than an admin alone: the queue these work through is listed for
+// the same people in the ticket list (see App\Support\Approvals).
+Route::group(['middleware' => ['auth:sanctum', 'permission.any:approve-wiki']], function () {
     Route::post('wiki/{slug}/approve', "\App\Http\Controllers\WikiController@approve");
     Route::post('wiki/{slug}/unapprove', "\App\Http\Controllers\WikiController@unapprove");
 });
@@ -370,12 +389,21 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
         Route::resource('datatable/roles', 'App\Http\Controllers\DataTable\\RoleController');
     });
 
-    Route::middleware('permission.any:manage-page')->group(function () {
+    // Split by what is being done to a page rather than gated on
+    // manage-page as a whole. Holding manage-page satisfies all four, so
+    // nothing that held it loses anything; what the split adds is being
+    // able to hand somebody the writing without the deleting.
+    Route::middleware('permission.any:view-page')->group(function () {
         Route::get('datatable/pages/{id}/history', 'App\Http\Controllers\DataTable\\PageController@history');
         Route::get('datatable/pages/{id}/history/{revision}', 'App\Http\Controllers\DataTable\\PageController@historyRevision')
             ->whereNumber('revision');
-        Route::resource('datatable/pages', 'App\Http\Controllers\DataTable\\PageController');
     });
+
+    Route::resource('datatable/pages', 'App\Http\Controllers\DataTable\\PageController')
+        ->middlewareFor(['index', 'show'], 'permission.any:view-page')
+        ->middlewareFor(['create', 'store'], 'permission.any:create-page')
+        ->middlewareFor(['edit', 'update'], 'permission.any:edit-page')
+        ->middlewareFor('destroy', 'permission.any:delete-page');
 
     // The vocabularies content is filed under. Their own feature, rather
     // than the pages' - the forum and the gallery file things under them
@@ -401,17 +429,32 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
         Route::get('datatable/permissions/permissions', 'App\Http\Controllers\DataTable\\PermissionController@permissions');
     });
 
-    Route::middleware('permission.any:manage-post')->group(function () {
+    Route::middleware('permission.any:view-post')->group(function () {
         Route::get('datatable/posts/{id}/history', 'App\Http\Controllers\DataTable\\PostController@history');
         Route::get('datatable/posts/{id}/history/{revision}', 'App\Http\Controllers\DataTable\\PostController@historyRevision')
             ->whereNumber('revision');
-        Route::resource('datatable/posts', 'App\Http\Controllers\DataTable\\PostController');
     });
 
+    Route::resource('datatable/posts', 'App\Http\Controllers\DataTable\\PostController')
+        ->middlewareFor(['index', 'show'], 'permission.any:view-post')
+        ->middlewareFor(['create', 'store'], 'permission.any:create-post')
+        ->middlewareFor(['edit', 'update'], 'permission.any:edit-post')
+        ->middlewareFor('destroy', 'permission.any:delete-post');
+
     // The calendar, the kinds of event, and the forms members fill in
-    // when they answer one
+    // when they answer one.
+    //
+    // The calendar is split by action; the kinds of event and the sign-up
+    // forms are the shape the calendar is built out of rather than
+    // entries in it, so they stay with the feature as a whole - the same
+    // line the wiki draws between a page and a category.
+    Route::resource('datatable/events', 'App\Http\Controllers\DataTable\\EventController')
+        ->middlewareFor(['index', 'show'], 'permission.any:view-event')
+        ->middlewareFor(['create', 'store'], 'permission.any:create-event')
+        ->middlewareFor(['edit', 'update'], 'permission.any:edit-event')
+        ->middlewareFor('destroy', 'permission.any:delete-event');
+
     Route::middleware('permission.any:manage-event')->group(function () {
-        Route::resource('datatable/events', 'App\Http\Controllers\DataTable\\EventController');
         Route::resource('datatable/event-types', 'App\Http\Controllers\DataTable\\EventTypeController');
         Route::resource('datatable/event-profiles', 'App\Http\Controllers\DataTable\\EventProfileController');
     });
@@ -689,15 +732,28 @@ Route::group(['prefix' => 'admin', 'middleware' => ['auth:sanctum']], function (
         Route::delete('/ranks/{rank}/image', 'App\Http\Controllers\Admin\RankAdminController@deleteImage');
     });
 
-    Route::middleware('permission.any:manage-podcast')->group(function () {
-        // Podcast: shows, their episodes, and the audio for each.
-        // Reachable with the feature switched off on purpose — an admin has
-        // to be able to get at the episodes to switch it back on.
+    // Podcast: shows, their episodes, and the audio for each. The same
+    // work as /api/podcasts/manage and split the same way, because it is
+    // the same controller behind both doors.
+    //
+    // Reachable with the feature switched off on purpose — an admin has
+    // to be able to get at the episodes to switch it back on.
+    Route::middleware('permission.any:view-podcast,create-podcast,edit-podcast')->group(function () {
         Route::get('/podcasts', 'App\Http\Controllers\Podcast\PodcastManageController@index');
+    });
+
+    // The whole site's figures, not one show's, so it asks for the
+    // feature rather than a part of it
+    Route::middleware('permission.any:view-podcast')->group(function () {
         Route::get('/podcasts/stats', 'App\Http\Controllers\Podcast\PodcastManageController@stats');
+    });
+
+    Route::middleware('permission.any:create-podcast')->group(function () {
         Route::post('/podcasts', 'App\Http\Controllers\Podcast\PodcastManageController@store');
+    });
+
+    Route::middleware('permission.any:edit-podcast,create-podcast')->group(function () {
         Route::patch('/podcasts/{podcast}', 'App\Http\Controllers\Podcast\PodcastManageController@update');
-        Route::delete('/podcasts/{podcast}', 'App\Http\Controllers\Podcast\PodcastManageController@destroy');
         Route::post('/podcasts/{podcast}/cover', 'App\Http\Controllers\Podcast\PodcastManageController@uploadCover');
         Route::get('/podcasts/{podcast}/episodes', 'App\Http\Controllers\Podcast\PodcastManageController@episodes');
         Route::post('/podcasts/{podcast}/episodes', 'App\Http\Controllers\Podcast\PodcastManageController@storeEpisode');
@@ -705,6 +761,10 @@ Route::group(['prefix' => 'admin', 'middleware' => ['auth:sanctum']], function (
         Route::delete('/podcasts/{podcast}/episodes/{episode}', 'App\Http\Controllers\Podcast\PodcastManageController@destroyEpisode');
         Route::post('/podcasts/{podcast}/episodes/{episode}/audio', 'App\Http\Controllers\Podcast\PodcastManageController@uploadAudio');
         Route::delete('/podcasts/{podcast}/episodes/{episode}/audio', 'App\Http\Controllers\Podcast\PodcastManageController@deleteAudio');
+    });
+
+    Route::middleware('permission.any:delete-podcast,create-podcast')->group(function () {
+        Route::delete('/podcasts/{podcast}', 'App\Http\Controllers\Podcast\PodcastManageController@destroy');
     });
 
     Route::middleware('permission.any:manage-ticket')->group(function () {

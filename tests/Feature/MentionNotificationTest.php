@@ -15,6 +15,7 @@ use App\Notifications\MentionNotification;
 use App\Notifications\StatusMentionNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
+use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
@@ -37,6 +38,12 @@ class MentionNotificationTest extends TestCase
 
         $this->author    = User::factory()->create(['username' => 'writer']);
         $this->mentioned = User::factory()->create(['username' => 'alice']);
+
+        // Writing a wiki page asks for create-wiki, which the `user`
+        // role carries for every member on a seeded install
+        $this->author->givePermissionTo(
+            Permission::firstOrCreate(['name' => 'create-wiki', 'guard_name' => 'api'])
+        );
 
         $this->category = Taxonomy::create([
             'term_id'    => Term::firstOrCreateByTitle('General')->id,

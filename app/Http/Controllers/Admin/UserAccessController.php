@@ -184,6 +184,20 @@ class UserAccessController extends Controller
             }
         }
 
+        $effective = array_values(array_unique(array_merge($direct, array_keys($byRole))));
+
+        // Holding a feature whole answers for each action under it at
+        // the moment the action is checked, so the screen is told which
+        // of them that applies to rather than being left to work the
+        // rule out a second time and get it slightly different.
+        $covered = [];
+
+        foreach (FeaturePermissions::umbrella() as $action => $umbrella) {
+            if (in_array($umbrella, $effective, true) && ! in_array($action, $effective, true)) {
+                $covered[$action] = $umbrella;
+            }
+        }
+
         return [
             'user' => [
                 'id'       => $user->id,
@@ -192,9 +206,14 @@ class UserAccessController extends Controller
             ],
             'roles'       => $user->roles->pluck('name')->all(),
             'permissions' => $direct,
-            // Everything they can do, however they came by it
-            'effective'       => array_values(array_unique(array_merge($direct, array_keys($byRole)))),
-            'from_roles'      => $byRole,
+            // Everything they hold, however they came by it
+            'effective'  => $effective,
+            'from_roles' => $byRole,
+            // An action answered for by the feature it belongs to, so
+            // the screen can tick it and say which permission covers it
+            // instead of showing an empty box beside something the
+            // member can in fact do
+            'covered'         => $covered,
             'grantable'       => $this->grantable($editor),
             'may_grant_admin' => $editor->isAdmin(),
             'is_self'         => $editor->id === $user->id,
@@ -213,7 +232,22 @@ class UserAccessController extends Controller
             return Permission::where('guard_name', 'api')->orderBy('name')->pluck('name')->all();
         }
 
-        return $editor->getAllPermissions()->pluck('name')->sort()->values()->all();
+        $held = $editor->getAllPermissions()->pluck('name')->all();
+
+        // Whoever holds a feature whole may hand out any part of it.
+        // Without this, somebody given manage-podcast could do every bit
+        // of the work themselves and still not be able to pass the
+        // writing of a show to anybody - which is the thing the split
+        // was made for.
+        foreach (FeaturePermissions::umbrella() as $action => $umbrella) {
+            if (in_array($umbrella, $held, true)) {
+                $held[] = $action;
+            }
+        }
+
+        sort($held);
+
+        return array_values(array_unique($held));
     }
 
     /**
@@ -239,7 +273,15 @@ class UserAccessController extends Controller
      */
     private function permissions(): array
     {
-        $order = array_flip(FeaturePermissions::names());
+        $known = [];
+
+        foreach (FeaturePermissions::all() as $row) {
+            $known[$row['name']] = $row;
+        }
+
+        // The catalogue's own order, which puts each feature's actions
+        // straight after the permission they sit under
+        $order = array_flip(array_keys($known));
 
         return Permission::where('guard_name', 'api')
             ->get()
@@ -249,6 +291,11 @@ class UserAccessController extends Controller
                 'display_name' => $permission->display_name ?: $permission->name,
                 'description'  => $permission->description,
                 'category'     => $permission->category ?: 'other',
+                // Which feature this belongs to and which part of it, so
+                // the screen can show the parts of the podcast beneath
+                // the podcast instead of as five more rows in a list
+                'feature'      => $known[$permission->name]['feature'] ?? null,
+                'action'       => $known[$permission->name]['action'] ?? null,
             ])
             ->values()
             ->all();

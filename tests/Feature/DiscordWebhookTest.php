@@ -16,6 +16,7 @@ use App\Support\DiscordEvents;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Http;
+use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\PermissionRegistrar;
 use Tests\TestCase;
@@ -40,6 +41,12 @@ class DiscordWebhookTest extends TestCase
         $this->admin = User::factory()->create(['username' => 'boss']);
         $this->admin->assignRole('admin');
         $this->member = User::factory()->create(['username' => 'alice']);
+
+        // Writing a wiki page asks for create-wiki, which the `user`
+        // role carries for every member on a seeded install
+        $this->member->givePermissionTo(
+            Permission::firstOrCreate(['name' => 'create-wiki', 'guard_name' => 'api'])
+        );
     }
 
     private function webhook(array $events = [DiscordEvents::TICKET_CREATED]): DiscordWebhook

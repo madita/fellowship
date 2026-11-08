@@ -204,11 +204,14 @@ class ForumController extends Controller
     }
 
     /**
-     * Create a new forum category (admin only).
+     * Create a new forum category.
      */
     public function store(Request $request): JsonResponse
     {
-        $this->authorize('manage-forum');
+        // manage-forum satisfies this, so whoever looked after the forum
+        // still does; the split is what lets somebody be trusted to open
+        // a category without being trusted to delete one
+        $this->authorize('create-forum');
 
         $validated = $request->validate([
             'name'             => 'required|string|max:255',
@@ -265,11 +268,11 @@ class ForumController extends Controller
     }
 
     /**
-     * Update a forum category (admin only).
+     * Update a forum category.
      */
     public function update(Request $request, int $id): JsonResponse
     {
-        $this->authorize('manage-forum');
+        $this->authorize('edit-forum');
 
         $taxonomy = Taxonomy::taxonomy('forum_cat')->findOrFail($id);
 
@@ -347,11 +350,11 @@ class ForumController extends Controller
     }
 
     /**
-     * Delete a forum category (admin only).
+     * Delete a forum category.
      */
     public function destroy(int $id): JsonResponse
     {
-        $this->authorize('manage-forum');
+        $this->authorize('delete-forum');
 
         $taxonomy = Taxonomy::taxonomy('forum_cat')->findOrFail($id);
         $taxonomy->delete();

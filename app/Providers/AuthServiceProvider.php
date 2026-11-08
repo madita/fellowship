@@ -6,9 +6,9 @@ use App\Models\Collection;
 use App\Models\Irc\IrcConnection;
 use App\Policies\CollectionPolicy;
 use App\Policies\IrcConnectionPolicy;
+use App\Support\FeaturePermissions;
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvider;
-use App\Support\FeaturePermissions;
 use Illuminate\Support\Facades\Gate;
 
 class AuthServiceProvider extends ServiceProvider
@@ -48,8 +48,15 @@ class AuthServiceProvider extends ServiceProvider
 
                 // By name, not hasPermissionTo: that throws when the
                 // permission has not been seeded yet, and a missing row
-                // should refuse the request, not break it
-                return $user->getAllPermissions()->pluck('name')->contains($permission);
+                // should refuse the request, not break it.
+                //
+                // Through satisfies(), so that holding a feature whole
+                // answers for each action it is split into - the same
+                // rule the route middleware applies, in the same words
+                return FeaturePermissions::satisfies(
+                    $permission,
+                    $user->getAllPermissions()->pluck('name')->all()
+                );
             });
         }
 

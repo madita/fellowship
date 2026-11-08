@@ -3,6 +3,7 @@
 import { useUserStore } from '@/store/userStore'
 import { useSettingsStore } from '@/store/settingStore'
 import { isFeatureAvailable } from '@/configs/features.js'
+import { satisfiesAny } from '@/configs/featurePermissions.js'
 
 // Instantiate the auth store
 
@@ -17,6 +18,16 @@ export default {
         return userStore.roles.includes(role)
     },
 
+    /**
+     * Whether the member may do this.
+     *
+     * Takes one permission name or a list of them, and answers yes for
+     * any of them. Holding a feature whole counts as holding each action
+     * it is split into, the same way the API answers it
+     * (App\Support\FeaturePermissions::satisfies) - so a menu entry
+     * naming `create-podcast` still shows for whoever holds
+     * manage-podcast.
+     */
     can(permission) {
         const userStore = useUserStore()
         const permissions = userStore.permissions
@@ -25,7 +36,8 @@ export default {
         if (permissions == null) {
             return false
         }
-        return permissions.includes(permission)
+
+        return satisfiesAny(permission, permissions)
     },
 
     /**

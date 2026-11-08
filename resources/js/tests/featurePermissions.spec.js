@@ -16,11 +16,13 @@ const guarded = (routes) => routes.filter(route =>
 const names = (routes) => guarded(routes).map(route => route.name);
 
 // A page names one permission, or a list of them
-const accepted = (route) => {
-    const wanted = ADMIN_PERMISSIONS[route];
+const accepted = (route) => list(ADMIN_PERMISSIONS[route]);
 
-    return Array.isArray(wanted) ? wanted : [wanted].filter(Boolean);
-};
+// So does a menu entry, now that a feature split by action is offered
+// for any part of it
+function list(value) {
+    return Array.isArray(value) ? value : [value].filter(Boolean);
+}
 
 describe('the router guard', () => {
     it('has a permission for every page it guards', () => {
@@ -47,7 +49,7 @@ describe('the router guard', () => {
             // settings overview is the way in to a dozen features and
             // belongs to all of them
             for (const name of accepted(route)) {
-                expect(name, route).toMatch(/^(manage|award)-/);
+                expect(name, route).toMatch(/^(manage|view|create|edit|delete|approve|award)-/);
             }
 
             expect(accepted(route).length, route).toBeGreaterThan(0);
@@ -59,20 +61,49 @@ describe('the router guard', () => {
         // standing in for a dozen features between them
         expect(ADMIN_PERMISSIONS['admin-migrations']).toBe('manage-migration');
         expect(ADMIN_PERMISSIONS['admin-translations']).toBe('manage-translation');
-        expect(ADMIN_PERMISSIONS['admin-forums']).toBe('manage-forum');
-        expect(ADMIN_PERMISSIONS['admin-gallery']).toBe('manage-gallery');
         expect(ADMIN_PERMISSIONS['admin-tickets']).toBe('manage-ticket');
 
         // …and the two of them are left with the feature they are named
         // after
-        expect(ADMIN_PERMISSIONS['admin-pages']).toBe('manage-page');
-        expect(ADMIN_PERMISSIONS['admin-posts']).toBe('manage-post');
+        expect(accepted('admin-pages')).toContain('manage-page');
+        expect(accepted('admin-posts')).toContain('manage-post');
+        expect(accepted('admin-forums')).toContain('manage-forum');
+        expect(accepted('admin-gallery')).toContain('manage-gallery');
     });
 
-    it('asks for the same permission on every page of a feature', () => {
-        const wiki = names(wikiRoutes).map(name => ADMIN_PERMISSIONS[name]);
+    it('opens a split feature for any part of it', () => {
+        // Somebody given only create-post should find the Posts screen
+        // rather than being refused it and then told they may post
+        expect(accepted('admin-posts')).toContain('create-post');
+        expect(accepted('admin-podcast')).toContain('create-podcast');
+        expect(accepted('admin-podcast')).toContain('approve-podcast');
 
-        expect([...new Set(wiki)]).toEqual(['manage-wiki']);
+        // …and a form that only ever writes asks for the parts that
+        // write, not for all of them
+        expect(accepted('podcast-create')).toEqual(['manage-podcast', 'create-podcast']);
+        expect(accepted('admin-pages-form')).toEqual(['manage-page', 'create-page', 'edit-page']);
+    });
+
+    it('keeps a feature whole where nothing is split', () => {
+        // A permission nothing checks is decoration, so the features
+        // with nothing members put into them stay as one name
+        expect(ADMIN_PERMISSIONS['admin-media']).toBe('manage-media');
+        expect(ADMIN_PERMISSIONS['admin-polls']).toBe('manage-poll');
+
+        // The wiki's categories are its shape rather than articles in it
+        expect(ADMIN_PERMISSIONS['wiki-category-create']).toBe('manage-wiki');
+    });
+
+    it('asks for the same feature on every page of a feature', () => {
+        const wiki = names(wikiRoutes).flatMap(name => accepted(name));
+
+        // Every wiki page asks for the wiki and nothing else, whichever
+        // part of it each one needs
+        for (const permission of wiki) {
+            expect(permission).toMatch(/-wiki$/);
+        }
+
+        expect(wiki).toContain('manage-wiki');
     });
 });
 
@@ -92,8 +123,14 @@ describe('the administration menu', () => {
     it('gates the entries under an entry as well', () => {
         const events = admin.items.find(item => item.key === 'menu.adminEvents');
 
-        expect(events.permission).toBe('manage-event');
-        expect(events.items.every(item => item.permission === 'manage-event')).toBe(true);
+        expect(list(events.permission)).toContain('manage-event');
+
+        // Every entry under it belongs to the events and to nothing else
+        for (const item of events.items) {
+            for (const permission of list(item.permission)) {
+                expect(permission, item.key).toMatch(/-event$/);
+            }
+        }
     });
 
     it('points each entry at the permission its page asks for', () => {
@@ -117,7 +154,12 @@ describe('the administration menu', () => {
             const item = admin.items.find(entry => entry.link === link);
 
             expect(item, link).toBeTruthy();
-            expect(accepted(route), link).toContain(item.permission);
+
+            // Whatever opens the menu entry has to open the page too, or
+            // the entry offers a page the router then refuses
+            for (const permission of list(item.permission)) {
+                expect(accepted(route), link).toContain(permission);
+            }
         }
     });
 

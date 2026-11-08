@@ -90,10 +90,11 @@
                                     v-for="permission in group.permissions"
                                     :key="permission.name"
                                     class="mb-1"
+                                    :class="{ 'ms-6': permission.action }"
                                 >
                                     <v-checkbox
                                         :model-value="isTicked(permission.name)"
-                                        :disabled="disabled || !mayGrant(permission.name) || fromRole(permission.name).length > 0"
+                                        :disabled="disabled || !mayGrant(permission.name) || fromRole(permission.name).length > 0 || !!coveredBy(permission.name)"
                                         density="compact"
                                         hide-details
                                         @update:model-value="toggle(permission.name, $event)"
@@ -113,6 +114,19 @@
                                                         class="ms-1"
                                                     >
                                                         {{ role }}
+                                                    </v-chip>
+                                                    <!-- Nor by hand: holding the feature
+                                                         whole answers for this part of it,
+                                                         so it is ticked and the thing that
+                                                         covers it is named. -->
+                                                    <v-chip
+                                                        v-if="coveredBy(permission.name)"
+                                                        size="x-small"
+                                                        variant="tonal"
+                                                        color="primary"
+                                                        class="ms-1"
+                                                    >
+                                                        {{ coveredBy(permission.name) }}
                                                     </v-chip>
                                                 </div>
                                                 <div v-if="permission.description" class="text-caption text-medium-emphasis">
@@ -155,6 +169,7 @@ import { ref, computed, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import axios from 'axios';
 import { useDialog } from '@/composables/useDialog.js';
+import { umbrellaFor } from '@/configs/featurePermissions.js';
 import { useUserStore } from '@/store/userStore.js';
 import LoadingState from '../../common/LoadingState.vue';
 
@@ -182,6 +197,12 @@ const grantable = ref([]);
 const mayGrantAdmin = ref(false);
 const isSelf = ref(false);
 const fromRoles = ref({});
+// action permission => the feature permission that answers for it
+const covered = ref({});
+// permission name => what it is called, for naming what covers a row
+const labels = computed(() =>
+    Object.fromEntries(permissions.value.map(permission => [permission.name, permission.display_name]))
+);
 
 const chosenRoles = ref([]);
 const chosenPermissions = ref([]);
@@ -203,7 +224,29 @@ const changed = computed(() =>
 // What a role brings with it, so a tick nobody put there by hand says so
 const fromRole = (name) => fromRoles.value[name] || [];
 
-const isTicked = (name) => chosenPermissions.value.includes(name) || fromRole(name).length > 0;
+// The feature standing over one of its parts. Holding manage-podcast
+// answers for create-podcast the moment it is checked, so the row is
+// ticked and says what covers it rather than offering an empty box
+// beside something the member can in fact do. Chosen roles and ticks
+// count too, so the screen keeps up while it is being changed.
+const coveredBy = (name) => {
+    const umbrella = umbrellaFor(name);
+
+    if (!umbrella) return null;
+
+    const held = covered.value[name]
+        || chosenPermissions.value.includes(umbrella)
+        || fromRole(umbrella).length > 0
+        || roles.value.some(role => chosenRoles.value.includes(role.name)
+            && (role.permissions || []).includes(umbrella));
+
+    return held ? labels.value[umbrella] || umbrella : null;
+};
+
+const isTicked = (name) =>
+    chosenPermissions.value.includes(name)
+    || fromRole(name).length > 0
+    || !!coveredBy(name);
 
 const mayGrant = (name) => grantable.value.includes(name);
 
@@ -272,6 +315,7 @@ const load = async () => {
         mayGrantAdmin.value = !!access.data.may_grant_admin;
         isSelf.value = !!access.data.is_self;
         fromRoles.value = access.data.from_roles || {};
+        covered.value = access.data.covered || {};
 
         heldRoles = access.data.roles || [];
         heldPermissions = access.data.permissions || [];
@@ -302,6 +346,7 @@ const save = async () => {
         heldRoles = data.roles || [];
         heldPermissions = data.permissions || [];
         fromRoles.value = data.from_roles || {};
+        covered.value = data.covered || {};
 
         // Changing your own is refused, so this can only be somebody
         // else's — except for the roles a role change may have given the

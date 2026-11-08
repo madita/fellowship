@@ -175,6 +175,10 @@ class SocialLoginController extends Controller
                 'password'          => null, // OAuth users don't need password
                 'email_verified_at' => $autoVerifyEmail ? now() : null,
             ]);
+
+            // Signing up through a provider is still signing up, so it
+            // carries the same role registration gives
+            $user->assignDefaultRole();
         }
 
         // Create the social account link

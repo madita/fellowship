@@ -277,7 +277,17 @@ class UserAccessTest extends TestCase
             ->getJson("/api/admin/users/{$this->member->id}/access")
             ->assertOk();
 
-        $this->assertEqualsCanonicalizing(['manage-forum', 'manage-user'], $response->json('grantable'));
+        // The two they hold, and the parts of the forum that holding it
+        // whole answers for: somebody given manage-forum can do all of
+        // this themselves, so being unable to pass any of it on would
+        // leave the split with nobody able to use it
+        $this->assertEqualsCanonicalizing(
+            ['manage-user', 'manage-forum', 'view-forum', 'create-forum', 'edit-forum', 'delete-forum'],
+            $response->json('grantable')
+        );
+
+        // …and not another feature's parts
+        $this->assertNotContains('create-wiki', $response->json('grantable'));
         $this->assertFalse($response->json('may_grant_admin'));
 
         // The whole list is still shown - what cannot be handed out is

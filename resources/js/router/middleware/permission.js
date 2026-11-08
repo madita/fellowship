@@ -1,5 +1,6 @@
 import { useUserStore } from "@/store/userStore.js";
 import { settingsPermissions } from "@/configs/settingsConfig.js";
+import { feature, satisfiesAny } from "@/configs/featurePermissions.js";
 
 // Which permission each admin page asks for. One per feature, the
 // same names the API guards itself with (App\Support\
@@ -11,28 +12,37 @@ export const ADMIN_PERMISSIONS = {
     "admin-roles": "manage-role",
     "admin-permissions": "manage-role",
 
-    "admin-pages": "manage-page",
-    "admin-pages-form": "manage-page",
-    "admin-posts": "manage-post",
+    // A feature split by action opens for any part of it: somebody given
+    // only create-page is shown the list and the form, and the API then
+    // refuses the parts they were not given. feature() names the whole
+    // set; naming actions narrows a page to the ones that reach it.
+    "admin-pages": feature("page"),
+    "admin-pages-form": feature("page", "create", "edit"),
+    "admin-posts": feature("post"),
     "admin-announcements": "manage-announcement",
 
-    "wiki-create": "manage-wiki",
-    "wiki-create-slug": "manage-wiki",
-    "wiki-edit": "manage-wiki",
+    "wiki-create": feature("wiki", "create"),
+    "wiki-create-slug": feature("wiki", "create"),
+    "wiki-edit": feature("wiki", "create", "edit"),
+    // A category is the wiki's shape rather than an article in it, so it
+    // asks for the feature as a whole - the same line WikiController
+    // draws in storeCategory()
     "wiki-category-create": "manage-wiki",
     "wiki-category-edit": "manage-wiki",
 
-    "admin-forums": "manage-forum",
+    "admin-forums": feature("forum"),
     "admin-taxonomie": "manage-taxonomy",
     "admin-terms": "manage-taxonomy",
     "admin-relations": "manage-relation",
 
-    "admin-events": "manage-event",
+    "admin-events": feature("event"),
+    // The kinds of event and the sign-up forms are what the calendar is
+    // built out of rather than entries in it
     "admin-events-types": "manage-event",
     "admin-events-profiles": "manage-event",
 
-    "admin-gallery": "manage-gallery",
-    "admin-album": "manage-gallery",
+    "admin-gallery": feature("gallery"),
+    "admin-album": feature("gallery"),
     "admin-media": "manage-media",
 
     "admin-polls": "manage-poll",
@@ -57,12 +67,14 @@ export const ADMIN_PERMISSIONS = {
     "admin-settings-page": settingsPermissions(),
 
     // Running a show from the podcast's own pages, the way the wiki
-    // is written from the wiki rather than from the admin panel
-    "admin-podcast": "manage-podcast",
-    "podcast-create": "manage-podcast",
-    "podcast-edit": "manage-podcast",
-    "podcast-episode-new": "manage-podcast",
-    "podcast-episode-edit": "manage-podcast",
+    // is written from the wiki rather than from the admin panel. A
+    // member trusted with create-podcast reaches these, and what they
+    // record waits for approve-podcast.
+    "admin-podcast": feature("podcast"),
+    "podcast-create": feature("podcast", "create"),
+    "podcast-edit": feature("podcast", "create", "edit"),
+    "podcast-episode-new": feature("podcast", "create", "edit"),
+    "podcast-episode-edit": feature("podcast", "create", "edit"),
 
     // Writing to every member
     "admin-mailings": "manage-mailings",
@@ -93,10 +105,11 @@ export default async function permission({ to, next }) {
 
     // A page may name one permission or any of several - the settings
     // overview is the way in to a dozen features and belongs to all of
-    // them.
-    const wanted = Array.isArray(requiredPermission) ? requiredPermission : [requiredPermission];
-    const held = userStore.permissions || [];
-    const hasAccess = wanted.some(permission => held.includes(permission));
+    // them, and a feature split by action names each of its parts.
+    //
+    // Through satisfies(), so holding a feature whole opens its pages
+    // without every line of the map having to repeat manage-<feature>.
+    const hasAccess = satisfiesAny(requiredPermission, userStore.permissions || []);
 
     if (!hasAccess) {
         // return next({

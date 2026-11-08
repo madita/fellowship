@@ -8,6 +8,7 @@ use App\Models\Ticket\Ticket;
 use App\Models\Ticket\TicketComment;
 use App\Models\Ticket\TicketType;
 use App\Models\User;
+use App\Support\Approvals;
 use App\Support\RichText;
 use App\Traits\Approvable;
 use Illuminate\Database\Eloquent\Relations\Relation;
@@ -34,12 +35,29 @@ class TicketController extends Controller
 
         $query = Ticket::with(['ticketType', 'creator', 'assignee', 'ticketable'])->withCount('comments');
 
-        // Non-admins can only see their own tickets: created by or assigned
-        // to them. Admins can narrow to the same set with ?mine=1.
+        // Non-admins see their own tickets - created by or assigned to
+        // them - and, where they approve something, whatever is waiting
+        // for them.
+        //
+        // The second half is what puts the queue in front of an
+        // approver at all: they did not open the ticket and nobody
+        // assigned it to them, so holding approve-wiki used to mean
+        // holding a permission with nothing behind it. It widens by
+        // exactly the types they approve, so an approver still does not
+        // see anybody else's support requests.
+        //
+        // ?mine=1 means only their own, queues included, so that there
+        // is still a way to ask the narrow question.
+        $queues = $request->boolean('mine') ? [] : Approvals::ticketTypesFor($user);
+
         if ( ! $user->isAdmin() || $request->boolean('mine')) {
-            $query->where(function ($q) use ($user) {
+            $query->where(function ($q) use ($user, $queues) {
                 $q->where('created_by_user_id', $user->id)
                     ->orWhere('assigned_to_user_id', $user->id);
+
+                if ($queues !== []) {
+                    $q->orWhereHas('ticketType', fn ($type) => $type->whereIn('slug', $queues));
+                }
             });
         }
 
@@ -373,14 +391,17 @@ class TicketController extends Controller
     {
         $user = Auth::user();
 
-        if ( ! $user || ! $user->isAdmin()) {
-            abort(403, 'Only admins can approve content.');
-        }
-
         $ticketable = $ticket->ticketable;
 
         if ( ! $ticketable || ! in_array(Approvable::class, class_uses_recursive($ticketable))) {
             abort(422, 'This ticket is not linked to approvable content.');
+        }
+
+        // Whoever holds the approve permission for this kind of content,
+        // which is what being its approver means now. An admin still
+        // holds all of them.
+        if ( ! Approvals::mayApprove($user, $ticketable)) {
+            abort(403, __('messages.error.permission_required'));
         }
 
         $ticketable->approve($user);
@@ -407,14 +428,16 @@ class TicketController extends Controller
     {
         $user = Auth::user();
 
-        if ( ! $user || ! $user->isAdmin()) {
-            abort(403, 'Only admins can reject content.');
-        }
-
         $ticketable = $ticket->ticketable;
 
         if ( ! $ticketable || ! in_array(Approvable::class, class_uses_recursive($ticketable))) {
             abort(422, 'This ticket is not linked to approvable content.');
+        }
+
+        // Sending something back is the same decision as letting it
+        // through, so it is the same permission
+        if ( ! Approvals::mayApprove($user, $ticketable)) {
+            abort(403, __('messages.error.permission_required'));
         }
 
         $ticketable->unapprove();
@@ -458,10 +481,23 @@ class TicketController extends Controller
     {
         $user = Auth::user();
 
-        if ( ! $user || ( ! $user->isAdmin()
-            && (int) $ticket->created_by_user_id !== (int) $user->id
-            && (int) $ticket->assigned_to_user_id !== (int) $user->id)) {
+        if ( ! $user) {
             abort(403, 'You do not have permission to view this ticket.');
         }
+
+        if ($user->isAdmin()
+            || (int) $ticket->created_by_user_id === (int) $user->id
+            || (int) $ticket->assigned_to_user_id === (int) $user->id) {
+            return;
+        }
+
+        // The queue they approve. index() lists these for them, so they
+        // have to open as well, or an approver would be shown a row they
+        // cannot click.
+        if (in_array($ticket->ticketType?->slug, Approvals::ticketTypesFor($user), true)) {
+            return;
+        }
+
+        abort(403, 'You do not have permission to view this ticket.');
     }
 }
