@@ -1,7 +1,6 @@
 <?php
 
 use App\Http\Controllers\Admin\MigrationController;
-use App\Support\FeaturePermissions;
 use App\Http\Controllers\CollectionController;
 use App\Http\Controllers\CommonController;
 use App\Http\Controllers\RelateableController;
@@ -11,6 +10,7 @@ use App\Http\Controllers\Sandbox\SandboxStatusController;
 use App\Http\Controllers\SocialAccountController;
 use App\Models\Setting;
 use App\Models\User;
+use App\Support\FeaturePermissions;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Route;

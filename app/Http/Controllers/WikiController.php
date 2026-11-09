@@ -28,32 +28,6 @@ class WikiController extends Controller
     {
     }
 
-    /**
-     * Whether this member may see wiki pages still waiting to be
-     * approved.
-     *
-     * It used to be admins and nobody else, which left the approver -
-     * the whole point of approve-wiki - unable to read the page they
-     * were being asked to judge. Both permissions answer yes: one is
-     * for whoever looks after the wiki, the other for whoever works
-     * through its queue.
-     */
-    private function seesPending(?User $user): bool
-    {
-        return $user !== null && ($user->can('view-wiki') || $user->can('approve-wiki'));
-    }
-
-    /**
-     * Whether this member may change or remove somebody else's page.
-     *
-     * A member's own page has always been theirs to edit, and still is -
-     * this is the permission to touch a page you did not write.
-     */
-    private function mayEditOthers(?User $user, string $action = 'edit'): bool
-    {
-        return $user !== null && $user->can("{$action}-wiki");
-    }
-
     public function getUpdatableColumns($type)
     {
         return [
@@ -687,6 +661,32 @@ class WikiController extends Controller
         $wiki->delete();
 
         return response()->json(['message' => __('messages.wiki.deleted')]);
+    }
+
+    /**
+     * Whether this member may see wiki pages still waiting to be
+     * approved.
+     *
+     * It used to be admins and nobody else, which left the approver -
+     * the whole point of approve-wiki - unable to read the page they
+     * were being asked to judge. Both permissions answer yes: one is
+     * for whoever looks after the wiki, the other for whoever works
+     * through its queue.
+     */
+    private function seesPending(?User $user): bool
+    {
+        return $user !== null && ($user->can('view-wiki') || $user->can('approve-wiki'));
+    }
+
+    /**
+     * Whether this member may change or remove somebody else's page.
+     *
+     * A member's own page has always been theirs to edit, and still is -
+     * this is the permission to touch a page you did not write.
+     */
+    private function mayEditOthers(?User $user, string $action = 'edit'): bool
+    {
+        return $user !== null && $user->can("{$action}-wiki");
     }
 
     /**
