@@ -229,7 +229,8 @@
 import { ref, computed, watch, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
-import { settingsCategories, getTotalSettingsCount } from '@/configs/settingsConfig';
+import { allowedCategories, getTotalSettingsCount } from '@/configs/settingsConfig';
+import permission from '@/utils/permission.js';
 import { useSettings } from '@/composables/useSettings';
 import PageHeader from '@/components/common/PageHeader.vue';
 import EmptyState from '@/components/common/EmptyState.vue';
@@ -337,17 +338,24 @@ onMounted(() => {
     }
 });
 
-const categoriesCount = computed(() => settingsCategories.length);
+// What this member may touch. Most of the settings belong to whoever
+// looks after the site, but the translations, the menus, the forum
+// categories and the migration tool are features of their own and are
+// reached from here - so whoever was handed one of those is shown the
+// way in, and the rest of the overview is not theirs to see.
+const settingsCategories = computed(() => allowedCategories(name => permission.can(name)));
+
+const categoriesCount = computed(() => settingsCategories.value.length);
 const totalSettings = computed(() => getTotalSettingsCount());
 
 // Filter categories based on search query
 const filteredCategories = computed(() => {
     if (!searchQuery.value) {
-        return settingsCategories;
+        return settingsCategories.value;
     }
 
     const query = searchQuery.value.toLowerCase();
-    return settingsCategories.filter(category => {
+    return settingsCategories.value.filter(category => {
         // Check if category matches
         const categoryMatches = category.title.toLowerCase().includes(query) ||
             category.description.toLowerCase().includes(query);

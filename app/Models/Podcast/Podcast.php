@@ -165,6 +165,11 @@ class Podcast extends Model
      * Whoever made the show, and whoever is named on it, can always see
      * it — approved or not, published or not. Being unable to see your
      * own draft is what made one impossible to work on.
+     *
+     * And whoever will decide on it: a show waiting for approval was
+     * visible to its author and to nobody else at all, not even an
+     * admin, so the only way through the queue was the ticket it raised.
+     * approve-podcast reads the show itself.
      */
     public function isVisibleTo(?User $user): bool
     {
@@ -177,7 +182,9 @@ class Podcast extends Model
         }
 
         return $this->created_by === $user->id
-            || $this->authors->contains('id', $user->id);
+            || $this->authors->contains('id', $user->id)
+            || $user->can('approve-podcast')
+            || $user->can('view-podcast');
     }
 
     public function coverUrl(): ?string

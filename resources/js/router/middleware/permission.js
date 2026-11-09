@@ -1,62 +1,88 @@
 import { useUserStore } from "@/store/userStore.js";
+import { settingsPermissions } from "@/configs/settingsConfig.js";
+import { feature, satisfiesAny } from "@/configs/featurePermissions.js";
+
+// Which permission each admin page asks for. One per feature, the
+// same names the API guards itself with (App\Support\
+// FeaturePermissions) - a page let open here that the API refuses
+// would hand somebody a form and then throw their work away.
+export const ADMIN_PERMISSIONS = {
+    "admin-dashboard": "manage-user",
+    "admin-users": "manage-user",
+    "admin-roles": "manage-role",
+    "admin-permissions": "manage-role",
+
+    // A feature split by action opens for any part of it: somebody given
+    // only create-page is shown the list and the form, and the API then
+    // refuses the parts they were not given. feature() names the whole
+    // set; naming actions narrows a page to the ones that reach it.
+    "admin-pages": feature("page"),
+    "admin-pages-form": feature("page", "create", "edit"),
+    "admin-posts": feature("post"),
+    "admin-announcements": "manage-announcement",
+
+    "wiki-create": feature("wiki", "create"),
+    "wiki-create-slug": feature("wiki", "create"),
+    "wiki-edit": feature("wiki", "create", "edit"),
+    // A category is the wiki's shape rather than an article in it, so it
+    // asks for the feature as a whole - the same line WikiController
+    // draws in storeCategory()
+    "wiki-category-create": "manage-wiki",
+    "wiki-category-edit": "manage-wiki",
+
+    "admin-forums": feature("forum"),
+    "admin-taxonomie": "manage-taxonomy",
+    "admin-terms": "manage-taxonomy",
+    "admin-relations": "manage-relation",
+
+    "admin-events": feature("event"),
+    // The kinds of event and the sign-up forms are what the calendar is
+    // built out of rather than entries in it
+    "admin-events-types": "manage-event",
+    "admin-events-profiles": "manage-event",
+
+    "admin-gallery": feature("gallery"),
+    "admin-album": feature("gallery"),
+    "admin-media": "manage-media",
+
+    "admin-polls": "manage-poll",
+    "admin-tickets": "manage-ticket",
+    "admin-ticket": "manage-ticket",
+    "admin-ticket-create": "manage-ticket",
+    "admin-ticket-edit": "manage-ticket",
+
+    "admin-migrations": "manage-migration",
+    "admin-translations": "manage-translation",
+    "admin-settings-menus": "manage-menu",
+    "admin-settings-discord": "manage-discord",
+
+    // The settings overview is the only way in to the translations, the
+    // menus, the forum categories and the migration tool, so it opens
+    // for anyone holding any of their permissions. Each entry inside is
+    // then shown or not on its own (allowedCategories in
+    // configs/settingsConfig.js), so what a member may touch is all
+    // they are offered.
+    "admin-settings": settingsPermissions(),
+    "admin-settings-category": settingsPermissions(),
+    "admin-settings-page": settingsPermissions(),
+
+    // Running a show from the podcast's own pages, the way the wiki
+    // is written from the wiki rather than from the admin panel. A
+    // member trusted with create-podcast reaches these, and what they
+    // record waits for approve-podcast.
+    "admin-podcast": feature("podcast"),
+    "podcast-create": feature("podcast", "create"),
+    "podcast-edit": feature("podcast", "create", "edit"),
+    "podcast-episode-new": feature("podcast", "create", "edit"),
+    "podcast-episode-edit": feature("podcast", "create", "edit"),
+
+    // Writing to every member
+    "admin-mailings": "manage-mailings",
+};
 
 export default async function permission({ to, next }) {
     const userStore = useUserStore();
-    const permissionsMap = {
-        "admin-dashboard": "manage-user",
-        "admin-users": "manage-user",
-        "admin-roles": "manage-role",
-        "admin-permissions": "manage-role",
-        "admin-pages": "manage-page",
-        "admin-pages-form": "manage-page",
-        "admin-posts": "manage-post",
-        "admin-events": "manage-post",
-        "admin-settings": "manage-post",
-        "admin-settings-category": "manage-post",
-        "admin-settings-page": "manage-post",
-        "admin-events-types": "manage-post",
-        "admin-events-profiles": "manage-post",
-        "admin-gallery": "manage-post",
-        "admin-album": "manage-post",
-        "admin-announcements": "manage-post",
-        "wiki-create": "manage-page",
-        "wiki-create-slug": "manage-page",
-        "wiki-edit": "manage-page",
-        "wiki-category-create": "manage-page",
-        "wiki-category-edit": "manage-page",
-        "admin-media": "manage-page",
-        "admin-migrations": "manage-page",
-        "admin-translations": "manage-page",
-        "admin-taxonomie": "manage-page",
-        "admin-terms": "manage-page",
-        "admin-settings-menus": "manage-page",
-        "admin-settings-discord": "manage-page",
-        "admin-tickets": "manage-page",
-        "admin-ticket": "manage-page",
-        "admin-ticket-create": "manage-page",
-        "admin-ticket-edit": "manage-page",
-        "admin-forums": "manage-page",
-        "admin-polls": "manage-post",
-        "admin-relations": "manage-page",
-        "admin-podcast": "manage-page",
-        // Running a show from the podcast's own pages, the way the wiki
-        // is written from the wiki rather than from the admin panel
-        // Has to match the API, which guards the same work with
-        // permission.any:manage-podcast — a member let onto the form by a
-        // permission the API does not accept reaches the upload and is
-        // refused there instead.
-        "podcast-create": "manage-podcast",
-        "podcast-edit": "manage-podcast",
-        "podcast-episode-new": "manage-podcast",
-        "podcast-episode-edit": "manage-podcast",
-        // Writing to every member. Matches the API, which guards the same
-        // work with permission.any:manage-mailings — a member let onto
-        // the page by a permission the API does not accept would reach
-        // the composer and be refused by it.
-        "admin-mailings": "manage-mailings",
-    };
-
-    const requiredPermission = permissionsMap[to.name];
+    const requiredPermission = ADMIN_PERMISSIONS[to.name];
 
     // If the route name is not in the permissions map, throw an error
     if (!requiredPermission) {
@@ -77,7 +103,13 @@ export default async function permission({ to, next }) {
         }
     }
 
-    const hasAccess = (userStore.permissions || []).includes(requiredPermission);
+    // A page may name one permission or any of several - the settings
+    // overview is the way in to a dozen features and belongs to all of
+    // them, and a feature split by action names each of its parts.
+    //
+    // Through satisfies(), so holding a feature whole opens its pages
+    // without every line of the map having to repeat manage-<feature>.
+    const hasAccess = satisfiesAny(requiredPermission, userStore.permissions || []);
 
     if (!hasAccess) {
         // return next({

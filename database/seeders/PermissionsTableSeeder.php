@@ -3,62 +3,48 @@
 namespace Database\Seeders;
 
 use App\Models\Permission;
+use App\Support\FeaturePermissions;
 use Illuminate\Database\Seeder;
 use Spatie\Permission\PermissionRegistrar;
 
 /**
- * Every permission the site actually checks.
+ * Every permission the site actually checks, one per feature.
  *
- * The list is the whole set, not a starting point: the router guards its
+ * The list itself lives in App\Support\FeaturePermissions, because the
+ * same names are needed by the migration that brings an existing install
+ * up to date and by the screen that hands them out. This writes them.
+ *
+ * The set is the whole set, not a starting point: the router guards its
  * admin pages against these names (resources/js/router/middleware/
  * permission.js) and the API against the same ones, so a permission that
  * is missing from the database is a page nobody but an admin can open.
  *
- * Three of them - award-achievements, manage-podcast and manage-mailings
- * - are also written by the migration of the feature they belong to, so
- * an install that is migrated without being seeded still has them. They
- * are repeated here
- * because this is the list somebody reads to find out what exists, and a
- * half-list is worse than a repeated row. Everything here is written with
- * firstOrCreate, so running it again changes nothing.
+ * Everything is written with firstOrCreate, so running it again changes
+ * nothing - except the wording, which is refreshed, so renaming a
+ * permission's label does not need the row deleting first.
  */
 class PermissionsTableSeeder extends Seeder
 {
-    /**
-     * name => [display name, category, default for a new role?, why].
-     */
-    private const PERMISSIONS = [
-        'manage-permission'  => ['Manage Permission', 'permission', true, null],
-        'manage-role'        => ['Manage Roles', 'permission', true, null],
-        'manage-user'        => ['Manage User', 'permission', true, null],
-        'manage-page'        => ['Manage Page', 'permission', true, null],
-        'manage-post'        => ['Manage Post', 'permission', true, null],
-        'award-achievements' => [
-            'Award Achievements', 'achievement', false,
-            'Hand achievements to members for things that happened away from the site',
-        ],
-        'manage-podcast'     => [
-            'Manage Podcast', 'podcast', false,
-            'Create shows, write episodes and upload their audio, without the admin panel',
-        ],
-        'manage-mailings'    => [
-            'Manage Mailings', 'mailing', false,
-            'Write and send mail to the members, and edit the templates the site sends',
-        ],
-    ];
-
     public function run(): void
     {
-        foreach (self::PERMISSIONS as $name => [$display, $category, $isDefault, $description]) {
-            Permission::firstOrCreate(
-                ['name' => $name, 'guard_name' => 'api'],
+        foreach (FeaturePermissions::all() as $permission) {
+            $row = Permission::firstOrCreate(
+                ['name' => $permission['name'], 'guard_name' => 'api'],
                 [
-                    'display_name' => $display,
-                    'description'  => $description,
-                    'category'     => $category,
-                    'is_default'   => $isDefault ? 1 : 0,
+                    'display_name' => $permission['display_name'],
+                    'description'  => $permission['description'],
+                    'category'     => $permission['category'],
+                    'is_default'   => $permission['is_default'] ? 1 : 0,
                 ]
             );
+
+            // What it is called and what it says it does are this list's
+            // to decide; who holds it is not touched
+            $row->update([
+                'display_name' => $permission['display_name'],
+                'description'  => $permission['description'],
+                'category'     => $permission['category'],
+            ]);
         }
 
         // Spatie keeps the whole set in one cache entry, which would

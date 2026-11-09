@@ -52,9 +52,15 @@ class Wiki extends Model implements TranslatableContract
      * Whether the member may read this page.
      *
      * A page awaiting approval cannot be opened by anyone but the author
-     * who wrote it and the admins who will approve it — the same rule the
+     * who wrote it and whoever will approve it — the same rule the
      * mention notifications wait on. Watching honours it, so a page that
      * goes back to pending stops appearing in other people's lists.
+     *
+     * "Whoever will approve it" was an admin and nobody else. It is now
+     * whoever holds approve-wiki, or view-wiki for somebody who looks
+     * after the wiki without judging what goes into it; an admin holds
+     * both. Without this an approver could be handed a queue of pages
+     * and then be refused every one of them.
      */
     public function isVisibleTo(?User $user): bool
     {
@@ -69,7 +75,9 @@ class Wiki extends Model implements TranslatableContract
         $model  = $this->wikiable_type;
         $author = $model ? $model::find($this->wikiable_id)?->user_id : null;
 
-        return (int) $author === (int) $user->id || $user->isAdmin();
+        return (int) $author === (int) $user->id
+            || $user->can('approve-wiki')
+            || $user->can('view-wiki');
     }
 
     /**

@@ -267,7 +267,10 @@ class RelatedContentTest extends TestCase
         $this->actingAs($this->admin, 'sanctum');
         $this->postJson('/api/relateable/relations', $this->relationBody($this->event, [$this->album]))->assertCreated();
 
-        Permission::create(['name' => 'manage-page', 'guard_name' => 'api', 'display_name' => 'Manage Page']);
+        Permission::firstOrCreate(
+            ['name' => 'manage-page', 'guard_name' => 'api'],
+            ['display_name' => 'Manage Page']
+        );
         $this->stranger->givePermissionTo('manage-page');
 
         $this->actingAs($this->stranger, 'sanctum');

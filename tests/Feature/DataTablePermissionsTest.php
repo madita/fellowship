@@ -66,11 +66,17 @@ class DataTablePermissionsTest extends TestCase
 
     public function test_each_permission_opens_its_own_tables_only(): void
     {
+        // One feature each, which is the point of there being one
+        // permission each: the taxonomies are filed under by the forum
+        // and the gallery as much as by the wiki, and the events are not
+        // posts.
         $cases = [
-            'manage-user' => [['users'], ['pages', 'posts', 'permissions']],
-            'manage-page' => [['pages', 'taxonomies', 'terms'], ['users', 'posts', 'permissions']],
-            'manage-post' => [['posts', 'events', 'event-types', 'event-profiles'], ['users', 'pages', 'permissions']],
-            'manage-role' => [['roles', 'permissions'], ['users', 'pages', 'posts']],
+            'manage-user'     => [['users'], ['pages', 'posts', 'permissions']],
+            'manage-page'     => [['pages'], ['users', 'posts', 'permissions', 'taxonomies', 'terms']],
+            'manage-post'     => [['posts'], ['users', 'pages', 'permissions', 'events', 'event-types']],
+            'manage-taxonomy' => [['taxonomies', 'terms'], ['users', 'pages', 'posts', 'permissions']],
+            'manage-event'    => [['events', 'event-types', 'event-profiles'], ['users', 'pages', 'posts', 'permissions']],
+            'manage-role'     => [['roles', 'permissions'], ['users', 'pages', 'posts']],
         ];
 
         foreach ($cases as $permission => [$allowed, $denied]) {

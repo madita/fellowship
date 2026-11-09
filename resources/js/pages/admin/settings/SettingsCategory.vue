@@ -65,7 +65,8 @@
 import { computed } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
-import { getCategoryBySlug } from '@/configs/settingsConfig';
+import { getCategoryBySlug, allowedSettings } from '@/configs/settingsConfig';
+import permission from '@/utils/permission.js';
 import PageHeader from '@/components/common/PageHeader.vue';
 import EmptyState from '@/components/common/EmptyState.vue';
 import SettingsItemCard from '@/components/settings/SettingsItemCard.vue';
@@ -75,7 +76,15 @@ const { t } = useI18n();
 const router = useRouter();
 const route = useRoute();
 
-const category = computed(() => getCategoryBySlug(route.params.category));
+// Only the entries this member may touch: an entry offered and then
+// refused by the page behind it is worse than no entry.
+const category = computed(() => {
+    const found = getCategoryBySlug(route.params.category);
+
+    return found
+        ? { ...found, settings: allowedSettings(found, name => permission.can(name)) }
+        : found;
+});
 
 const breadcrumbs = computed(() => [
     section('admin'),

@@ -33,7 +33,9 @@ describe('the permission middleware', () => {
     const to = (name = 'admin-settings-page') => ({ name });
 
     it('lets a member through who holds the permission', async () => {
-        store.updateState({ permissions: ['manage-post'] });
+        // The settings pages ask for manage-setting now, not for
+        // manage-post standing in for half the admin area
+        store.updateState({ permissions: ['manage-setting'] });
 
         const next = vi.fn();
         await permission({ to: to(), next });
@@ -55,7 +57,7 @@ describe('the permission middleware', () => {
         expect(store.permissions).toBeNull();
 
         api.get.mockResolvedValue({
-            data: { user: { id: 1 }, roles: ['admin'], permissions: ['manage-post'] },
+            data: { user: { id: 1 }, roles: ['admin'], permissions: ['manage-setting'] },
         });
 
         const next = vi.fn();

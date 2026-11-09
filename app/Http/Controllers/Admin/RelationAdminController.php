@@ -20,7 +20,7 @@ class RelationAdminController extends Controller
     public function __construct()
     {
         $this->middleware(['auth:sanctum']);
-        $this->middleware(['admin']);
+        $this->middleware(['permission.any:manage-relation']);
     }
 
     public function index(Request $request): JsonResponse

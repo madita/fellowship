@@ -19,6 +19,20 @@
             >
                 <template #actions>
                     <div class="d-flex align-center ga-4">
+                        <!-- Handing this member a role, for whoever looks
+                             after the members. The question comes up while
+                             reading somebody's page far more often than it
+                             does in a table of four hundred rows. -->
+                        <v-btn
+                            v-if="mayManageAccess"
+                            variant="tonal"
+                            size="small"
+                            prepend-icon="mdi-shield-account-outline"
+                            @click="accessOpen = true"
+                        >
+                            {{ $t('access.manage') }}
+                        </v-btn>
+
                         <v-avatar :color="member.avatar ? undefined : 'primary'" size="64">
                             <v-img v-if="member.avatar" :src="member.avatar" :alt="member.username" />
                             <span v-else class="text-h5 text-white">{{ member.initials }}</span>
@@ -171,6 +185,13 @@
                     </v-col>
                 </v-row>
             </v-container>
+
+            <user-access-dialog
+                v-if="mayManageAccess"
+                v-model="accessOpen"
+                :user="member"
+                @saved="load"
+            />
         </template>
     </div>
 </template>
@@ -182,8 +203,11 @@ import EmptyState from '@/components/common/EmptyState.vue';
 import LoadingState from '@/components/common/LoadingState.vue';
 import AchievementBadge from '@/components/achievements/AchievementBadge.vue';
 import ActivityFeed from '@/components/common/ActivityFeed.vue';
+import UserAccessDialog from '@/components/admin/users/UserAccessDialog.vue';
 import { formatDateDistanceToNow } from '@/plugins/formatDate.js';
 import { useSettingsStore } from '@/store/settingStore.js';
+import { useUserStore } from '@/store/userStore.js';
+import permission from '@/utils/permission.js';
 
 // What each kind of thing looks like, which count belongs to it, and the
 // feature it belongs to — a member's forum posts are nobody's business
@@ -198,17 +222,28 @@ const KINDS = [
 
 export default {
     name: 'MemberProfilePage',
-    components: { PageHeader, EmptyState, LoadingState, AchievementBadge, ActivityFeed },
+    components: { PageHeader, EmptyState, LoadingState, AchievementBadge, ActivityFeed, UserAccessDialog },
     setup() {
-        return { settingsStore: useSettingsStore() };
+        return { settingsStore: useSettingsStore(), userStore: useUserStore() };
     },
     data() {
         return {
             loading: true,
             member: null,
+            accessOpen: false,
         };
     },
     computed: {
+        /**
+         * Whoever looks after the members may change what this one is
+         * allowed - but not their own, which the API refuses anyway.
+         */
+        mayManageAccess() {
+            return !!this.member?.id
+                && this.member.id !== this.userStore.user?.id
+                && permission.can('manage-user');
+        },
+
         headerSubtitle() {
             return this.$t('memberProfile.memberSince', { date: this.formatDate(this.member?.member_since) });
         },

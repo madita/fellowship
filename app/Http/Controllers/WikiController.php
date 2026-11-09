@@ -7,6 +7,7 @@ use App\Models\Revision;
 use App\Models\Tag\Taxonomy;
 use App\Models\Tag\Term;
 use App\Models\Ticket\Ticket;
+use App\Models\User;
 use App\Models\Wiki;
 use App\Notifications\WikiUpdatedNotification;
 use Illuminate\Http\JsonResponse;
@@ -48,14 +49,13 @@ class WikiController extends Controller
         $perPage = 9;
         $query   = $request->get('q');
         $user    = Auth::user();
-        $isAdmin = $user && $user->isAdmin();
 
         $page = request()->input('page', 1); // Current page number, default to 1
 
         $wikiQuery = Wiki::where('status', null);
 
-        // Non-admins only see approved pages
-        if ( ! $isAdmin) {
+        // Everybody else only sees approved pages
+        if ( ! $this->seesPending($user)) {
             $wikiQuery->approved();
         }
 
@@ -134,9 +134,8 @@ class WikiController extends Controller
      */
     public function recentChanges(Request $request): JsonResponse
     {
-        $limit   = max(1, min((int) $request->get('limit', 5), 20));
-        $user    = Auth::user();
-        $isAdmin = $user && $user->isAdmin();
+        $limit = max(1, min((int) $request->get('limit', 5), 20));
+        $user  = Auth::user();
 
         // Latest revision per page. The morph relation stores the class name;
         // older rows may carry the table name the listener passes.
@@ -155,7 +154,7 @@ class WikiController extends Controller
         $wikis = Wiki::where('wikiable_type', Page::class)
             ->whereIn('wikiable_id', $pageIds)
             ->whereNull('status')
-            ->when( ! $isAdmin, fn ($q) => $q->approved())
+            ->when( ! $this->seesPending($user), fn ($q) => $q->approved())
             ->get()
             ->keyBy('wikiable_id');
 
@@ -252,10 +251,9 @@ class WikiController extends Controller
 
     public function getPages()
     {
-        $user    = Auth::user();
-        $isAdmin = $user && $user->isAdmin();
+        $user = Auth::user();
 
-        $wikidata = $isAdmin ? Wiki::all() : Wiki::approved()->get();
+        $wikidata = $this->seesPending($user) ? Wiki::all() : Wiki::approved()->get();
 
         return response()->json($wikidata);
     }
@@ -280,10 +278,10 @@ class WikiController extends Controller
             return response(['status' => 404, 'message' => __('messages.wiki.create_page'), 'page' => $data], 404);
         }
 
-        // Block unapproved pages for non-admins
+        // The author's own page, and whoever will decide on it
         $currentUser = Auth::user();
-        $isAdmin     = $currentUser && $currentUser->isAdmin();
-        if ($wiki->isPending() && ! $isAdmin) {
+
+        if ( ! $wiki->isVisibleTo($currentUser)) {
             abort(403, 'This page is pending approval.');
         }
 
@@ -354,6 +352,14 @@ class WikiController extends Controller
         // Authorization check
         if ( ! auth()->check()) {
             abort(401, 'Authentication required to create wiki pages');
+        }
+
+        // Every member has always been able to write a page and have it
+        // wait for approval, so the `user` role is given create-wiki by
+        // the migration rather than this becoming a new door. Saying it
+        // out loud is what lets it be taken away from one person.
+        if ( ! auth()->user()->can('create-wiki')) {
+            abort(403, __('messages.error.permission_required'));
         }
 
         // Input validation
@@ -429,9 +435,8 @@ class WikiController extends Controller
         $model = $wiki->wikiable_type;
         $data  = $model::where('id', $wiki->wikiable_id)->firstOrFail();
 
-        // Check if user is the owner or admin
-        //todo check haspermission
-        if ($data->user_id !== auth()->id() && ! auth()->user()->isAdmin()) {
+        // Their own page, or somebody trusted to change other people's
+        if ($data->user_id !== auth()->id() && ! $this->mayEditOthers(auth()->user())) {
             abort(403, 'You do not have permission to edit this wiki page');
         }
 
@@ -523,8 +528,8 @@ class WikiController extends Controller
     public function approve($slug): JsonResponse
     {
         $user = Auth::user();
-        if ( ! $user || ! $user->isAdmin()) {
-            abort(403, 'Only admins can approve wiki pages.');
+        if ( ! $user || ! $user->can('approve-wiki')) {
+            abort(403, __('messages.error.permission_required'));
         }
 
         $wiki = Wiki::where('slug', '=', $slug)->firstOrFail();
@@ -544,8 +549,8 @@ class WikiController extends Controller
     public function unapprove($slug): JsonResponse
     {
         $user = Auth::user();
-        if ( ! $user || ! $user->isAdmin()) {
-            abort(403, 'Only admins can unapprove wiki pages.');
+        if ( ! $user || ! $user->can('approve-wiki')) {
+            abort(403, __('messages.error.permission_required'));
         }
 
         $wiki = Wiki::where('slug', '=', $slug)->firstOrFail();
@@ -556,9 +561,12 @@ class WikiController extends Controller
 
     public function storeCategory(Request $request)
     {
-        // Authorization check - only admins can create wiki categories
-        if ( ! auth()->check() || ! auth()->user()->isAdmin()) {
-            abort(403, 'Only administrators can create wiki categories');
+        // The shape of the wiki rather than an article in it, so it asks
+        // for the feature as a whole and not create-wiki: a member
+        // trusted to write a page is not thereby trusted to invent the
+        // categories everything else is filed under
+        if ( ! auth()->check() || ! auth()->user()->can('manage-wiki')) {
+            abort(403, __('messages.error.permission_required'));
         }
 
         // Input validation
@@ -587,9 +595,9 @@ class WikiController extends Controller
 
     public function updateCategory(Request $request, $slug)
     {
-        // Authorization check - only admins can update wiki categories
-        if ( ! auth()->check() || ! auth()->user()->isAdmin()) {
-            abort(403, 'Only administrators can update wiki categories');
+        // As with creating one: the wiki's shape, not its articles
+        if ( ! auth()->check() || ! auth()->user()->can('manage-wiki')) {
+            abort(403, __('messages.error.permission_required'));
         }
 
         // Input validation
@@ -643,8 +651,8 @@ class WikiController extends Controller
         $model = $wiki->wikiable_type;
         $data  = $model::where('id', $wiki->wikiable_id)->firstOrFail();
 
-        // Check if user is the owner or admin
-        if ($data->user_id !== auth()->id() && ! auth()->user()->isAdmin()) {
+        // Their own page, or somebody trusted to remove other people's
+        if ($data->user_id !== auth()->id() && ! $this->mayEditOthers(auth()->user(), 'delete')) {
             abort(403, 'You do not have permission to delete this wiki page');
         }
 
@@ -653,6 +661,32 @@ class WikiController extends Controller
         $wiki->delete();
 
         return response()->json(['message' => __('messages.wiki.deleted')]);
+    }
+
+    /**
+     * Whether this member may see wiki pages still waiting to be
+     * approved.
+     *
+     * It used to be admins and nobody else, which left the approver -
+     * the whole point of approve-wiki - unable to read the page they
+     * were being asked to judge. Both permissions answer yes: one is
+     * for whoever looks after the wiki, the other for whoever works
+     * through its queue.
+     */
+    private function seesPending(?User $user): bool
+    {
+        return $user !== null && ($user->can('view-wiki') || $user->can('approve-wiki'));
+    }
+
+    /**
+     * Whether this member may change or remove somebody else's page.
+     *
+     * A member's own page has always been theirs to edit, and still is -
+     * this is the permission to touch a page you did not write.
+     */
+    private function mayEditOthers(?User $user, string $action = 'edit'): bool
+    {
+        return $user !== null && $user->can("{$action}-wiki");
     }
 
     /**
@@ -682,8 +716,7 @@ class WikiController extends Controller
     {
         $wiki = Wiki::where('slug', '=', $slug)->firstOrFail();
 
-        $user = Auth::user();
-        if ($wiki->isPending() && ! ($user && $user->isAdmin())) {
+        if ( ! $wiki->isVisibleTo(Auth::user())) {
             abort(403, 'This page is pending approval.');
         }
 

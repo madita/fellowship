@@ -121,6 +121,28 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
     }
 
     /**
+     * Give this member the role every member holds.
+     *
+     * Nothing used to do this. The `user` role was seeded and then
+     * assigned to nobody but the demo accounts, so a permission handed
+     * to it was handed to an empty room - which is why there was no way
+     * to say "members may write the wiki" other than letting anybody
+     * signed in do it, and no way to open a feature to the membership
+     * at all. Registration and OAuth sign-up both call this now, and a
+     * migration gave it to everybody who had been registered already.
+     *
+     * Guarded, because a user can be made in a test or a seeder long
+     * before the roles exist, and a missing role should not stop
+     * somebody signing up.
+     */
+    public function assignDefaultRole(): void
+    {
+        if (Role::where('name', 'user')->where('guard_name', $this->guard_name)->exists()) {
+            $this->assignRole('user');
+        }
+    }
+
+    /**
      * Determine if the user is an administrator.
      *
      * @return bool

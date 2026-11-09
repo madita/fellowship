@@ -290,6 +290,16 @@ return [
         'links_cleared'         => 'Link report cleared (:count links)',
     ],
 
+    // Roles and permissions handed to one member
+    'access' => [
+        'saved'                => 'Saved what :name is allowed',
+        'not_your_own'         => 'Your own access cannot be changed from here. Ask another admin.',
+        'admin_role_denied'    => 'Only an admin can hand out the admin role, or take it away',
+        'last_admin'           => 'This is the only admin left, and a site nobody can administer cannot be put right from inside it',
+        'beyond_your_own'      => 'You can only hand out what you hold yourself, and that does not include: :names',
+        'role_beyond_your_own' => 'The role ":role" carries permissions you do not hold yourself: :names',
+    ],
+
     // Discord webhooks
     'discord' => [
         'fields' => [

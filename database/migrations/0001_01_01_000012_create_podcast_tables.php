@@ -88,7 +88,6 @@ return new class extends Migration
 
         $this->seedApprovalTicketType();
         $this->seedAutoApproveRoles();
-        $this->seedManagePermission();
     }
 
     public function down(): void
@@ -135,30 +134,6 @@ return new class extends Migration
             'type'       => 'json',
             'created_at' => now(),
             'updated_at' => now(),
-        ]);
-    }
-
-    /**
-     * Admins pass without holding it; see EnsureUserHasPermission.
-     * PermissionsTableSeeder lists it too, and RolesTableSeeder gives the
-     * admin role every permission there is each time it runs, so an admin
-     * is offered the pages this guards rather than bounced off them.
-     */
-    private function seedManagePermission(): void
-    {
-        if (DB::table('permissions')->where('name', 'manage-podcast')->exists()) {
-            return;
-        }
-
-        DB::table('permissions')->insert([
-            'name'         => 'manage-podcast',
-            'guard_name'   => 'api',
-            'display_name' => 'Manage Podcast',
-            'description'  => 'Create shows, write episodes and upload their audio, without the admin panel',
-            'category'     => 'podcast',
-            'is_default'   => 0,
-            'created_at'   => now(),
-            'updated_at'   => now(),
         ]);
     }
 };

@@ -18,7 +18,7 @@ class TranslationController extends Controller
 
     public function __construct()
     {
-        $this->middleware(['auth:sanctum', 'admin']);
+        $this->middleware(['auth:sanctum', 'permission.any:manage-translation']);
 
         $this->jsTranslationsPath  = resource_path('js/translations');
         $this->phpTranslationsPath = lang_path();

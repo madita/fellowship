@@ -189,8 +189,7 @@ class CollectionController extends Controller
      */
     public function destroy(Collection $collection)
     {
-        // Authorization check would go here
-        // $this->authorize('delete', $collection);
+        $this->authorize('delete', $collection);
 
         try {
             // Spatie Media Library will automatically delete media files
@@ -212,8 +211,14 @@ class CollectionController extends Controller
      */
     public function deleteMedia(Media $media)
     {
-        // Authorization check would go here
-        // $this->authorize('delete', $media->model);
+        // Against the album the file hangs on, when it hangs on one.
+        // Anything else uploaded to the site is the media library's, and
+        // that is a feature of its own.
+        if ($media->model instanceof Collection) {
+            $this->authorize('delete', $media->model);
+        } else {
+            $this->authorize('manage-media');
+        }
 
         try {
             $media->delete();

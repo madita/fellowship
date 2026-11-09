@@ -25,7 +25,7 @@ class DiscordWebhookController extends Controller
     public function __construct()
     {
         $this->middleware(['auth:sanctum']);
-        $this->middleware(['admin']);
+        $this->middleware(['permission.any:manage-discord']);
     }
 
     public function index(): JsonResponse

@@ -18,7 +18,7 @@ class PollAdminController extends Controller
     public function __construct()
     {
         $this->middleware(['auth:sanctum']);
-        $this->middleware(['admin']);
+        $this->middleware(['permission.any:manage-poll']);
     }
 
     public function index(Request $request): JsonResponse

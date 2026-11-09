@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Support\FeaturePermissions;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -13,6 +14,13 @@ use Symfony\Component\HttpFoundation\Response;
  *
  * Permissions are matched by name, the way /api/user reports them and the
  * admin screens check them, so the API mirrors what the UI already allows.
+ *
+ * Holding a feature whole counts as holding each action it is split
+ * into, so a route asking for `create-podcast` lets `manage-podcast`
+ * through. That is the one place the umbrella is applied for the whole
+ * API - without it, every gate would have to name both, and the day
+ * somebody forgot the second name an admin's delegate would quietly
+ * lose a screen they used to have.
  */
 class EnsureUserHasPermission
 {
@@ -24,14 +32,16 @@ class EnsureUserHasPermission
             return $next($request);
         }
 
-        $held = $user ? $user->getAllPermissions()->pluck('name') : collect();
+        $held = $user ? $user->getAllPermissions()->pluck('name')->all() : [];
 
-        if ($held->intersect($permissions)->isEmpty()) {
-            return response()->json([
-                'message' => __('messages.error.permission_required'),
-            ], 403);
+        foreach ($permissions as $wanted) {
+            if (FeaturePermissions::satisfies($wanted, $held)) {
+                return $next($request);
+            }
         }
 
-        return $next($request);
+        return response()->json([
+            'message' => __('messages.error.permission_required'),
+        ], 403);
     }
 }

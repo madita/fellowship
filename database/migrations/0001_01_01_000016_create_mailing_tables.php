@@ -353,7 +353,6 @@ return new class extends Migration
 
         $this->seedCategories();
         $this->seedTemplates();
-        $this->seedPermission();
     }
 
     public function down(): void
@@ -369,8 +368,6 @@ return new class extends Migration
         Schema::dropIfExists('mail_templates');
         Schema::dropIfExists('mail_category_translations');
         Schema::dropIfExists('mail_categories');
-
-        DB::table('permissions')->where('name', 'manage-mailings')->delete();
     }
 
     private function seedCategories(): void
@@ -431,40 +428,6 @@ return new class extends Migration
                     'updated_at'       => $now,
                 ]);
             }
-        }
-    }
-
-    /**
-     * Writing to every member is not something to hand out with the rest
-     * of the admin panel, so it is its own permission - and one an admin
-     * can delegate to whoever actually writes the newsletter.
-     */
-    private function seedPermission(): void
-    {
-        if (DB::table('permissions')->where('name', 'manage-mailings')->exists()) {
-            return;
-        }
-
-        $now = now();
-
-        $id = DB::table('permissions')->insertGetId([
-            'name'         => 'manage-mailings',
-            'display_name' => 'Manage Mailings',
-            'description'  => 'Write and send mail to the members, and edit the templates the site sends',
-            'category'     => 'mailing',
-            'is_default'   => 0,
-            'guard_name'   => 'api',
-            'created_at'   => $now,
-            'updated_at'   => $now,
-        ]);
-
-        $admin = DB::table('roles')->where('name', 'admin')->where('guard_name', 'api')->value('id');
-
-        if ($admin) {
-            DB::table('role_has_permissions')->insert([
-                'permission_id' => $id,
-                'role_id'       => $admin,
-            ]);
         }
     }
 };
