@@ -3,32 +3,40 @@
 use App\Models\User;
 use App\Support\FeaturePermissions;
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Spatie\Permission\PermissionRegistrar;
 
 /**
- * The action permissions, on an install that is already running.
+ * The permissions themselves, written from the one list that describes
+ * them.
  *
- * Each of the seven features members put things into is now split by
- * what is being done to it - view, create, edit, delete, and approve
- * where something really waits to be approved. This writes those names.
+ * Seeding would do this too, and PermissionsTableSeeder does. This is
+ * here for the install that is only ever migrated: a deploy runs
+ * `migrate` and nothing else, so without this it would come up with a
+ * site whose every admin page is shut to everybody but an admin - which
+ * is how the gamification, podcast and mailing permissions came to write
+ * themselves inside their own table migrations. They no longer do; there
+ * is one place a permission row comes from, and it is this one.
  *
- * Nobody is granted anything here, and that is deliberate. An action is
- * covered by its feature's `manage-` permission at the moment it is
- * checked (FeaturePermissions::satisfies, applied by the route
- * middleware and the Gate alike), so whoever could manage the podcast
- * yesterday can still do every part of it today without this migration
- * writing thirty rows per role to say so. The previous migration had to
- * hand out what it carved up, because manage-page really did stop
- * covering the wiki; here the umbrella still holds.
+ * A name already in the table keeps whoever holds it and has only its
+ * wording refreshed, so reading the list again after an edit to it is
+ * safe and takes nothing away from anybody.
  *
- * The grants that are made keep things as they are rather than changing
- * them. Any signed-in member could always write a wiki page and have it
- * held back until it was approved, and could always make a gallery
- * album - CollectionPolicy::create() returned true with a comment
- * saying so. Gating those on `create-wiki` and `create-gallery` without
- * giving them to the `user` role would quietly take both away from every
- * member on the day this lands, so the role is given them.
+ * Nobody is granted an action permission here, and that is deliberate.
+ * An action is covered by its feature's `manage-` permission at the
+ * moment it is checked - FeaturePermissions::satisfies(), applied by the
+ * route middleware and by the Gate alike - so whoever could manage the
+ * podcast yesterday can still do every part of it today without this
+ * writing thirty rows per role to say so.
+ *
+ * The two grants that are made keep things as they are rather than
+ * changing them. Any signed-in member could always write a wiki page and
+ * have it held back until it was approved, and could always make a
+ * gallery album - CollectionPolicy::create() returned true with a
+ * comment saying so. Gating those on `create-wiki` and `create-gallery`
+ * without giving them to the `user` role would quietly take both away
+ * from every member on the day this lands, so the role is given them.
  *
  * Which turned out to need one more thing: nothing ever gave anybody the
  * `user` role. It was seeded on every install and assigned only to the
@@ -79,9 +87,7 @@ return new class extends Migration
         }
 
         // What every member could already do, said out loud now that
-        // there is a name for it. A page of the wiki and an album were
-        // both open to anybody signed in; CollectionPolicy::create()
-        // said so in a comment and returned true.
+        // there is a name for it.
         //
         // RolesTableSeeder does the same for a fresh install, where the
         // `user` role does not exist until the seeders run - this is for
@@ -92,8 +98,6 @@ return new class extends Migration
         }
 
         // ...which only means anything once somebody holds the role.
-        // Registration never handed it out, so the `user` role had been
-        // seeded on every install and assigned to nobody.
         $this->backfillMemberRole();
 
         // The admin role holds everything there is, including whatever
@@ -114,17 +118,14 @@ return new class extends Migration
 
     public function down(): void
     {
-        $names = [];
-
-        foreach (FeaturePermissions::all() as $permission) {
-            if ($permission['action'] !== null) {
-                $names[] = $permission['name'];
-            }
-        }
-
+        // Every name this wrote, which is all of them: rolling it back
+        // means going back to a site that had no feature permissions at
+        // all, and keeping half of them would describe nothing. Who held
+        // what goes with them; the seeders put the admin role and the
+        // member role back.
         $ids = DB::table('permissions')
             ->where('guard_name', 'api')
-            ->whereIn('name', $names)
+            ->whereIn('name', FeaturePermissions::names())
             ->pluck('id');
 
         if ($ids->isNotEmpty()) {
@@ -174,7 +175,10 @@ return new class extends Migration
             });
     }
 
-    private function give(string $role, string $permission, \Illuminate\Support\Collection $existing): void
+    /**
+     * @param  Collection<string, int>  $existing
+     */
+    private function give(string $role, string $permission, Collection $existing): void
     {
         $roleId = DB::table('roles')->where('name', $role)->where('guard_name', 'api')->value('id');
 

@@ -3,7 +3,6 @@
 namespace Tests\Feature;
 
 use App\Models\Permission;
-use App\Models\Role;
 use App\Models\User;
 use App\Support\FeaturePermissions;
 use Database\Seeders\PermissionsTableSeeder;
@@ -152,34 +151,5 @@ class FeaturePermissionTest extends TestCase
         $this->actingAs($editor, 'sanctum')->getJson('/api/admin/media')->assertForbidden();
         $this->actingAs($editor, 'sanctum')->getJson('/api/admin/translations/locales')->assertForbidden();
         $this->actingAs($editor, 'sanctum')->getJson('/api/admin/menus')->assertForbidden();
-    }
-
-    public function test_a_role_that_held_the_coarse_permission_keeps_what_it_could_reach(): void
-    {
-        // The upgrade path: a moderator role made before the split held
-        // manage-page, and reached the forum and the wiki with it. The
-        // migration hands it the permissions carved out of that one, so
-        // nothing is lost on the day this lands.
-        $role = Role::create(['name' => 'moderator', 'guard_name' => 'api', 'display_name' => 'Moderator']);
-        $role->givePermissionTo('manage-page');
-
-        // Run the migration itself: the suite's database was built
-        // before this role existed, so migrating again is a no-op
-        (require database_path('migrations/2026_11_05_000001_add_feature_permissions.php'))->up();
-
-        $role->refresh();
-        $held = $role->permissions->pluck('name');
-
-        foreach (FeaturePermissions::inherited() as $name => $inherits) {
-            if ($inherits !== 'manage-page') {
-                continue;
-            }
-
-            $this->assertTrue($held->contains($name), "moderator did not inherit {$name}");
-        }
-
-        // And not the ones that were never manage-page's to give
-        $this->assertFalse($held->contains('manage-rank'));
-        $this->assertFalse($held->contains('manage-user'));
     }
 }

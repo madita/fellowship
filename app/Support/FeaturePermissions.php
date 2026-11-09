@@ -337,36 +337,13 @@ class FeaturePermissions
     }
 
     /**
-     * The coarse permission a feature's work used to belong to, for
-     * every permission that was carved out of one.
-     *
-     * This is the migration's map, and it is historical: it carries both
-     * the features carved out of manage-page and manage-post, and each
-     * action carved out of its own feature.
-     *
-     * @return array<string, string>
-     */
-    public static function inherited(): array
-    {
-        $map = [];
-
-        foreach (self::all() as $row) {
-            if ($row['inherits'] !== null) {
-                $map[$row['name']] = $row['inherits'];
-            }
-        }
-
-        return $map;
-    }
-
-    /**
      * The permission that stands over each action permission.
      *
-     * Not the same as inherited(), and deliberately narrower: that one
-     * also says manage-wiki came out of manage-page, and making it live
-     * would hand whoever holds manage-page the whole wiki again, which
-     * is the thing this set was split up to undo. This map is only ever
-     * an action and the one feature it belongs to.
+     * Deliberately narrower than the `inherits` each row carries: that
+     * one also says manage-wiki came out of manage-page, and reading it
+     * as live would hand whoever holds manage-page the whole wiki again,
+     * which is the thing this set was split up to undo. This map is only
+     * ever an action and the one feature it belongs to.
      *
      * @return array<string, string>
      */

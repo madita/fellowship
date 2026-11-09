@@ -212,7 +212,6 @@ return new class extends Migration
             $table->unique(['rank_id', 'locale']);
         });
 
-        $this->seedAwardPermission();
         $this->seedStarterAchievements($this->seedTypes());
         $this->seedRanks();
     }
@@ -225,30 +224,6 @@ return new class extends Migration
         Schema::dropIfExists('achievement_user');
         Schema::dropIfExists('achievement_translations');
         Schema::dropIfExists('achievements');
-    }
-
-    /**
-     * Handing out an achievement for something that happened away from
-     * the site can be delegated, so it gets a permission of its own
-     * rather than belonging to admins alone. PermissionsTableSeeder lists
-     * it too, for an install that is seeded rather than migrated.
-     */
-    private function seedAwardPermission(): void
-    {
-        if (DB::table('permissions')->where('name', 'award-achievements')->exists()) {
-            return;
-        }
-
-        DB::table('permissions')->insert([
-            'name'         => 'award-achievements',
-            'guard_name'   => 'api',
-            'display_name' => 'Award Achievements',
-            'description'  => 'Hand achievements to members for things that happened away from the site',
-            'category'     => 'achievement',
-            'is_default'   => 0,
-            'created_at'   => now(),
-            'updated_at'   => now(),
-        ]);
     }
 
     /**
