@@ -42,41 +42,6 @@ class PodcastManageController extends Controller
     /** 200 MB: an hour of decent-bitrate audio with room to spare. */
     private const AUDIO_MAX_KB = 204800;
 
-    // No middleware here on purpose: the two route groups that reach this
-    // controller guard it differently (admin, or the podcast's own
-    // permissions), and a constructor that insisted on one would lock the
-    // other out.
-
-    /**
-     * Whether this member may work on this particular show.
-     *
-     * Reaching the routes at all says they may run a podcast; it does not
-     * say which one. Whoever made a show, or is named as an author on it,
-     * may work on it - and anybody else needs to have been trusted with
-     * other people's, which is what edit-podcast and delete-podcast are
-     * for.
-     *
-     * This guard is new, and it had to be: before it, every route here
-     * needed manage-podcast, so whoever got in could already edit every
-     * show and there was nothing to separate. Handing create-podcast to
-     * a member without it would have handed them everybody's shows.
-     */
-    private function mayWorkOn(Podcast $podcast, string $action = 'edit'): void
-    {
-        $user = auth()->user();
-
-        if ($user && ((int) $podcast->created_by === (int) $user->id
-            || $podcast->authors->contains('id', $user->id))) {
-            return;
-        }
-
-        abort_unless(
-            $user && $user->can("{$action}-podcast"),
-            403,
-            __('messages.error.permission_required')
-        );
-    }
-
     // ----------------------------------------------------------------
     // Shows
     // ----------------------------------------------------------------
@@ -352,6 +317,41 @@ class PodcastManageController extends Controller
             'message' => __('messages.media.deleted'),
             'episode' => $episode->fresh()->toApiArray(detailed: true),
         ]);
+    }
+
+    // No middleware here on purpose: the two route groups that reach this
+    // controller guard it differently (admin, or the podcast's own
+    // permissions), and a constructor that insisted on one would lock the
+    // other out.
+
+    /**
+     * Whether this member may work on this particular show.
+     *
+     * Reaching the routes at all says they may run a podcast; it does not
+     * say which one. Whoever made a show, or is named as an author on it,
+     * may work on it - and anybody else needs to have been trusted with
+     * other people's, which is what edit-podcast and delete-podcast are
+     * for.
+     *
+     * This guard is new, and it had to be: before it, every route here
+     * needed manage-podcast, so whoever got in could already edit every
+     * show and there was nothing to separate. Handing create-podcast to
+     * a member without it would have handed them everybody's shows.
+     */
+    private function mayWorkOn(Podcast $podcast, string $action = 'edit'): void
+    {
+        $user = auth()->user();
+
+        if ($user && ((int) $podcast->created_by === (int) $user->id
+            || $podcast->authors->contains('id', $user->id))) {
+            return;
+        }
+
+        abort_unless(
+            $user && $user->can("{$action}-podcast"),
+            403,
+            __('messages.error.permission_required')
+        );
     }
 
     // ----------------------------------------------------------------
