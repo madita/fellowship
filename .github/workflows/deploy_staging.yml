@@ -144,8 +144,27 @@ jobs:
           username: ${{ secrets.SSH_USERNAME }}
           envs: DOT_ENV,BASE_PATH
           script: |
-            cd ${BASE_PATH}
             set -e
-            printf "%s" "$DOT_ENV" > "${BASE_PATH}/.env"
+            cd "${BASE_PATH}"
+
+            # Not written straight to .env: the redirection truncates it
+            # before the first byte lands, so a disk that is full - or a
+            # quota that is - leaves the site with no configuration at
+            # all and nothing to say why. Write it beside the real one,
+            # check it arrived whole, and move it into place; a move
+            # within one filesystem needs no second copy of it.
+            umask 077
+
+            if ! printf '%s' "$DOT_ENV" > .env.deploy || [ ! -s .env.deploy ]; then
+              rm -f .env.deploy
+              echo "Could not write .env - the account is out of space:"
+              df -h . || true
+              quota -s 2>/dev/null || true
+              echo "The .env already there has been left alone."
+              exit 1
+            fi
+
+            mv .env.deploy .env
+
             bash server_deploy.sh
 
