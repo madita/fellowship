@@ -35,9 +35,13 @@ return [
     */
 
     'channels' => [
+        // `daily` rather than `single`: one laravel.log that nothing ever
+        // rotates grows until the disk says no, and on a box with a quota
+        // it is what says no first. The fortnight below is what staging
+        // gets looked at within anyway.
         'stack' => [
             'driver'            => 'stack',
-            'channels'          => ['single'],
+            'channels'          => ['daily'],
             'ignore_exceptions' => false,
         ],
 
