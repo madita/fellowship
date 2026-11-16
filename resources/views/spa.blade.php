@@ -82,6 +82,11 @@
         <!-- PWA Manifest -->
         <link rel="manifest" href="/manifest.json">
 
+        <!-- Build version -->
+        @if(config('app.version'))
+        <meta name="app-version" content="{{ config('app.version') }}">
+        @endif
+
         <meta name="csrf-token" content="{{ csrf_token() }}">
 
         <!-- Structured Data (JSON-LD) -->
@@ -111,6 +116,7 @@
             window.App = {!! json_encode([
                 'csrfToken' => csrf_token(),
                 'baseUrl' => url('/'),
+                'version' => config('app.version'),
                 'routes' => collect(Route::getRoutes())->mapWithKeys(function ($route) { return [$route->getName() => $route->uri()]; })
             ]) !!};
         </script>

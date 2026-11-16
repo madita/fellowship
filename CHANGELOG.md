@@ -3,6 +3,16 @@
 All notable changes to Fellowship are documented here. This project follows
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.0-alpha.2] — 2026-11-16
+
+### Added
+
+- The running build now reports its version. `config('app.version')` reads it
+  from `package.json` (overridable with `APP_VERSION`), the SPA view renders it
+  as an `app-version` meta tag and on `window.App`, and the default layout
+  shows it in the footer. A deploy can be confirmed with one plain request
+  instead of guessing from asset hashes.
+
 ## [2.0.0-alpha.1] — 2026-11-15
 
 First tagged release of the project, and the first alpha of the 2.0 line. It

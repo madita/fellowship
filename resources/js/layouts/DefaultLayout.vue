@@ -196,6 +196,9 @@
             <div class="text-overline">
                 @fellowship
             </div>
+            <div v-if="appVersionLabel" class="text-caption text-medium-emphasis ms-3">
+                {{ appVersionLabel }}
+            </div>
         </v-footer>
     </div>
 </template>
@@ -229,6 +232,7 @@ import ConversationBoxManager from '../components/conversation/ConversationBoxMa
 import SidebarUsers from '../components/conversation/SidebarUsers.vue'
 import UserSettingsSidebar from '../components/settings/UserSettingsSidebar.vue'
 import eventBus from '../components/common/eventBus.js'
+import { appVersionLabel } from '../utils/version.js'
 import { useConversationStore } from '@/store/conversationStore.js'
 
 export default {
@@ -421,6 +425,7 @@ export default {
         }
 
         return {
+            appVersionLabel,
             drawer,
             showSearch,
             navigation,

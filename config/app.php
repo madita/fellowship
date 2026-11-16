@@ -79,6 +79,32 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Application Version
+    |--------------------------------------------------------------------------
+    |
+    | The version this build reports. It is read from package.json so there is
+    | a single place to bump, and APP_VERSION overrides it when a build knows
+    | better than the file does. Resolved once, here, so that a cached config
+    | stores a plain string rather than a closure.
+    |
+    */
+
+    'version' => env('APP_VERSION') ?: (static function (): ?string {
+        $manifest = dirname(__DIR__) . '/package.json';
+
+        if ( ! is_readable($manifest)) {
+            return null;
+        }
+
+        $data = json_decode((string) file_get_contents($manifest), true);
+
+        return is_array($data) && is_string($data['version'] ?? null)
+            ? $data['version']
+            : null;
+    })(),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application Environment
     |--------------------------------------------------------------------------
     |
