@@ -2,72 +2,53 @@
 
 namespace Database\Seeders;
 
+use App\Models\Permission;
+use App\Support\FeaturePermissions;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\DB;
+use Spatie\Permission\PermissionRegistrar;
 
+/**
+ * Every permission the site actually checks, one per feature.
+ *
+ * The list itself lives in App\Support\FeaturePermissions, because the
+ * same names are needed by the migration that brings an existing install
+ * up to date and by the screen that hands them out. This writes them.
+ *
+ * The set is the whole set, not a starting point: the router guards its
+ * admin pages against these names (resources/js/router/middleware/
+ * permission.js) and the API against the same ones, so a permission that
+ * is missing from the database is a page nobody but an admin can open.
+ *
+ * Everything is written with firstOrCreate, so running it again changes
+ * nothing - except the wording, which is refreshed, so renaming a
+ * permission's label does not need the row deleting first.
+ */
 class PermissionsTableSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     *
-     * @return void
-     */
-    public function run()
+    public function run(): void
     {
-        // Reset cached roles and permissions
-//        app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
+        foreach (FeaturePermissions::all() as $permission) {
+            $row = Permission::firstOrCreate(
+                ['name' => $permission['name'], 'guard_name' => 'api'],
+                [
+                    'display_name' => $permission['display_name'],
+                    'description'  => $permission['description'],
+                    'category'     => $permission['category'],
+                    'is_default'   => $permission['is_default'] ? 1 : 0,
+                ]
+            );
 
-        DB::table('permissions')->insert([
-            [
-                'name'         => 'manage-permission',
-                'guard_name'   => 'api',
-                'display_name' => 'Manage Permission',
-                'description'  => null,
-                'category'     => 'permission',
-                'is_default'   => 1,
-                'created_at'   => date('Y-m-d H:i:s'),
-                'updated_at'   => date('Y-m-d H:i:s'),
-            ],
-            [
-                'name'         => 'manage-role',
-                'guard_name'   => 'api',
-                'display_name' => 'Manage Roles',
-                'description'  => null,
-                'category'     => 'permission',
-                'is_default'   => 1,
-                'created_at'   => date('Y-m-d H:i:s'),
-                'updated_at'   => date('Y-m-d H:i:s'),
-            ],
-            [
-                'name'         => 'manage-user',
-                'guard_name'   => 'api',
-                'display_name' => 'Manage User',
-                'description'  => null,
-                'category'     => 'permission',
-                'is_default'   => 1,
-                'created_at'   => date('Y-m-d H:i:s'),
-                'updated_at'   => date('Y-m-d H:i:s'),
-            ],
-            [
-                'name'         => 'manage-page',
-                'guard_name'   => 'api',
-                'display_name' => 'Manage Page',
-                'description'  => null,
-                'category'     => 'permission',
-                'is_default'   => 1,
-                'created_at'   => date('Y-m-d H:i:s'),
-                'updated_at'   => date('Y-m-d H:i:s'),
-            ],
-            [
-                'name'         => 'manage-post',
-                'guard_name'   => 'api',
-                'display_name' => 'Manage Post',
-                'description'  => null,
-                'category'     => 'permission',
-                'is_default'   => 1,
-                'created_at'   => date('Y-m-d H:i:s'),
-                'updated_at'   => date('Y-m-d H:i:s'),
-            ],
-        ]);
+            // What it is called and what it says it does are this list's
+            // to decide; who holds it is not touched
+            $row->update([
+                'display_name' => $permission['display_name'],
+                'description'  => $permission['description'],
+                'category'     => $permission['category'],
+            ]);
+        }
+
+        // Spatie keeps the whole set in one cache entry, which would
+        // otherwise still be the set from before this ran
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
     }
 }

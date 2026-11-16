@@ -1,0 +1,267 @@
+<template>
+    <div>
+        <div :class="previewClass" class="d-flex flex-column align-center mb-4">
+            <!-- Preview container with fixed dimensions -->
+            <div
+                v-if="preview"
+                :class="['image-preview-container', placeholderClass, 'mb-2', imageClass]"
+            >
+                <v-img
+                    :src="preview"
+                    :max-height="maxHeight"
+                    :max-width="maxWidth"
+                    height="100%"
+                    width="100%"
+                    contain
+                ></v-img>
+            </div>
+            <div v-else :class="['image-preview-container', placeholderClass, 'mb-2']">
+                <v-icon :size="placeholderIconSize" class="text-medium-emphasis">mdi-image-off</v-icon>
+            </div>
+
+            <v-file-input
+                v-model="file"
+                :label="label"
+                :accept="accept"
+                :prepend-icon="icon"
+                :density="density"
+                :disabled="uploading || deleting"
+                variant="outlined"
+                @change="handleSelect"
+                show-size
+                :hint="hint"
+                :persistent-hint="!!hint"
+            ></v-file-input>
+
+            <div class="d-flex ga-2 mt-2">
+                <v-btn
+                    v-if="file"
+                    color="primary"
+                    :size="buttonSize"
+                    :loading="uploading"
+                    :disabled="deleting"
+                    @click="handleUpload"
+                >
+                    {{ $t('settings.imageUpload.upload') }}
+                </v-btn>
+                <v-btn
+                    v-if="currentImage"
+                    color="error"
+                    :size="buttonSize"
+                    variant="outlined"
+                    :loading="deleting"
+                    :disabled="uploading"
+                    @click="handleDelete"
+                >
+                    {{ $t('settings.imageUpload.delete') }}
+                </v-btn>
+            </div>
+        </div>
+    </div>
+</template>
+
+<script setup>
+import { ref, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
+import { useApi } from '@/api/useAPI.js';
+import { useDialog } from '@/composables/useDialog.js';
+
+const { t } = useI18n();
+const api = useApi('api');
+const dialog = useDialog();
+
+const props = defineProps({
+    imageKey: {
+        type: String,
+        required: true,
+    },
+    label: {
+        type: String,
+        default: 'Upload Image',
+    },
+    currentImage: {
+        type: String,
+        default: null,
+    },
+    accept: {
+        type: String,
+        default: 'image/*',
+    },
+    icon: {
+        type: String,
+        default: 'mdi-image',
+    },
+    maxHeight: {
+        type: [String, Number],
+        default: 100,
+    },
+    maxWidth: {
+        type: [String, Number],
+        default: 150,
+    },
+    placeholderSize: {
+        type: String,
+        default: 'normal', // 'small', 'normal', or 'large'
+    },
+    density: {
+        type: String,
+        default: 'compact',
+    },
+    buttonSize: {
+        type: String,
+        default: 'small',
+    },
+    hint: {
+        type: String,
+        default: '',
+    },
+    imageClass: {
+        type: String,
+        default: '',
+    },
+    previewClass: {
+        type: String,
+        default: '',
+    },
+});
+
+const emit = defineEmits(['uploaded', 'deleted', 'error']);
+
+const file = ref(null);
+const preview = ref(null);
+const uploading = ref(false);
+const deleting = ref(false);
+
+const placeholderClass = props.placeholderSize === 'small'
+    ? 'image-placeholder-small'
+    : props.placeholderSize === 'large'
+    ? 'image-placeholder-large'
+    : 'image-placeholder';
+
+const placeholderIconSize = props.placeholderSize === 'small' ? 32 : props.placeholderSize === 'large' ? 64 : 48;
+
+// Initialize preview from current image
+watch(() => props.currentImage, (newVal) => {
+    if (newVal) {
+        preview.value = `/storage/${newVal}`;
+    } else {
+        preview.value = null;
+    }
+}, { immediate: true });
+
+function handleSelect() {
+    const selectedFile = Array.isArray(file.value) ? file.value[0] : file.value;
+    if (selectedFile) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            preview.value = e.target.result;
+        };
+        reader.readAsDataURL(selectedFile);
+    }
+}
+
+async function handleUpload() {
+    if (uploading.value || deleting.value) return;
+
+    const selectedFile = Array.isArray(file.value) ? file.value[0] : file.value;
+    if (!selectedFile) {
+        const message = t('settings.imageUpload.pleaseSelect', { label: props.label.toLowerCase() });
+        emit('error', message);
+        dialog.warning(message);
+        return;
+    }
+
+    uploading.value = true;
+
+    try {
+        const formData = new FormData();
+        formData.append('image', selectedFile);
+        formData.append('key', props.imageKey);
+
+        const response = await api.post('/admin/settings/image', formData);
+
+        preview.value = response.data.url;
+        file.value = null;
+        emit('uploaded', { key: props.imageKey, path: response.data.path, url: response.data.url });
+        dialog.success(t('settings.imageUpload.uploadSuccess'));
+    } catch (error) {
+        console.error(`Failed to upload ${props.imageKey}:`, error);
+        const message = t('settings.imageUpload.uploadFailed', { key: props.imageKey });
+        emit('error', message);
+        dialog.requestError(error, message);
+    } finally {
+        uploading.value = false;
+    }
+}
+
+async function handleDelete() {
+    if (uploading.value || deleting.value) return;
+
+    const ok = await dialog.confirmDelete(
+        t('settings.imageUpload.deleteConfirm', { label: props.label.toLowerCase() })
+    );
+    if (!ok) return;
+
+    deleting.value = true;
+
+    try {
+        await api.delete('/admin/settings/image', {
+            data: { key: props.imageKey }
+        });
+        preview.value = null;
+        emit('deleted', props.imageKey);
+        dialog.success(t('settings.imageUpload.deleteSuccess'));
+    } catch (error) {
+        console.error(`Failed to delete ${props.imageKey}:`, error);
+        const message = t('settings.imageUpload.deleteFailed', { key: props.imageKey });
+        emit('error', message);
+        dialog.requestError(error, message);
+    } finally {
+        deleting.value = false;
+    }
+}
+</script>
+
+<style scoped>
+.image-preview-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid rgba(var(--v-border-color), var(--v-border-opacity));
+    border-radius: 8px;
+    overflow: hidden;
+    background-color: rgba(var(--v-theme-on-surface), 0.04);
+}
+
+.image-placeholder {
+    width: 100%;
+    max-width: 300px;
+    height: 200px;
+    border-style: dashed;
+}
+
+.image-placeholder-small {
+    width: 120px;
+    height: 120px;
+    border-style: dashed;
+}
+
+.image-placeholder-large {
+    width: 100%;
+    max-width: 600px;
+    height: 300px;
+    min-height: 250px;
+    border-style: dashed;
+}
+
+@media (max-width: 600px) {
+    .image-placeholder-large {
+        height: 200px;
+        min-height: 180px;
+    }
+
+    .image-placeholder {
+        height: 150px;
+    }
+}
+</style>

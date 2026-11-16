@@ -1,7 +1,18 @@
 <?php
 
+use App\Http\Controllers\Admin\MigrationController;
+use App\Http\Controllers\CollectionController;
+use App\Http\Controllers\CommonController;
+use App\Http\Controllers\RelateableController;
+use App\Http\Controllers\Sandbox\SandboxCommentController;
+use App\Http\Controllers\Sandbox\SandboxController;
+use App\Http\Controllers\Sandbox\SandboxStatusController;
+use App\Http\Controllers\SocialAccountController;
+use App\Models\Setting;
+use App\Models\User;
+use App\Support\FeaturePermissions;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Broadcast;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -14,35 +25,307 @@ use Illuminate\Support\Facades\Route;
 | is assigned the "api" middleware group. Enjoy building your API!
 |
 */
-//Broadcast::routes(['middleware' => ['auth:sanctum']]);
+// Broadcast::routes(['middleware' => ['auth:sanctum']]);
+
+// Public cacheable routes
+Route::middleware(['cache.control'])->group(function () {
+    Route::get('wiki/recent-changes', "\App\Http\Controllers\WikiController@recentChanges");
+
+    // Special pages of the wiki
+    Route::get('wiki/special/all-pages', "\App\Http\Controllers\WikiSpecialController@allPages");
+    Route::get('wiki/special/categories', "\App\Http\Controllers\WikiSpecialController@categories");
+    Route::get('wiki/special/wanted', "\App\Http\Controllers\WikiSpecialController@wantedPages");
+    Route::get('wiki/special/orphaned', "\App\Http\Controllers\WikiSpecialController@orphanedPages");
+    Route::get('wiki/special/dead-end', "\App\Http\Controllers\WikiSpecialController@deadEndPages");
+    Route::get('wiki/special/uncategorised', "\App\Http\Controllers\WikiSpecialController@uncategorisedPages");
+    Route::get('wiki/special/by-length', "\App\Http\Controllers\WikiSpecialController@pagesByLength");
+    Route::get('wiki/special/statistics', "\App\Http\Controllers\WikiSpecialController@statistics");
+    Route::get('wiki/special/random', "\App\Http\Controllers\WikiSpecialController@randomPage");
+    Route::resource('wiki', "\App\Http\Controllers\WikiController")->only(['index', 'show']);
+    Route::get('wiki-pages', "\App\Http\Controllers\WikiController@getPages");
+    Route::get('wiki/{slug}/history', "\App\Http\Controllers\WikiController@history");
+    Route::get('wiki/{slug}/history/{revision}', "\App\Http\Controllers\WikiController@historyVersion")
+        ->whereNumber('revision');
+
+    // Public menu access
+    Route::get('menus/location/{location}', 'App\Http\Controllers\Menu\MenuController@getByLocation');
+    Route::get('menus/slug/{slug}', 'App\Http\Controllers\Menu\MenuController@getBySlug');
+});
+
+// Forum Routes (public read, auth for write)
+Route::get('/forums', 'App\Http\Controllers\Forum\ForumController@index');
+Route::get('/forums/search', 'App\Http\Controllers\Forum\ForumSearchController@search');
+Route::get('/forums/recent-threads', 'App\Http\Controllers\Forum\ForumController@recentThreads');
+Route::get('/forums/{slug}', 'App\Http\Controllers\Forum\ForumController@show');
+Route::get('/forums/{forumSlug}/threads/{threadSlug}', 'App\Http\Controllers\Forum\ForumThreadController@show');
+Route::get('/activity', 'App\Http\Controllers\ActivityController@index');
+
+// Podcast: a show is public by nature, so none of this asks for a
+// sign-in. The feature gate does apply — switching the podcast off in
+// Admin → Settings → Features closes these, not just the menu entry.
+// Running a show without the admin panel, from the podcast's own pages,
+// the way the wiki is written from the wiki. Declared above the public
+// routes because /podcasts/manage would otherwise be read as a show
+// whose slug is "manage".
+//
+// Split by what is being done rather than gated on manage-podcast as a
+// whole: a member trusted to record a show of their own holds
+// create-podcast and nothing else, and what they make waits for
+// approve-podcast before anybody hears it. Holding manage-podcast
+// satisfies every one of these, so whoever ran the podcast yesterday
+// runs it today (see EnsureUserHasPermission), and admins pass as ever.
+//
+// Which show, as opposed to whether any, is the controller's:
+// PodcastManageController::mayWorkOn() keeps somebody with
+// create-podcast to their own shows.
+Route::middleware(['auth:sanctum', 'feature.enabled:podcast'])
+    ->prefix('podcasts/manage')
+    ->group(function () {
+        Route::get('/', 'App\Http\Controllers\Podcast\PodcastManageController@index')
+            ->middleware('permission.any:view-podcast,create-podcast,edit-podcast');
+        Route::post('/', 'App\Http\Controllers\Podcast\PodcastManageController@store')
+            ->middleware('permission.any:create-podcast');
+
+        Route::middleware('permission.any:edit-podcast,create-podcast')->group(function () {
+            Route::patch('/{podcast}', 'App\Http\Controllers\Podcast\PodcastManageController@update');
+            Route::post('/{podcast}/cover', 'App\Http\Controllers\Podcast\PodcastManageController@uploadCover');
+            Route::get('/{podcast}/episodes', 'App\Http\Controllers\Podcast\PodcastManageController@episodes');
+            Route::post('/{podcast}/episodes', 'App\Http\Controllers\Podcast\PodcastManageController@storeEpisode');
+            Route::patch('/{podcast}/episodes/{episode}', 'App\Http\Controllers\Podcast\PodcastManageController@updateEpisode');
+            Route::delete('/{podcast}/episodes/{episode}', 'App\Http\Controllers\Podcast\PodcastManageController@destroyEpisode');
+            Route::post('/{podcast}/episodes/{episode}/audio', 'App\Http\Controllers\Podcast\PodcastManageController@uploadAudio');
+            Route::delete('/{podcast}/episodes/{episode}/audio', 'App\Http\Controllers\Podcast\PodcastManageController@deleteAudio');
+        });
+
+        Route::delete('/{podcast}', 'App\Http\Controllers\Podcast\PodcastManageController@destroy')
+            ->middleware('permission.any:delete-podcast,create-podcast');
+    });
+
+Route::middleware(['feature.enabled:podcast'])->group(function () {
+    Route::get('/podcasts', 'App\Http\Controllers\Podcast\PodcastController@index');
+    Route::get('/podcasts/latest-episodes', 'App\Http\Controllers\Podcast\PodcastController@latest');
+    Route::get('/podcasts/{slug}', 'App\Http\Controllers\Podcast\PodcastController@show');
+    Route::get('/podcasts/{slug}/episodes/{episodeSlug}', 'App\Http\Controllers\Podcast\PodcastController@episode');
+    Route::post('/podcasts/{slug}/episodes/{episodeSlug}/play', 'App\Http\Controllers\Podcast\PodcastController@play');
+});
+
+// A member's public page, reachable from a username anywhere on the site
+Route::get('/members/{username}', 'App\Http\Controllers\MemberProfileController@show');
+
+// Achievements: a member's own standing needs a sign-in, a badge case does not
+Route::get('/achievements/user/{user}', 'App\Http\Controllers\AchievementController@forUser');
+Route::get('/achievements/leaderboard', 'App\Http\Controllers\AchievementController@leaderboard');
+
+// The help written for the page being looked at. Open to guests on
+// purpose: a tour can be written for the signed-out landing page, and what
+// comes back is narrowed to the viewer either way. Remembering that one has
+// been seen needs an account — for a guest that lives in their own browser.
+Route::get('/help-tours', 'App\Http\Controllers\Help\HelpTourController@index');
+Route::middleware('auth:sanctum')->group(function () {
+    Route::post('/help-tours/{tour}/seen', 'App\Http\Controllers\Help\HelpTourController@seen');
+    Route::delete('/help-tours/seen', 'App\Http\Controllers\Help\HelpTourController@reset');
+});
+
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/achievements', 'App\Http\Controllers\AchievementController@index');
+    Route::get('/achievements/summary', 'App\Http\Controllers\AchievementController@summary');
+    // The ladder, and how far up it the member is
+    Route::get('/ranks', 'App\Http\Controllers\AchievementController@ranks');
+
+    // Handing one out for something that happened away from the site.
+    // Admins can; so can anyone given the award-achievements permission,
+    // which is why this sits outside the admin-only group.
+    Route::middleware('permission.any:award-achievements')->group(function () {
+        Route::post('/achievements/{achievement}/award', 'App\Http\Controllers\Admin\AchievementAdminController@award');
+        Route::post('/achievements/{achievement}/revoke', 'App\Http\Controllers\Admin\AchievementAdminController@revoke');
+    });
+});
+
+Route::group(['middleware' => ['auth:sanctum']], function () {
+    // Forum management (admin only)
+    Route::post('/forums', 'App\Http\Controllers\Forum\ForumController@store');
+    Route::patch('/forums/{id}', 'App\Http\Controllers\Forum\ForumController@update');
+    Route::delete('/forums/{id}', 'App\Http\Controllers\Forum\ForumController@destroy');
+
+    // Thread management
+    Route::post('/forums/{id}/threads', 'App\Http\Controllers\Forum\ForumThreadController@store');
+    Route::patch('/threads/{thread}', 'App\Http\Controllers\Forum\ForumThreadController@update');
+    Route::delete('/threads/{thread}', 'App\Http\Controllers\Forum\ForumThreadController@destroy');
+
+    // Post management
+    Route::post('/threads/{thread}/posts', 'App\Http\Controllers\Forum\ForumPostController@store');
+    Route::patch('/posts/{post}', 'App\Http\Controllers\Forum\ForumPostController@update');
+    Route::delete('/posts/{post}', 'App\Http\Controllers\Forum\ForumPostController@destroy');
+    Route::post('/posts/{post}/helpful', 'App\Http\Controllers\Forum\ForumPostController@toggleHelpful');
+
+    // Watching anything: forum threads, tickets, whatever is registered in
+    // App\Support\Watchables. The kind is a registry slug, not a class name.
+    Route::get('/watching', 'App\Http\Controllers\WatchController@index');
+    Route::post('/watch/{kind}/{id}', 'App\Http\Controllers\WatchController@toggle')
+        ->whereNumber('id');
+
+    // Post likes
+    Route::post('/posts/{post}/like', 'App\Http\Controllers\Forum\ForumPostLikeController@store');
+    Route::delete('/posts/{post}/like', 'App\Http\Controllers\Forum\ForumPostLikeController@destroy');
+});
+
+// Wiki write operations (not cached)
+Route::resource('wiki', "\App\Http\Controllers\WikiController")->only(['store', 'update', 'destroy']);
+Route::post('wiki/category', "\App\Http\Controllers\WikiController@storeCategory");
+Route::patch('wiki/category/{slug}', "\App\Http\Controllers\WikiController@updateCategory");
+
+// Letting a page out, or sending it back. Whoever holds approve-wiki
+// rather than an admin alone: the queue these work through is listed for
+// the same people in the ticket list (see App\Support\Approvals).
+Route::group(['middleware' => ['auth:sanctum', 'permission.any:approve-wiki']], function () {
+    Route::post('wiki/{slug}/approve', "\App\Http\Controllers\WikiController@approve");
+    Route::post('wiki/{slug}/unapprove', "\App\Http\Controllers\WikiController@unapprove");
+});
+
+// Public OAuth Providers endpoint (for login page)
+Route::get('/settings/oauth-providers', 'App\Http\Controllers\Admin\SettingsController@getEnabledOAuthProviders');
 
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
-    $user = $request->user();
+    $user        = $request->user();
     $permissions = $user->getAllPermissions()->pluck('name');
-    $roles = $user->roles()->pluck('name');
+    $roles       = $user->roles()->pluck('name');
+
+    // Their own address is theirs to see; it is hidden by default because a
+    // user travels with its content
+    $user->makeVisible('email');
 
     return ['user' => $user, 'roles' => $roles, 'permissions' => $permissions];
 });
 
+// Route::post('/upload-image', [ImageUploadController::class, 'upload']);
+Route::post('/upload-image', "\App\Http\Controllers\ImageController@upload");
+Route::post('/users/search', "\App\Http\Controllers\UserController@searchUsers");
+
 //
 Route::group(['prefix' => '/account', 'middleware' => ['auth:sanctum'], 'as' => 'account.'], function () {
+    // Claim content from the old site (creates a legacy-account-claim ticket)
+    Route::post('/legacy-claim/preview', 'App\Http\Controllers\LegacyClaimController@preview');
+    Route::post('/legacy-claim', 'App\Http\Controllers\LegacyClaimController@store');
+
     Route::get('/notifications', 'App\Http\Controllers\NotificationController@index')->name('notification.index');
+    // Dashboard widgets
+    Route::get('/dashboard/stats', 'App\Http\Controllers\DashboardController@stats');
+    Route::get('/dashboard/tickets', 'App\Http\Controllers\DashboardController@tickets');
+    Route::get('/dashboard/layout', 'App\Http\Controllers\DashboardController@layout');
+    Route::put('/dashboard/layout', 'App\Http\Controllers\DashboardController@saveLayout');
     Route::get('/notification', 'App\Http\Controllers\NotificationController@notification')->name('notification.unread');
     Route::delete('/notification/delete/{id}', 'App\Http\Controllers\NotificationController@notificationdelete');
     Route::get('/notification/allasread', 'App\Http\Controllers\NotificationController@notificationread');
     Route::get('/notification/markasread/{id}', 'App\Http\Controllers\NotificationController@notificationsingleread');
 
     Route::post('/avatar', 'App\Http\Controllers\UserController@uploadAvatar');
+    Route::patch('/preferences', 'App\Http\Controllers\UserController@updatePreferences');
+
+    // Which kinds of mail may reach them. The same answers the
+    // unsubscribe link in a mail footer writes — one set of preferences,
+    // reachable two ways.
+    Route::get('/mail-preferences', 'App\Http\Controllers\MailPreferenceController@index');
+    Route::patch('/mail-preferences', 'App\Http\Controllers\MailPreferenceController@update');
+    Route::post('/mail-preferences/unsubscribe-all', 'App\Http\Controllers\MailPreferenceController@unsubscribeAll');
+    Route::post('/mail-preferences/resubscribe', 'App\Http\Controllers\MailPreferenceController@resubscribe');
+
+    Route::patch('/profile', 'App\Http\Controllers\UserController@updateProfile');
+    // The rest a member may tell us about themselves, and what of it they
+    // let others see
+    Route::get('/information', 'App\Http\Controllers\UserController@information');
+    Route::patch('/information', 'App\Http\Controllers\UserController@updateInformation');
+
+    // Social Account Management
+    Route::get('/social-accounts', [SocialAccountController::class, 'index'])
+        ->name('social-accounts.index');
+    Route::delete('/social-accounts/{provider}', [SocialAccountController::class, 'disconnect'])
+        ->name('social-accounts.disconnect');
+    Route::get('/social-accounts/{provider}/link', [SocialAccountController::class, 'link'])
+        ->name('social-accounts.link');
 });
 
 Route::group(['prefix' => '/chat', 'middleware' => ['auth:sanctum']], function () {
-//    Route::get('/', 'App\Http\Controllers\Chat\ChatController@index')->name('chat');
+    //    Route::get('/', 'App\Http\Controllers\Chat\ChatController@index')->name('chat');
     Route::get('/messages', 'App\Http\Controllers\Chat\ChatMessageController@index');
     Route::post('/messages', 'App\Http\Controllers\Chat\ChatMessageController@store');
 });
 
-Route::get('/pages/{slug}', '\App\Http\Controllers\PageController@view');
+// Ticket System Routes
+Route::get('/ticket-types', 'App\Http\Controllers\Ticket\TicketController@types');
 
+Route::group(['middleware' => ['auth:sanctum']], function () {
+    // Tickets
+    Route::get('/tickets', 'App\Http\Controllers\Ticket\TicketController@index');
+    Route::get('/tickets/{ticket}', 'App\Http\Controllers\Ticket\TicketController@show');
+    Route::get('/tickets/{ticket}/history', 'App\Http\Controllers\Ticket\TicketController@history');
+    Route::post('/tickets', 'App\Http\Controllers\Ticket\TicketController@store');
+    Route::patch('/tickets/{ticket}', 'App\Http\Controllers\Ticket\TicketController@update');
+    Route::delete('/tickets/{ticket}', 'App\Http\Controllers\Ticket\TicketController@destroy');
+    Route::post('/tickets/{ticket}/assign', 'App\Http\Controllers\Ticket\TicketController@assign');
+    Route::post('/tickets/{ticket}/unassign', 'App\Http\Controllers\Ticket\TicketController@unassign');
+    Route::post('/tickets/{ticket}/approve', 'App\Http\Controllers\Ticket\TicketController@approve');
+    Route::post('/tickets/{ticket}/reject', 'App\Http\Controllers\Ticket\TicketController@reject');
+
+    // Ticket Comments
+    Route::post('/tickets/{ticket}/comments', 'App\Http\Controllers\Ticket\TicketCommentController@store');
+    Route::patch('/ticket-comments/{comment}', 'App\Http\Controllers\Ticket\TicketCommentController@update');
+    Route::delete('/ticket-comments/{comment}', 'App\Http\Controllers\Ticket\TicketCommentController@destroy');
+});
+
+// Feedback: public bug reports and feature requests (tickets of type bug / feature)
+Route::group(['prefix' => '/feedback'], function () {
+    Route::get('/tags', 'App\Http\Controllers\Ticket\FeedbackController@tags');
+    Route::get('/tickets', 'App\Http\Controllers\Ticket\FeedbackController@index');
+    Route::get('/tickets/{ticket}', 'App\Http\Controllers\Ticket\FeedbackController@show');
+
+    Route::group(['middleware' => ['auth:sanctum']], function () {
+        Route::post('/tickets', 'App\Http\Controllers\Ticket\FeedbackController@store')->middleware('throttle:10,1');
+        Route::patch('/tickets/{ticket}', 'App\Http\Controllers\Ticket\FeedbackController@update');
+        Route::post('/tickets/{ticket}/vote', 'App\Http\Controllers\Ticket\FeedbackController@vote');
+        Route::post('/tickets/{ticket}/comments', 'App\Http\Controllers\Ticket\FeedbackController@comment')->middleware('throttle:20,1');
+    });
+});
+
+// Status Timeline Routes
+Route::get('/statuses', 'App\Http\Controllers\Status\StatusController@index');
+Route::get('/statuses/{status}', 'App\Http\Controllers\Status\StatusController@show');
+
+Route::group(['middleware' => ['auth:sanctum']], function () {
+    // Status CRUD
+    Route::post('/statuses', 'App\Http\Controllers\Status\StatusController@store');
+    Route::patch('/statuses/{status}', 'App\Http\Controllers\Status\StatusController@update');
+    Route::delete('/statuses/{status}', 'App\Http\Controllers\Status\StatusController@destroy');
+
+    // Likes
+    Route::post('/statuses/{status}/like', 'App\Http\Controllers\Status\StatusController@toggleLike');
+    Route::get('/statuses/{status}/likes', 'App\Http\Controllers\Status\StatusController@likes');
+});
+
+// Comments on anything registered in App\Support\Commentables: a wiki
+// page's discussion, a timeline post. The kind is a registry slug, not a
+// class name. Reading is open; writing needs a login.
+Route::get('/comments/{kind}/{id}', 'App\Http\Controllers\CommentController@index')->whereNumber('id');
+
+Route::group(['middleware' => ['auth:sanctum']], function () {
+    Route::post('/comments/{kind}/{id}', 'App\Http\Controllers\CommentController@store')->whereNumber('id');
+    Route::patch('/comments/{comment}', 'App\Http\Controllers\CommentController@update')->whereNumber('comment');
+    Route::delete('/comments/{comment}', 'App\Http\Controllers\CommentController@destroy')->whereNumber('comment');
+    // Marking the comment that answered it, which only whoever owns the
+    // commented-on thing may do
+    Route::post('/comments/{comment}/helpful', 'App\Http\Controllers\CommentController@toggleHelpful')->whereNumber('comment');
+});
+
+Route::get('/tag/taxonomies', '\App\Http\Controllers\TaxonomyController@getTaxonomies');
+Route::get('/tag/terms/{taxonomy?}', '\App\Http\Controllers\TaxonomyController@getTerms');
+Route::get('/taxables', '\App\Http\Controllers\TaxonomyController@getTaxables');
+Route::post('/tag/terms/', '\App\Http\Controllers\TaxonomyController@saveTerms');
+Route::get('/tag/{term}/{taxonomy?}', '\App\Http\Controllers\TaxonomyController@getTermInfo');
+
+Route::get('/pages/{slug}', '\App\Http\Controllers\PageController@view');
+Route::get('/pages/{page}/history', '\App\Http\Controllers\PageController@history');
+// Route::get('/pages/tag/{term}', '\App\Http\Controllers\PageController@showWithTerm');
+// Route::get('/pages/{taxonomy}/{category}', '\App\Http\Controllers\PageController@showWithCategory');
+Route::get('/posts', '\App\Http\Controllers\PostController@index');
 Route::get('/posts/{slug}', '\App\Http\Controllers\PostController@view');
 
 Route::group(['middleware' => ['auth:sanctum']], function () {
@@ -52,19 +335,718 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::get('/posts/{page}/edit', '\App\Http\Controllers\PostController@show');
     Route::patch('/posts/{page}/edit', '\App\Http\Controllers\PostController@update');
 
-    Route::get('/events/{event}/going/{answer}', "\App\Http\Controllers\EventController@isGoing");
-    Route::resource('events', "\App\Http\Controllers\EventController");
+    Route::get('/events/{event}/going/{answer}', "\App\Http\Controllers\Event\EventController@isGoing");
+    Route::get('/events/types', "\App\Http\Controllers\Event\EventController@getTypes");
+    Route::get('/events/upcoming', "\App\Http\Controllers\Event\EventController@upcoming");
+    Route::post('/events/{event}/answer', "\App\Http\Controllers\Event\EventController@joinEvent");
+    Route::get('/events/{event}/profile-draft', "\App\Http\Controllers\Event\EventController@profileDraft");
+    //    Route::resource('events', "\App\Http\Controllers\Event\EventController");
+    Route::get('events/create', ['as' => 'event.create', 'uses' => "\App\Http\Controllers\Event\EventController@create"]);
+    Route::get('events', ['as' => 'event.index', 'uses' => "\App\Http\Controllers\Event\EventController@index"]);
+    Route::post('events', ['as' => 'event.store', 'uses' => "\App\Http\Controllers\Event\EventController@store"]);
+    Route::get('events/{event}', ['as' => 'event.show', 'uses' => "\App\Http\Controllers\Event\EventController@show"]);
+    Route::patch('events/{event}', ['as' => 'event.update', 'uses' => "\App\Http\Controllers\Event\EventController@update"]);
+    Route::delete('events/{event}', ['as' => 'event.destroy', 'uses' => "\App\Http\Controllers\Event\EventController@destroy"]);
+    Route::get('events/{event}/edit', ['as' => 'event.edit', 'uses' => "\App\Http\Controllers\Event\EventController@edit"]);
+    Route::post('events/{event}/approve-guest', ['as' => 'event.approve', 'uses' => "\App\Http\Controllers\Event\EventController@approveGuest"]);
 });
 
-Route::group(['middleware' => ['role_or_permission:admin|manage-*']], function () {
-    Route::resource('datatable/pages', 'App\Http\Controllers\DataTable\PageController');
-    Route::resource('datatable/posts', 'App\Http\Controllers\DataTable\PostController');
-    Route::resource('datatable/users', 'App\Http\Controllers\DataTable\UserController');
-    Route::resource('datatable/roles', 'App\Http\Controllers\DataTable\RoleController');
-    Route::resource('datatable/taxonomies', 'App\Http\Controllers\DataTable\TaxonomyController');
-    Route::resource('datatable/terms', 'App\Http\Controllers\DataTable\TermController');
-    Route::get('datatable/permissions/roles', 'App\Http\Controllers\DataTable\PermissionController@roles');
-    Route::post('datatable/permissions/roles', 'App\Http\Controllers\DataTable\PermissionController@updateRolePermissions');
-    Route::get('datatable/permissions/permissions', 'App\Http\Controllers\DataTable\PermissionController@permissions');
-    Route::resource('datatable/permissions', 'App\Http\Controllers\DataTable\PermissionController');
+// Collections (Photo Gallery)
+// Albums are public to look at; the forum is read without signing in and
+// so are the pictures.
+Route::get('/collections/recent', [CollectionController::class, 'recent']); // Newest albums (dashboard widget)
+Route::get('/collections', [CollectionController::class, 'index']); // Fetch all collections
+Route::get('/collections/{collection}', [CollectionController::class, 'show']); // Fetch media for a specific collection
+
+// Changing one is not. These carried no middleware at all, which left
+// deleting an album - and deleting any uploaded file - open to anyone
+// who knew the URL. Who may do what to which album is CollectionPolicy's
+// to say: whoever made it, or whoever looks after the gallery.
+Route::middleware('auth:sanctum')->group(function () {
+    Route::post('/collections', [CollectionController::class, 'store']); // Create a new collection
+    Route::post('/collections/{collection}', [CollectionController::class, 'uploadMedia']); // Upload media to collection
+    Route::patch('/media/{media}/caption', [CollectionController::class, 'updateMediaCaption']); // Update caption for a media item
+    Route::delete('/collections/{collection}', [CollectionController::class, 'destroy']); // Delete collection
+    Route::delete('/media/{media}', [CollectionController::class, 'deleteMedia']); // Delete a media item
+});
+
+Route::group(['middleware' => ['auth:sanctum']], function () {
+    // Each table needs the permission its admin screen already requires;
+    // admins pass everything (see EnsureUserHasPermission).
+
+    // Members load this form when they answer an event, so it stays readable
+    Route::get('datatable/event-profiles/{id}', 'App\Http\Controllers\DataTable\\EventProfileController@show');
+
+    Route::middleware('permission.any:manage-user')->group(function () {
+        Route::get('datatable/users/{id}/event-profiles', 'App\Http\Controllers\DataTable\\UserController@eventProfiles');
+        Route::resource('datatable/users', 'App\Http\Controllers\DataTable\\UserController');
+    });
+
+    Route::middleware('permission.any:manage-role')->group(function () {
+        Route::post('datatable/permissions/roles', 'App\Http\Controllers\DataTable\\PermissionController@updateRolePermissions');
+        Route::resource('datatable/permissions', 'App\Http\Controllers\DataTable\\PermissionController')
+            ->where(['permission' => '[0-9]+']);
+        Route::resource('datatable/roles', 'App\Http\Controllers\DataTable\\RoleController');
+    });
+
+    // Split by what is being done to a page rather than gated on
+    // manage-page as a whole. Holding manage-page satisfies all four, so
+    // nothing that held it loses anything; what the split adds is being
+    // able to hand somebody the writing without the deleting.
+    Route::middleware('permission.any:view-page')->group(function () {
+        Route::get('datatable/pages/{id}/history', 'App\Http\Controllers\DataTable\\PageController@history');
+        Route::get('datatable/pages/{id}/history/{revision}', 'App\Http\Controllers\DataTable\\PageController@historyRevision')
+            ->whereNumber('revision');
+    });
+
+    Route::resource('datatable/pages', 'App\Http\Controllers\DataTable\\PageController')
+        ->middlewareFor(['index', 'show'], 'permission.any:view-page')
+        ->middlewareFor(['create', 'store'], 'permission.any:create-page')
+        ->middlewareFor(['edit', 'update'], 'permission.any:edit-page')
+        ->middlewareFor('destroy', 'permission.any:delete-page');
+
+    // The vocabularies content is filed under. Their own feature, rather
+    // than the pages' - the forum and the gallery file things under them
+    // as much as the wiki does.
+    Route::middleware('permission.any:manage-taxonomy')->group(function () {
+        Route::resource('datatable/taxonomies', 'App\Http\Controllers\DataTable\\TaxonomyController');
+        Route::resource('datatable/terms', 'App\Http\Controllers\DataTable\\TermController');
+    });
+
+    // Role and permission names are only read by several admin screens (forum
+    // categories, moderation, sandbox limits), so reading the lists needs any
+    // admin-area permission while changing them needs manage-role. These come
+    // after the resources on purpose: a later route with the same URI replaces
+    // the earlier one, so registering them last keeps their own middleware.
+    //
+    // "Any admin-area permission" is now a list rather than three names:
+    // the screens that read these belong to features of their own, and a
+    // forum moderator holding manage-forum needs the role names as much
+    // as whoever holds manage-page ever did.
+    Route::middleware('permission.any:' . implode(',', FeaturePermissions::names()))->group(function () {
+        Route::get('datatable/roles', 'App\Http\Controllers\DataTable\\RoleController@index');
+        Route::get('datatable/permissions/roles', 'App\Http\Controllers\DataTable\\PermissionController@roles');
+        Route::get('datatable/permissions/permissions', 'App\Http\Controllers\DataTable\\PermissionController@permissions');
+    });
+
+    Route::middleware('permission.any:view-post')->group(function () {
+        Route::get('datatable/posts/{id}/history', 'App\Http\Controllers\DataTable\\PostController@history');
+        Route::get('datatable/posts/{id}/history/{revision}', 'App\Http\Controllers\DataTable\\PostController@historyRevision')
+            ->whereNumber('revision');
+    });
+
+    Route::resource('datatable/posts', 'App\Http\Controllers\DataTable\\PostController')
+        ->middlewareFor(['index', 'show'], 'permission.any:view-post')
+        ->middlewareFor(['create', 'store'], 'permission.any:create-post')
+        ->middlewareFor(['edit', 'update'], 'permission.any:edit-post')
+        ->middlewareFor('destroy', 'permission.any:delete-post');
+
+    // The calendar, the kinds of event, and the forms members fill in
+    // when they answer one.
+    //
+    // The calendar is split by action; the kinds of event and the sign-up
+    // forms are the shape the calendar is built out of rather than
+    // entries in it, so they stay with the feature as a whole - the same
+    // line the wiki draws between a page and a category.
+    Route::resource('datatable/events', 'App\Http\Controllers\DataTable\\EventController')
+        ->middlewareFor(['index', 'show'], 'permission.any:view-event')
+        ->middlewareFor(['create', 'store'], 'permission.any:create-event')
+        ->middlewareFor(['edit', 'update'], 'permission.any:edit-event')
+        ->middlewareFor('destroy', 'permission.any:delete-event');
+
+    Route::middleware('permission.any:manage-event')->group(function () {
+        Route::resource('datatable/event-types', 'App\Http\Controllers\DataTable\\EventTypeController');
+        Route::resource('datatable/event-profiles', 'App\Http\Controllers\DataTable\\EventProfileController');
+    });
+});
+
+Route::group(['middleware' => ['auth:sanctum']], function () {
+    // Route::get('', 'ConversationController@index');
+    // Route::post('', 'ConversationController@store');
+    // Route::get('/{conversation}', 'ConversationController@show');
+    Route::resource('conversations', 'App\Http\Controllers\Conversation\ConversationController');
+    Route::post('/conversations/{conversation}/reply', 'App\Http\Controllers\Conversation\ConversationReplyController@store');
+    Route::post('/conversations/{conversation}/users', 'App\Http\Controllers\Conversation\ConversationUserController@store');
+    Route::post('/conversations/{conversation}/mark-as-read', 'App\Http\Controllers\Conversation\ConversationController@markAsRead');
+});
+
+// Poll System Routes
+Route::group(['middleware' => ['auth:sanctum']], function () {
+    Route::resource('polls', 'App\Http\Controllers\Poll\PollController');
+    Route::post('/polls/{poll}/vote', 'App\Http\Controllers\Poll\PollVoteController@vote');
+    Route::delete('/polls/{poll}/vote', 'App\Http\Controllers\Poll\PollVoteController@unvote');
+});
+
+// Collaborative Sandbox
+Route::prefix('sandbox')->group(function () {
+    // Status endpoints are exempt from sandbox.enabled check (needed by admin settings)
+    Route::middleware('auth:sanctum')->group(function () {
+        Route::get('/status', [SandboxStatusController::class, 'status']);
+        Route::get('/status/websocket', [SandboxStatusController::class, 'websocketStatus']);
+    });
+
+    // All other sandbox routes require the feature to be enabled
+    Route::middleware('sandbox.enabled')->group(function () {
+        Route::get('/', [SandboxController::class, 'index'])->middleware('auth:sanctum');
+        Route::post('/', [SandboxController::class, 'store'])->middleware('auth:sanctum');
+
+        Route::get('/{uuid}', [SandboxController::class, 'show']); // Public for public sandboxes
+
+        Route::middleware('auth:sanctum')->group(function () {
+            Route::put('/{sandbox}', [SandboxController::class, 'update']);
+            Route::delete('/{sandbox}', [SandboxController::class, 'destroy']);
+
+            // Collaboration state
+            Route::get('/{sandbox}/state', [SandboxController::class, 'getState']);
+            Route::post('/{sandbox}/state', [SandboxController::class, 'saveState']);
+
+            // Collaborators
+            Route::post('/{sandbox}/collaborators', [SandboxController::class, 'addCollaborator']);
+            Route::delete('/{sandbox}/collaborators/{collaborator}', [SandboxController::class, 'removeCollaborator']);
+            Route::post('/{sandbox}/accept-invite', [SandboxController::class, 'acceptInvite']);
+
+            // Version history
+            Route::get('/{sandbox}/versions', [SandboxController::class, 'versions']);
+            Route::get('/{sandbox}/versions/{version}', [SandboxController::class, 'showVersion']);
+            Route::post('/{sandbox}/versions/{version}/restore', [SandboxController::class, 'restoreVersion']);
+
+            // Revision history (field-level changes)
+            Route::get('/{sandbox}/history', [SandboxController::class, 'history']);
+
+            // Comment threads
+            Route::get('/{sandbox}/threads', [SandboxCommentController::class, 'index']);
+            Route::post('/{sandbox}/threads', [SandboxCommentController::class, 'storeThread']);
+            Route::put('/{sandbox}/threads/{thread}', [SandboxCommentController::class, 'updateThread']);
+            Route::delete('/{sandbox}/threads/{thread}', [SandboxCommentController::class, 'destroyThread']);
+            Route::post('/{sandbox}/threads/{thread}/comments', [SandboxCommentController::class, 'storeComment']);
+            Route::put('/{sandbox}/threads/{thread}/comments/{comment}', [SandboxCommentController::class, 'updateComment']);
+            Route::delete('/{sandbox}/threads/{thread}/comments/{comment}', [SandboxCommentController::class, 'destroyComment']);
+        });
+    }); // sandbox.enabled
+});
+
+// Related content (links between wiki pages, pages, posts, events and albums)
+Route::prefix('relateable')->group(function () {
+    Route::get('/kinds', [RelateableController::class, 'kinds']);
+    Route::get('/items', [RelateableController::class, 'items']);
+    Route::get('/related', [RelateableController::class, 'related']);
+    Route::post('/relations', [RelateableController::class, 'store'])->middleware('auth:sanctum');
+    Route::delete('/relations', [RelateableController::class, 'destroy'])->middleware('auth:sanctum');
+});
+
+Route::get('/common/items', [CommonController::class, 'getItems']);
+
+// Cache test route
+Route::get('/cache-test', function () {
+    return response()->json([
+        'cache_enabled'  => Setting::isCacheEnabled(),
+        'cache_lifetime' => Setting::getCacheLifetime(),
+        'time'           => now()->toDateTimeString(),
+    ]);
+})->middleware('cache.control');
+
+// Public cacheable routes (settings, homepage, footer)
+Route::middleware(['cache.control'])->group(function () {
+    // Public Settings
+    Route::get('/settings/public', 'App\Http\Controllers\Admin\SettingsController@public');
+    Route::get('/settings/performance', 'App\Http\Controllers\Admin\SettingsController@performanceSettings');
+
+    // Homepage
+    Route::get('/homepage/widgets', 'App\Http\Controllers\Admin\HomepageWidgetController@getActiveWidgets');
+    Route::get('/homepage/menu', 'App\Http\Controllers\Admin\HomepageMenuController@getActiveMenu');
+    Route::get('/homepage/sections', 'App\Http\Controllers\Admin\HomepageSectionController@getActiveSections');
+
+    // Footer
+    Route::get('/footer/widgets', 'App\Http\Controllers\Admin\FooterWidgetController@getActiveWidgets');
+    Route::get('/footer/sections', 'App\Http\Controllers\Admin\FooterSectionController@getActiveSections');
+});
+
+// Newsletter Subscription — the footer form, which hands an address to
+// whichever outside provider an admin configured. Nothing to do with the
+// site's own mailings below, which go to members from here.
+Route::post('/newsletter/subscribe', 'App\Http\Controllers\NewsletterController@subscribe');
+
+// The unsubscribe link at the bottom of every mail.
+//
+// Open on purpose: somebody who wants the mail to stop should not have to
+// remember a password first, and the random token in the link is what
+// stands in for one. Throttled because it is open, and by token rather
+// than by address so a GET cannot be used to find out who is a member.
+//
+// GET is the page a person lands on; POST is what a mail client's own
+// unsubscribe button posts to, with nobody watching — see the
+// List-Unsubscribe header in App\Mail\TemplatedMail.
+Route::prefix('mail/unsubscribe')->middleware('throttle:30,1')->group(function () {
+    Route::get('/{token}', 'App\Http\Controllers\MailUnsubscribeController@show');
+    Route::post('/{token}', 'App\Http\Controllers\MailUnsubscribeController@store');
+    Route::patch('/{token}', 'App\Http\Controllers\MailUnsubscribeController@update');
+    Route::post('/{token}/resubscribe', 'App\Http\Controllers\MailUnsubscribeController@resubscribe');
+});
+
+// Mailings: writing to the members, the templates the site sends, and the
+// kinds of mail somebody can say no to.
+//
+// Its own permission rather than the admin middleware the rest of /admin
+// uses: writing to four hundred people is worth delegating to whoever
+// actually writes the newsletter, without handing them everything else.
+// Admins pass too — see EnsureUserHasPermission.
+Route::middleware(['auth:sanctum', 'permission.any:manage-mailings'])
+    ->prefix('admin')
+    ->group(function () {
+        Route::get('/mailings', 'App\Http\Controllers\Admin\MailingController@index');
+        Route::post('/mailings', 'App\Http\Controllers\Admin\MailingController@store');
+        // Declared above /mailings/{mailing}, which would otherwise read
+        // "estimate", "options" and "fill" as the id of a mailing
+        Route::post('/mailings/estimate', 'App\Http\Controllers\Admin\MailingController@estimate');
+        Route::get('/mailings/options', 'App\Http\Controllers\Admin\MailingController@options');
+        // What a mailing can be filled in from - the events there are,
+        // the articles, the achievements - and one record's values put
+        // into the wording being written
+        Route::get('/mailings/sources/{type}', 'App\Http\Controllers\Admin\MailingController@sourceOptions');
+        Route::post('/mailings/fill', 'App\Http\Controllers\Admin\MailingController@fill');
+        Route::get('/mailings/{mailing}', 'App\Http\Controllers\Admin\MailingController@show');
+        Route::patch('/mailings/{mailing}', 'App\Http\Controllers\Admin\MailingController@update');
+        Route::delete('/mailings/{mailing}', 'App\Http\Controllers\Admin\MailingController@destroy');
+        Route::get('/mailings/{mailing}/recipients', 'App\Http\Controllers\Admin\MailingController@recipients');
+        Route::get('/mailings/{mailing}/preview', 'App\Http\Controllers\Admin\MailingController@preview');
+        Route::post('/mailings/{mailing}/test', 'App\Http\Controllers\Admin\MailingController@test');
+        Route::post('/mailings/{mailing}/send', 'App\Http\Controllers\Admin\MailingController@send');
+        Route::post('/mailings/{mailing}/cancel', 'App\Http\Controllers\Admin\MailingController@cancel');
+
+        // Templates
+        Route::get('/mail-templates', 'App\Http\Controllers\Admin\MailTemplateController@index');
+        Route::post('/mail-templates', 'App\Http\Controllers\Admin\MailTemplateController@store');
+        Route::patch('/mail-templates/{template}', 'App\Http\Controllers\Admin\MailTemplateController@update');
+        Route::delete('/mail-templates/{template}', 'App\Http\Controllers\Admin\MailTemplateController@destroy');
+        Route::post('/mail-templates/{template}/preview', 'App\Http\Controllers\Admin\MailTemplateController@preview');
+        // The wording of a template, as the starting point for a mailing
+        Route::post('/mail-templates/{template}/draft', 'App\Http\Controllers\Admin\MailingController@fromTemplate');
+
+        // Categories
+        Route::get('/mail-categories', 'App\Http\Controllers\Admin\MailCategoryController@index');
+        Route::post('/mail-categories', 'App\Http\Controllers\Admin\MailCategoryController@store');
+        Route::post('/mail-categories/reorder', 'App\Http\Controllers\Admin\MailCategoryController@reorder');
+        Route::patch('/mail-categories/{category}', 'App\Http\Controllers\Admin\MailCategoryController@update');
+        Route::delete('/mail-categories/{category}', 'App\Http\Controllers\Admin\MailCategoryController@destroy');
+    });
+
+// API Keys Management (for users to manage their own API keys)
+Route::group(['prefix' => 'api-keys', 'middleware' => ['auth:sanctum']], function () {
+    Route::get('/status', 'App\Http\Controllers\Api\ApiKeyController@status');
+    Route::get('/', 'App\Http\Controllers\Api\ApiKeyController@index');
+    Route::post('/', 'App\Http\Controllers\Api\ApiKeyController@store');
+    Route::get('/{id}', 'App\Http\Controllers\Api\ApiKeyController@show');
+    Route::patch('/{id}', 'App\Http\Controllers\Api\ApiKeyController@update');
+    Route::delete('/{id}', 'App\Http\Controllers\Api\ApiKeyController@destroy');
+    Route::post('/{id}/regenerate', 'App\Http\Controllers\Api\ApiKeyController@regenerate');
+});
+
+// Account Deletion (GDPR Right to be Forgotten)
+Route::group(['prefix' => 'account', 'middleware' => ['auth:sanctum']], function () {
+    Route::get('/deletion/status', 'App\Http\Controllers\Api\AccountDeletionController@status');
+    Route::get('/export-data', 'App\Http\Controllers\Api\AccountDeletionController@exportData');
+    Route::post('/delete', 'App\Http\Controllers\Api\AccountDeletionController@requestDeletion');
+});
+
+// External API Routes (authenticated via API key with dynamic rate limiting)
+Route::group(['prefix' => 'v1', 'middleware' => ['api.key', 'api.rate']], function () {
+    // Example: Get current user info via API key
+    Route::get('/me', function (Request $request) {
+        return response()->json([
+            'user'    => $request->user()->only(['id', 'name', 'username', 'email']),
+            'api_key' => [
+                'id'   => $request->attributes->get('api_key')->id,
+                'name' => $request->attributes->get('api_key')->name,
+            ],
+        ]);
+    });
+
+    // Add more external API endpoints here as needed
+    // These endpoints are accessible via API key authentication
+});
+
+// Admin Settings Routes
+//
+// Every route in here is behind the permission named after its feature,
+// and EnsureUserHasPermission lets admins through all of them - so the
+// group asks for a signed-in member and leaves the rest to the gates.
+// It used to ask for the admin role as a whole, which meant a member
+// handed one feature was refused before their own gate was reached.
+//
+// That makes the gates load-bearing: a route added in here without one
+// would be open to any signed-in member. FeaturePermissionTest walks the
+// routes and fails if one has no permission on it.
+Route::group(['prefix' => 'admin', 'middleware' => ['auth:sanctum']], function () {
+    Route::middleware('permission.any:manage-user')->group(function () {
+        // Admin overview
+        Route::get('/dashboard', 'App\Http\Controllers\Admin\AdminDashboardController@index');
+
+        // What one member is allowed, and changing it - from the members
+        // table or from their profile. The controller holds the rules
+        // about what the person doing it may hand out; "access" is
+        // declared above "{user}" so the literal path is not read as an
+        // id.
+        Route::get('/users/access/catalogue', 'App\Http\Controllers\Admin\UserAccessController@catalogue');
+        Route::get('/users/{user}/access', 'App\Http\Controllers\Admin\UserAccessController@show');
+        Route::put('/users/{user}/access', 'App\Http\Controllers\Admin\UserAccessController@update');
+    });
+
+    Route::middleware('permission.any:manage-achievement')->group(function () {
+        // Achievements. Setting them up is an admin's job; handing one out for
+        // something that happened in the real world can be delegated with the
+        // award-achievements permission.
+        Route::get('/achievements', 'App\Http\Controllers\Admin\AchievementAdminController@index');
+        Route::get('/achievements/stats', 'App\Http\Controllers\Admin\AchievementAdminController@stats');
+        Route::post('/achievements', 'App\Http\Controllers\Admin\AchievementAdminController@store');
+        Route::patch('/achievements/{achievement}', 'App\Http\Controllers\Admin\AchievementAdminController@update');
+        Route::delete('/achievements/{achievement}', 'App\Http\Controllers\Admin\AchievementAdminController@destroy');
+        Route::get('/achievements/{achievement}/holders', 'App\Http\Controllers\Admin\AchievementAdminController@holders');
+        // Kinds of achievement, kept as a taxonomy so one can be added without
+        // a deploy and its name is translated
+        Route::post('/achievement-types', 'App\Http\Controllers\Admin\AchievementAdminController@storeType');
+        Route::delete('/achievement-types/{taxonomy}', 'App\Http\Controllers\Admin\AchievementAdminController@destroyType');
+
+        // A badge can wear a picture instead of one of the built-in icons
+        Route::post('/achievements/{achievement}/badge', 'App\Http\Controllers\Admin\AchievementAdminController@uploadBadge');
+        Route::delete('/achievements/{achievement}/badge', 'App\Http\Controllers\Admin\AchievementAdminController@deleteBadge');
+    });
+
+    Route::middleware('permission.any:manage-help')->group(function () {
+        // Help & Tours: the walkthroughs and the hints an admin writes for a
+        // page. A tour and its steps are saved in one request — see the
+        // controller for why.
+        Route::get('/help-tours', 'App\Http\Controllers\Help\HelpTourManageController@index');
+        Route::post('/help-tours', 'App\Http\Controllers\Help\HelpTourManageController@store');
+        Route::patch('/help-tours/{tour}', 'App\Http\Controllers\Help\HelpTourManageController@update');
+        Route::delete('/help-tours/{tour}', 'App\Http\Controllers\Help\HelpTourManageController@destroy');
+        Route::post('/help-tours/{tour}/duplicate', 'App\Http\Controllers\Help\HelpTourManageController@duplicate');
+    });
+
+    Route::middleware('permission.any:manage-rank')->group(function () {
+        // Ranks: the ladder members climb with their points
+        Route::get('/ranks', 'App\Http\Controllers\Admin\RankAdminController@index');
+        Route::post('/ranks', 'App\Http\Controllers\Admin\RankAdminController@store');
+        Route::patch('/ranks/{rank}', 'App\Http\Controllers\Admin\RankAdminController@update');
+        Route::delete('/ranks/{rank}', 'App\Http\Controllers\Admin\RankAdminController@destroy');
+        Route::post('/ranks/{rank}/image', 'App\Http\Controllers\Admin\RankAdminController@uploadImage');
+        Route::delete('/ranks/{rank}/image', 'App\Http\Controllers\Admin\RankAdminController@deleteImage');
+    });
+
+    // Podcast: shows, their episodes, and the audio for each. The same
+    // work as /api/podcasts/manage and split the same way, because it is
+    // the same controller behind both doors.
+    //
+    // Reachable with the feature switched off on purpose — an admin has
+    // to be able to get at the episodes to switch it back on.
+    Route::middleware('permission.any:view-podcast,create-podcast,edit-podcast')->group(function () {
+        Route::get('/podcasts', 'App\Http\Controllers\Podcast\PodcastManageController@index');
+    });
+
+    // The whole site's figures, not one show's, so it asks for the
+    // feature rather than a part of it
+    Route::middleware('permission.any:view-podcast')->group(function () {
+        Route::get('/podcasts/stats', 'App\Http\Controllers\Podcast\PodcastManageController@stats');
+    });
+
+    Route::middleware('permission.any:create-podcast')->group(function () {
+        Route::post('/podcasts', 'App\Http\Controllers\Podcast\PodcastManageController@store');
+    });
+
+    Route::middleware('permission.any:edit-podcast,create-podcast')->group(function () {
+        Route::patch('/podcasts/{podcast}', 'App\Http\Controllers\Podcast\PodcastManageController@update');
+        Route::post('/podcasts/{podcast}/cover', 'App\Http\Controllers\Podcast\PodcastManageController@uploadCover');
+        Route::get('/podcasts/{podcast}/episodes', 'App\Http\Controllers\Podcast\PodcastManageController@episodes');
+        Route::post('/podcasts/{podcast}/episodes', 'App\Http\Controllers\Podcast\PodcastManageController@storeEpisode');
+        Route::patch('/podcasts/{podcast}/episodes/{episode}', 'App\Http\Controllers\Podcast\PodcastManageController@updateEpisode');
+        Route::delete('/podcasts/{podcast}/episodes/{episode}', 'App\Http\Controllers\Podcast\PodcastManageController@destroyEpisode');
+        Route::post('/podcasts/{podcast}/episodes/{episode}/audio', 'App\Http\Controllers\Podcast\PodcastManageController@uploadAudio');
+        Route::delete('/podcasts/{podcast}/episodes/{episode}/audio', 'App\Http\Controllers\Podcast\PodcastManageController@deleteAudio');
+    });
+
+    Route::middleware('permission.any:delete-podcast,create-podcast')->group(function () {
+        Route::delete('/podcasts/{podcast}', 'App\Http\Controllers\Podcast\PodcastManageController@destroy');
+    });
+
+    Route::middleware('permission.any:manage-ticket')->group(function () {
+        // Tickets
+        Route::get('/tickets/stats', 'App\Http\Controllers\Admin\TicketAdminController@stats');
+    });
+
+    Route::middleware('permission.any:manage-discord')->group(function () {
+        // Discord webhooks
+        Route::get('/discord-webhooks', 'App\Http\Controllers\Admin\DiscordWebhookController@index');
+        Route::post('/discord-webhooks', 'App\Http\Controllers\Admin\DiscordWebhookController@store');
+        Route::patch('/discord-webhooks/{discordWebhook}', 'App\Http\Controllers\Admin\DiscordWebhookController@update');
+        Route::delete('/discord-webhooks/{discordWebhook}', 'App\Http\Controllers\Admin\DiscordWebhookController@destroy');
+        Route::post('/discord-webhooks/{discordWebhook}/test', 'App\Http\Controllers\Admin\DiscordWebhookController@test');
+    });
+
+    Route::middleware('permission.any:manage-poll')->group(function () {
+        // Polls
+        Route::get('/polls', 'App\Http\Controllers\Admin\PollAdminController@index');
+        Route::get('/polls/stats', 'App\Http\Controllers\Admin\PollAdminController@stats');
+        Route::patch('/polls/{poll}/close', 'App\Http\Controllers\Admin\PollAdminController@close');
+        Route::patch('/polls/{poll}/reopen', 'App\Http\Controllers\Admin\PollAdminController@reopen');
+        Route::delete('/polls/{poll}', 'App\Http\Controllers\Admin\PollAdminController@destroy');
+    });
+
+    Route::middleware('permission.any:manage-relation')->group(function () {
+        // Related content
+        Route::get('/relations', 'App\Http\Controllers\Admin\RelationAdminController@index');
+        Route::get('/relations/stats', 'App\Http\Controllers\Admin\RelationAdminController@stats');
+        Route::delete('/relations', 'App\Http\Controllers\Admin\RelationAdminController@destroy');
+    });
+
+    Route::middleware('permission.any:manage-setting')->group(function () {
+        // Settings
+        Route::get('/settings', 'App\Http\Controllers\Admin\SettingsController@index');
+        Route::post('/settings', 'App\Http\Controllers\Admin\SettingsController@update');
+        Route::get('/settings/server-info', 'App\Http\Controllers\Admin\SettingsController@serverInfo');
+        Route::post('/settings/logo', 'App\Http\Controllers\Admin\SettingsController@uploadLogo');
+        Route::delete('/settings/logo', 'App\Http\Controllers\Admin\SettingsController@deleteLogo');
+        Route::post('/settings/image', 'App\Http\Controllers\Admin\SettingsController@uploadImage');
+        Route::delete('/settings/image', 'App\Http\Controllers\Admin\SettingsController@deleteImage');
+        Route::post('/settings/test-email', 'App\Http\Controllers\Admin\SettingsController@testEmail');
+        Route::get('/settings/cache-status', 'App\Http\Controllers\Admin\SettingsController@cacheStatus');
+        Route::post('/settings/clear-cache', 'App\Http\Controllers\Admin\SettingsController@clearCache');
+    });
+
+    Route::middleware('permission.any:manage-menu')->group(function () {
+        // Menu Management
+        Route::get('/menus', 'App\Http\Controllers\Menu\MenuController@index');
+        Route::post('/menus', 'App\Http\Controllers\Menu\MenuController@store');
+        Route::patch('/menus/{menu}', 'App\Http\Controllers\Menu\MenuController@update');
+        Route::delete('/menus/{menu}', 'App\Http\Controllers\Menu\MenuController@destroy');
+        Route::get('/menus/{menu}/items', 'App\Http\Controllers\Menu\MenuController@getItems');
+        Route::post('/menus/{menu}/items', 'App\Http\Controllers\Menu\MenuController@addItem');
+        Route::patch('/menu-items/{item}', 'App\Http\Controllers\Menu\MenuController@updateItem');
+        Route::delete('/menu-items/{item}', 'App\Http\Controllers\Menu\MenuController@deleteItem');
+        Route::post('/menus/{menu}/reorder', 'App\Http\Controllers\Menu\MenuController@reorderItems');
+    });
+
+    Route::middleware('permission.any:manage-homepage')->group(function () {
+        // Homepage Widgets
+        Route::get('/homepage/widgets', 'App\Http\Controllers\Admin\HomepageWidgetController@index');
+        Route::post('/homepage/widgets', 'App\Http\Controllers\Admin\HomepageWidgetController@store');
+        Route::patch('/homepage/widgets/{id}', 'App\Http\Controllers\Admin\HomepageWidgetController@update');
+        Route::delete('/homepage/widgets/{id}', 'App\Http\Controllers\Admin\HomepageWidgetController@destroy');
+        Route::post('/homepage/widgets/reorder', 'App\Http\Controllers\Admin\HomepageWidgetController@updateOrder');
+        Route::post('/homepage/widgets/{id}/toggle', 'App\Http\Controllers\Admin\HomepageWidgetController@toggle');
+        Route::post('/homepage/widgets/{id}/duplicate', 'App\Http\Controllers\Admin\HomepageWidgetController@duplicate');
+
+        // Homepage Menu
+        Route::get('/homepage/menu', 'App\Http\Controllers\Admin\HomepageMenuController@index');
+        Route::post('/homepage/menu', 'App\Http\Controllers\Admin\HomepageMenuController@store');
+        Route::patch('/homepage/menu/{id}', 'App\Http\Controllers\Admin\HomepageMenuController@update');
+        Route::delete('/homepage/menu/{id}', 'App\Http\Controllers\Admin\HomepageMenuController@destroy');
+        Route::post('/homepage/menu/reorder', 'App\Http\Controllers\Admin\HomepageMenuController@updateOrder');
+
+        // Homepage Sections
+        Route::get('/homepage/sections', 'App\Http\Controllers\Admin\HomepageSectionController@index');
+        Route::post('/homepage/sections', 'App\Http\Controllers\Admin\HomepageSectionController@store');
+        Route::patch('/homepage/sections/{id}', 'App\Http\Controllers\Admin\HomepageSectionController@update');
+        Route::delete('/homepage/sections/{id}', 'App\Http\Controllers\Admin\HomepageSectionController@destroy');
+        Route::post('/homepage/sections/reorder', 'App\Http\Controllers\Admin\HomepageSectionController@updateOrder');
+        Route::post('/homepage/sections/{id}/toggle', 'App\Http\Controllers\Admin\HomepageSectionController@toggle');
+
+        // Homepage Image Upload
+        Route::post('/homepage/upload-image', 'App\Http\Controllers\Admin\HomepageImageController@upload');
+        Route::delete('/homepage/delete-image', 'App\Http\Controllers\Admin\HomepageImageController@delete');
+
+        // Footer Widgets
+        Route::get('/footer/widgets', 'App\Http\Controllers\Admin\FooterWidgetController@index');
+        Route::post('/footer/widgets', 'App\Http\Controllers\Admin\FooterWidgetController@store');
+        Route::patch('/footer/widgets/{id}', 'App\Http\Controllers\Admin\FooterWidgetController@update');
+        Route::delete('/footer/widgets/{id}', 'App\Http\Controllers\Admin\FooterWidgetController@destroy');
+        Route::post('/footer/widgets/reorder', 'App\Http\Controllers\Admin\FooterWidgetController@updateOrder');
+        Route::post('/footer/widgets/{id}/toggle', 'App\Http\Controllers\Admin\FooterWidgetController@toggle');
+
+        // Footer Sections
+        Route::get('/footer/sections', 'App\Http\Controllers\Admin\FooterSectionController@index');
+        Route::post('/footer/sections', 'App\Http\Controllers\Admin\FooterSectionController@store');
+        Route::patch('/footer/sections/{id}', 'App\Http\Controllers\Admin\FooterSectionController@update');
+        Route::delete('/footer/sections/{id}', 'App\Http\Controllers\Admin\FooterSectionController@destroy');
+        Route::post('/footer/sections/reorder', 'App\Http\Controllers\Admin\FooterSectionController@updateOrder');
+        Route::post('/footer/sections/{id}/toggle', 'App\Http\Controllers\Admin\FooterSectionController@toggle');
+    });
+
+    Route::middleware('permission.any:manage-media')->group(function () {
+        // Media Center
+        Route::get('/media', 'App\Http\Controllers\Admin\MediaController@index');
+        Route::get('/media/folders', 'App\Http\Controllers\Admin\MediaController@folders');
+        Route::get('/media/model-items', 'App\Http\Controllers\Admin\MediaController@modelItems');
+        Route::get('/media/stats', 'App\Http\Controllers\Admin\MediaController@stats');
+        Route::get('/media/contexts', 'App\Http\Controllers\Admin\MediaController@contexts');
+        Route::get('/media/library', 'App\Http\Controllers\Admin\MediaController@libraryImages');
+        Route::post('/media/upload', 'App\Http\Controllers\Admin\MediaController@upload');
+        Route::get('/media/{media}', 'App\Http\Controllers\Admin\MediaController@show');
+        Route::delete('/media/{media}', 'App\Http\Controllers\Admin\MediaController@destroy');
+        Route::post('/media/bulk-delete', 'App\Http\Controllers\Admin\MediaController@bulkDestroy');
+    });
+
+    // Migration Dashboard — the controller and its jobs are intentionally
+    // not in the repo yet; only register the routes where they exist.
+    if (class_exists(MigrationController::class)) {
+        Route::middleware('permission.any:manage-migration')->group(function () {
+            Route::get('/migrations', 'App\Http\Controllers\Admin\MigrationController@index');
+            Route::post('/migrations/start', 'App\Http\Controllers\Admin\MigrationController@start');
+            Route::get('/migrations/status/{batchId}', 'App\Http\Controllers\Admin\MigrationController@status');
+            Route::get('/migrations/logs/{batchId}/{migrationKey}', 'App\Http\Controllers\Admin\MigrationController@logs');
+            Route::post('/migrations/cancel/{batchId}', 'App\Http\Controllers\Admin\MigrationController@cancel');
+            Route::get('/migrations/history', 'App\Http\Controllers\Admin\MigrationController@history');
+            Route::delete('/migrations/history', 'App\Http\Controllers\Admin\MigrationController@clearHistory');
+
+            // Generic migration tool: sources, schema introspection, mappings
+            Route::get('/migrations/sources', 'App\Http\Controllers\Admin\MigrationController@sources');
+            Route::post('/migrations/sources', 'App\Http\Controllers\Admin\MigrationController@storeSource');
+            Route::patch('/migrations/sources/{source}', 'App\Http\Controllers\Admin\MigrationController@updateSource');
+            Route::delete('/migrations/sources/{source}', 'App\Http\Controllers\Admin\MigrationController@deleteSource');
+            Route::post('/migrations/sources/{source}/test', 'App\Http\Controllers\Admin\MigrationController@testSource');
+            Route::get('/migrations/sources/{source}/tables', 'App\Http\Controllers\Admin\MigrationController@sourceTables');
+            Route::get('/migrations/sources/{source}/tables/{table}/columns', 'App\Http\Controllers\Admin\MigrationController@sourceColumns');
+            Route::get('/migrations/targets', 'App\Http\Controllers\Admin\MigrationController@targets');
+            Route::get('/migrations/legacy-users', 'App\Http\Controllers\Admin\MigrationController@legacyUsers');
+            Route::post('/migrations/forum/archive', 'App\Http\Controllers\Admin\MigrationController@archiveForumImport');
+            Route::post('/migrations/legacy-users/assign', 'App\Http\Controllers\Admin\MigrationController@assignLegacyUser');
+            Route::post('/migrations/legacy-users/delete', 'App\Http\Controllers\Admin\MigrationController@deleteLegacyUsers');
+            // What the imported content links to, and whether it still leads
+            // anywhere. Declared above /mappings/{mapping} for the same
+            // reason as the rest: a literal path must not be read as an id.
+            Route::get('/migrations/links', 'App\Http\Controllers\Admin\MigrationController@links');
+            Route::post('/migrations/links/scan', 'App\Http\Controllers\Admin\MigrationController@scanLinks');
+            Route::post('/migrations/links/check', 'App\Http\Controllers\Admin\MigrationController@checkLinks');
+            Route::delete('/migrations/links', 'App\Http\Controllers\Admin\MigrationController@clearLinks');
+
+            Route::get('/migrations/mappings', 'App\Http\Controllers\Admin\MigrationController@mappings');
+            Route::get('/migrations/mappings/export', 'App\Http\Controllers\Admin\MigrationController@exportMappings');
+            Route::post('/migrations/mappings/import', 'App\Http\Controllers\Admin\MigrationController@importMappings');
+            Route::post('/migrations/mappings', 'App\Http\Controllers\Admin\MigrationController@storeMapping');
+            Route::patch('/migrations/mappings/{mapping}', 'App\Http\Controllers\Admin\MigrationController@updateMapping');
+            Route::delete('/migrations/mappings/{mapping}', 'App\Http\Controllers\Admin\MigrationController@deleteMapping');
+            Route::post('/migrations/mappings/{mapping}/preview', 'App\Http\Controllers\Admin\MigrationController@previewMapping');
+            Route::post('/migrations/mappings/{mapping}/run', 'App\Http\Controllers\Admin\MigrationController@runMapping');
+        });
+    }
+
+    Route::middleware('permission.any:manage-translation')->group(function () {
+        // Translation Management
+        Route::get('/translations/locales', 'App\Http\Controllers\Admin\TranslationController@locales');
+        Route::get('/translations/js/{locale}', 'App\Http\Controllers\Admin\TranslationController@getJsTranslations');
+        Route::put('/translations/js/{locale}', 'App\Http\Controllers\Admin\TranslationController@updateJsTranslations');
+        Route::get('/translations/php/{locale}/{file?}', 'App\Http\Controllers\Admin\TranslationController@getPhpTranslations');
+        Route::put('/translations/php/{locale}/{file}', 'App\Http\Controllers\Admin\TranslationController@updatePhpTranslations');
+        Route::post('/translations/locales', 'App\Http\Controllers\Admin\TranslationController@createLocale');
+        Route::post('/translations/keys', 'App\Http\Controllers\Admin\TranslationController@addKey');
+        Route::delete('/translations/keys', 'App\Http\Controllers\Admin\TranslationController@deleteKey');
+        Route::get('/translations/scan', 'App\Http\Controllers\Admin\TranslationController@scanMissing');
+        Route::get('/translations/report', 'App\Http\Controllers\Admin\TranslationController@generateReport');
+        Route::get('/translations/compare', 'App\Http\Controllers\Admin\TranslationController@compareLocales');
+
+        // Model Translations Management
+        Route::get('/model-translations', 'App\Http\Controllers\Admin\ModelTranslationController@index');
+        Route::get('/model-translations/stats', 'App\Http\Controllers\Admin\ModelTranslationController@stats');
+        Route::get('/model-translations/missing/{locale}', 'App\Http\Controllers\Admin\ModelTranslationController@missing');
+        Route::get('/model-translations/{modelType}', 'App\Http\Controllers\Admin\ModelTranslationController@listItems');
+        Route::get('/model-translations/{modelType}/{id}', 'App\Http\Controllers\Admin\ModelTranslationController@show');
+        Route::put('/model-translations/{modelType}/{id}', 'App\Http\Controllers\Admin\ModelTranslationController@update');
+        Route::put('/model-translations/{modelType}/bulk', 'App\Http\Controllers\Admin\ModelTranslationController@bulkUpdate');
+    });
+
+    // IRC Admin
+    Route::prefix('irc')->middleware('permission.any:manage-irc')->group(function () {
+        Route::get('/servers', 'App\Http\Controllers\Admin\IrcAdminController@getServers');
+        Route::post('/servers', 'App\Http\Controllers\Admin\IrcAdminController@storeServer');
+        Route::patch('/servers/{server}', 'App\Http\Controllers\Admin\IrcAdminController@updateServer');
+        Route::delete('/servers/{server}', 'App\Http\Controllers\Admin\IrcAdminController@deleteServer');
+        Route::post('/servers/{server}/check', 'App\Http\Controllers\Admin\IrcAdminController@checkServer');
+        Route::get('/connections', 'App\Http\Controllers\Admin\IrcAdminController@getConnections');
+        Route::post('/connections/{connection}/disconnect', 'App\Http\Controllers\Admin\IrcAdminController@disconnectConnection');
+        Route::delete('/connections/{connection}', 'App\Http\Controllers\Admin\IrcAdminController@deleteConnection');
+        Route::get('/daemon/status', 'App\Http\Controllers\Admin\IrcAdminController@getDaemonStatus');
+        Route::get('/stats', 'App\Http\Controllers\Admin\IrcAdminController@getStats');
+
+        // The comic chat character creator, which is part of looking
+        // after IRC - the permission on the group above covers it.
+        Route::get('/comic-characters', 'App\Http\Controllers\Admin\IrcComicCharacterController@index');
+        Route::post('/comic-characters', 'App\Http\Controllers\Admin\IrcComicCharacterController@store');
+        Route::patch('/comic-characters/{character}', 'App\Http\Controllers\Admin\IrcComicCharacterController@update');
+        Route::delete('/comic-characters/{character}', 'App\Http\Controllers\Admin\IrcComicCharacterController@destroy');
+    });
+});
+
+Route::post('/login', function (Request $request) {
+    $data = $request->validate([
+        'email'    => 'required|email',
+        'password' => 'required',
+    ]);
+
+    $user = User::where('email', $request->email)->first();
+
+    if ( ! $user || ! Hash::check($request->password, $user->password)) {
+        return response([
+            'message' => ['These credentials do not match our records.'],
+        ], 404);
+    }
+
+    $user->update([
+        'previous_login_at' => $user->last_login_at,
+        'last_login_at'     => now()->toDateTimeString(),
+        'last_login_ip'     => $request->getClientIp(),
+    ]);
+
+    $token = $user->createToken('my-app-token')->plainTextToken;
+
+    $response = [
+        'user'  => $user,
+        'token' => $token,
+    ];
+
+    return response($response, 201);
+});
+
+// IRC Client Routes
+Route::middleware(['auth:sanctum'])->prefix('irc')->group(function () {
+    // Whether the daemon is up. The client asks before it opens the chat at
+    // all — without the daemon nothing can connect, so the feature is hidden.
+    Route::get('/status', 'App\Http\Controllers\Irc\IrcController@status');
+
+    // The comic characters a member can pick from
+    Route::get('/comic-characters', 'App\Http\Controllers\Irc\IrcController@comicCharacters');
+
+    // Servers
+    Route::get('/servers', 'App\Http\Controllers\Irc\IrcController@getServers');
+
+    // Connections
+    Route::get('/connections', 'App\Http\Controllers\Irc\IrcController@getConnections');
+    Route::post('/connections', 'App\Http\Controllers\Irc\IrcController@createConnection');
+    Route::patch('/connections/{connection}', 'App\Http\Controllers\Irc\IrcController@updateConnection');
+    Route::delete('/connections/{connection}', 'App\Http\Controllers\Irc\IrcController@deleteConnection');
+    // Disconnecting stays open: with the daemon gone it tidies up the
+    // connection state instead of queueing a command nobody consumes.
+    Route::post('/connections/{connection}/disconnect', 'App\Http\Controllers\Irc\IrcController@disconnect');
+
+    // Channels
+    Route::get('/available-channels', 'App\Http\Controllers\Irc\IrcController@availableChannels');
+    Route::get('/connections/{connection}/channels', 'App\Http\Controllers\Irc\IrcController@getServerChannels');
+    Route::post('/channels/{channel}/favorite', 'App\Http\Controllers\Irc\IrcController@toggleFavorite');
+
+    // Messages
+    Route::get('/channels/{channel}/users', 'App\Http\Controllers\Irc\IrcController@getChannelUsers');
+    Route::get('/channels/{channel}/messages', 'App\Http\Controllers\Irc\IrcController@getChannelMessages');
+    Route::get('/connections/{connection}/unread', 'App\Http\Controllers\Irc\IrcController@getUnreadCount');
+
+    // Events polling
+    Route::get('/events', 'App\Http\Controllers\Irc\IrcController@pollEvents');
+
+    // Anything that talks to an IRC server goes through the daemon's command
+    // queue — with the daemon down the command is never consumed, so the
+    // request would silently do nothing. Refuse it instead.
+    Route::middleware('irc.daemon')->group(function () {
+        Route::post('/connections/{connection}/connect', 'App\Http\Controllers\Irc\IrcController@connect');
+        Route::post('/connections/{connection}/join', 'App\Http\Controllers\Irc\IrcController@joinChannel');
+        Route::post('/channels/{channel}/part', 'App\Http\Controllers\Irc\IrcController@partChannel');
+        Route::post('/channels/{channel}/messages', 'App\Http\Controllers\Irc\IrcController@sendMessage');
+        Route::post('/connections/{connection}/nick', 'App\Http\Controllers\Irc\IrcController@changeNick');
+        Route::post('/connections/{connection}/pm', 'App\Http\Controllers\Irc\IrcController@sendPrivateMessage');
+    });
 });

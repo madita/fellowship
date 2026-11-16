@@ -3,9 +3,14 @@
 namespace App\Models;
 
 use App\Models\Chat\Message;
+use App\Models\Conversation\Conversation;
 use App\Models\Event\Event;
+use App\Models\Help\HelpTourView;
+use App\Models\Mail\MailPreference;
+use App\Support\Ranks;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
@@ -18,9 +23,9 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
 {
     use HasApiTokens;
     use HasFactory;
-    use Notifiable;
     use HasRoles;
     use InteractsWithMedia;
+    use Notifiable;
 
     protected $guard_name = 'api';
 
@@ -34,8 +39,17 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
         'username',
         'email',
         'password',
+        'previous_login_at',
         'last_login_at',
         'last_login_ip',
+        'timezone',
+        'date_format',
+        'time_format',
+        'theme_mode',
+        'language',
+        'notification_toasts',
+        'email_verified_at',
+        'mail_unsubscribed_at',
     ];
 
     /**
@@ -47,6 +61,11 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
         'avatar',
         'isAdmin',
         'initials',
+        'timezone',
+        'date_format',
+        'time_format',
+        'theme_mode',
+        'language',
     ];
 
     /**
@@ -57,6 +76,26 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
     protected $hidden = [
         'password',
         'remember_token',
+        // Only the owner reads it, through the dashboard layout endpoint.
+        'dashboard_layout',
+        // A user travels with its content — a forum post carries its
+        // author, and the forum is readable without signing in. Hidden by
+        // default and made visible where it is genuinely wanted: the
+        // owner's own account, and the admin screens.
+        'email',
+        // What an unsubscribe link carries. Anyone holding it can turn
+        // off somebody else's mail, so it never travels with the user.
+        'mail_token',
+    ];
+
+    /**
+     * Column defaults the model carries itself, so a user that has just
+     * been made answers the same as one read back from the database.
+     *
+     * @var array
+     */
+    protected $attributes = [
+        'notification_toasts' => true,
     ];
 
     /**
@@ -65,7 +104,10 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
      * @var array
      */
     protected $casts = [
-        'email_verified_at' => 'datetime',
+        'email_verified_at'    => 'datetime',
+        'dashboard_layout'     => 'array',
+        'notification_toasts'  => 'boolean',
+        'mail_unsubscribed_at' => 'datetime',
     ];
 
     /**
@@ -76,6 +118,28 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
     public function isAdmin()
     {
         return $this->hasRole('admin');
+    }
+
+    /**
+     * Give this member the role every member holds.
+     *
+     * Nothing used to do this. The `user` role was seeded and then
+     * assigned to nobody but the demo accounts, so a permission handed
+     * to it was handed to an empty room - which is why there was no way
+     * to say "members may write the wiki" other than letting anybody
+     * signed in do it, and no way to open a feature to the membership
+     * at all. Registration and OAuth sign-up both call this now, and a
+     * migration gave it to everybody who had been registered already.
+     *
+     * Guarded, because a user can be made in a test or a seeder long
+     * before the roles exist, and a missing role should not stop
+     * somebody signing up.
+     */
+    public function assignDefaultRole(): void
+    {
+        if (Role::where('name', 'user')->where('guard_name', $this->guard_name)->exists()) {
+            $this->assignRole('user');
+        }
     }
 
     /**
@@ -92,7 +156,7 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
     {
         if ($this->name) {
             $initials = explode(' ', strtoupper($this->name));
-            $initial = substr($initials[0], 0, 1);
+            $initial  = substr($initials[0], 0, 1);
             if (count($initials) > 1) {
                 $initial .= substr($initials[count($initials) - 1], 0, 1);
             }
@@ -108,13 +172,25 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
         return $this->getInitals();
     }
 
+    /**
+     * The rank beside a member's name, just enough to draw it.
+     *
+     * Not appended: a user travels with a lot of content and this costs a
+     * lookup, so the places that show it ask for it with append('rank')
+     * after priming the lot — see App\Support\Ranks.
+     */
+    public function getRankAttribute(): ?array
+    {
+        return Ranks::of($this->id);
+    }
+
     public function getAvatar()
     {
-        if (!count($this->getMedia('avatars'))) {
+        if ( ! count($this->getMedia('avatars'))) {
             return '';
         }
 
-        return $this->getMedia('avatars')->last()->getFullUrl('thumb');
+        return $this->getFirstMediaUrl('avatars');
     }
 
     public function getAvatarAttribute()
@@ -122,7 +198,122 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
         return $this->getAvatar();
     }
 
-    public function registerMediaConversions(Media $media = null): void
+    /**
+     * Get the user's timezone preference with fallback to global setting.
+     *
+     * @return string
+     */
+    public function getTimezoneAttribute()
+    {
+        // Get the raw database value
+        $value = $this->getAttributeFromArray('timezone');
+
+        // Return user's preference if set
+        if ($value !== null && $value !== '') {
+            return $value;
+        }
+
+        // Try to get from global settings, with fallback to UTC
+        try {
+            return Setting::get('default_timezone', 'UTC');
+        } catch (\Exception $e) {
+            return 'UTC';
+        }
+    }
+
+    /**
+     * Get the user's date format preference with fallback to global setting.
+     *
+     * @return string
+     */
+    public function getDateFormatAttribute()
+    {
+        // Get the raw database value
+        $value = $this->getAttributeFromArray('date_format');
+
+        // Return user's preference if set
+        if ($value !== null && $value !== '') {
+            return $value;
+        }
+
+        // Try to get from global settings, with fallback to Y-m-d
+        try {
+            return Setting::get('date_format', 'Y-m-d');
+        } catch (\Exception $e) {
+            return 'Y-m-d';
+        }
+    }
+
+    /**
+     * Get the user's time format preference with fallback to global setting.
+     *
+     * @return string
+     */
+    public function getTimeFormatAttribute()
+    {
+        // Get the raw database value
+        $value = $this->getAttributeFromArray('time_format');
+
+        // Return user's preference if set
+        if ($value !== null && $value !== '') {
+            return $value;
+        }
+
+        // Try to get from global settings, with fallback to H:i:s
+        try {
+            return Setting::get('time_format', 'H:i:s');
+        } catch (\Exception $e) {
+            return 'H:i:s';
+        }
+    }
+
+    /**
+     * Get the user's theme mode preference with fallback to global setting.
+     *
+     * @return string
+     */
+    public function getThemeModeAttribute()
+    {
+        // Get the raw database value
+        $value = $this->getAttributeFromArray('theme_mode');
+
+        // Return user's preference if set
+        if ($value !== null && $value !== '') {
+            return $value;
+        }
+
+        // Try to get from global settings, with fallback to 'system'
+        try {
+            return Setting::get('theme_mode', 'system');
+        } catch (\Exception $e) {
+            return 'system';
+        }
+    }
+
+    /**
+     * Get the user's language preference with fallback to global setting.
+     *
+     * @return string
+     */
+    public function getLanguageAttribute()
+    {
+        // Get the raw database value
+        $value = $this->getAttributeFromArray('language');
+
+        // Return user's preference if set
+        if ($value !== null && $value !== '') {
+            return $value;
+        }
+
+        // Try to get from global settings, with fallback to 'en'
+        try {
+            return Setting::get('default_language', 'en');
+        } catch (\Exception $e) {
+            return 'en';
+        }
+    }
+
+    public function registerMediaConversions(?Media $media = null): void
     {
         $this->addMediaConversion('thumb')
             ->width(100)
@@ -131,12 +322,56 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
 
     public function receivesBroadcastNotificationsOn()
     {
-        return 'users.'.$this->id;
+        return 'users.' . $this->id;
     }
 
     public function pages()
     {
         return $this->hasMany(Page::class);
+    }
+
+    /**
+     * The rest of what this member has told us about themselves.
+     */
+    public function profile()
+    {
+        return $this->hasOne(UserProfile::class);
+    }
+
+    /**
+     * Their profile, made on the spot the first time they fill it in.
+     */
+    public function profileOrNew(): UserProfile
+    {
+        return $this->profile ?: $this->profile()->make();
+    }
+
+    /**
+     * The achievements this member has earned.
+     */
+    public function achievements()
+    {
+        return $this->belongsToMany(Achievement::class)
+            ->withPivot(['awarded_at', 'awarded_by', 'note', 'count_at_award'])
+            ->withTimestamps()
+            ->orderByPivot('awarded_at', 'desc');
+    }
+
+    /**
+     * What the earned achievements add up to.
+     */
+    public function achievementPoints(): int
+    {
+        return (int) $this->achievements()->sum('points');
+    }
+
+    /**
+     * The rank those points have reached. Worked out rather than stored,
+     * so editing a rank's threshold re-ranks everyone at once.
+     */
+    public function rank(): ?Rank
+    {
+        return Rank::forPoints($this->achievementPoints());
     }
 
     public function posts()
@@ -149,10 +384,97 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
         return $this->hasMany(Message::class);
     }
 
+    public function events()
+    {
+        return $this->hasMany(Event::class);
+    }
+
     public function eventGuest()
     {
         return $this->belongsToMany(Event::class, 'event_guests')
             ->withPivot('type')
             ->withTimestamps();
+    }
+
+    public function conversations()
+    {
+        //        return $this->belongsToMany(Conversation::class)->whereNull('parent_id')->orderBy('last_reply', 'desc');
+        return $this->belongsToMany(Conversation::class)->withPivot('read_at');
+    }
+
+    public function inConversation($id)
+    {
+        return $this->conversations->contains('id', $id);
+    }
+
+    public function hasRead(Conversation $conversation)
+    {
+        return $this->conversations->find($conversation->id)->pivot->read_at;
+    }
+
+    /**
+     * Get the social accounts for the user.
+     */
+    public function socialAccounts()
+    {
+        return $this->hasMany(SocialAccount::class);
+    }
+
+    /**
+     * Check if user has a specific social provider linked.
+     *
+     * @param  string  $provider
+     * @return bool
+     */
+    public function hasSocialProvider($provider)
+    {
+        return $this->socialAccounts()->where('provider', $provider)->exists();
+    }
+
+    /**
+     * Get the API keys for the user.
+     */
+    public function apiKeys()
+    {
+        return $this->hasMany(ApiKey::class);
+    }
+
+    /**
+     * Everything the member is following, whatever kind of thing it is.
+     */
+    public function watches(): HasMany
+    {
+        return $this->hasMany(Watch::class);
+    }
+
+    /**
+     * Everything the member has liked, whatever kind of thing it is.
+     */
+    public function likes(): HasMany
+    {
+        return $this->hasMany(Like::class);
+    }
+
+    /**
+     * The help tours this member has already been shown — what keeps one
+     * that starts by itself from starting again every visit.
+     */
+    public function helpTourViews(): HasMany
+    {
+        return $this->hasMany(HelpTourView::class);
+    }
+
+    /**
+     * What this member said about each kind of mail.
+     *
+     * Only the answers that differ from a category's own default are
+     * stored, so this being empty means "never asked", not "wants
+     * nothing". Read it through App\Services\Mail\MailPreferences rather
+     * than here — that is where the defaults and the blanket unsubscribe
+     * are taken into account.
+     */
+    public function mailPreferences(): HasMany
+    {
+        return $this->hasMany(MailPreference::class);
     }
 }

@@ -25,8 +25,7 @@ class Announcement extends Notification
     /**
      * Get the notification's delivery channels.
      *
-     * @param mixed $notifiable
-     *
+     * @param  mixed  $notifiable
      * @return array
      */
     public function via($notifiable)
@@ -35,37 +34,52 @@ class Announcement extends Notification
     }
 
     /**
+     * What the socket says this is, matching the payload's own `type`.
+     *
+     * Without it Laravel broadcasts the class name under that key and
+     * overwrites it, leaving the browser a notification it cannot read.
+     */
+    public function broadcastType(): string
+    {
+        return 'announcement';
+    }
+
+    /**
      * Get the mail representation of the notification.
      *
-     * @param mixed $notifiable
-     *
-     * @return \Illuminate\Notifications\Messages\MailMessage
+     * @param  mixed  $notifiable
+     * @return MailMessage
      */
     public function toMail($notifiable)
     {
-        return (new MailMessage())
+        $mail = (new MailMessage)
             ->greeting($this->message['subject'])
-            ->line($this->message['body'])
-            ->action($this->message['action'], $this->message['url'])
-            ->line($this->message['thanks']);
+            ->line($this->message['body']);
+
+        // A button only when the announcement carries one
+        if ( ! empty($this->message['action']) && ! empty($this->message['url'])) {
+            $mail->action($this->message['action'], $this->message['url']);
+        }
+
+        return $mail->line($this->message['thanks'] ?? '');
     }
 
     /**
      * Get the array representation of the notification.
      *
-     * @param mixed $notifiable
-     *
+     * @param  mixed  $notifiable
      * @return array
      */
     public function toArray($notifiable)
     {
+        // Only subject, body and thanks are required of an announcement
         return [
             'subject'  => $this->message['subject'],
             'body'     => $this->message['body'],
             'notifier' => auth()->user(),
-            'url'      => $this->message['url'],
-            'action'   => $this->message['action'],
-            'thanks'   => $this->message['thanks'],
+            'url'      => $this->message['url'] ?? null,
+            'action'   => $this->message['action'] ?? null,
+            'thanks'   => $this->message['thanks'] ?? null,
         ];
     }
 }

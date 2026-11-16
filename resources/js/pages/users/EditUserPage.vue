@@ -1,89 +1,134 @@
 <template>
-    <div class="flex-grow-1">
-        <div class="d-flex align-center py-3">
-            <div>
-                <div class="display-1">Edit User {{ user.name && `- ${user.name}` }}</div>
-                <v-breadcrumbs :items="breadcrumbs" class="pa-0 py-2"></v-breadcrumbs>
-            </div>
-            <v-spacer></v-spacer>
-            <v-btn icon @click>
-                <v-icon>mdi-refresh</v-icon>
-            </v-btn>
-        </div>
-
-        <div
-            v-if="roles.includes('admin')"
-            class="d-flex align-center font-weight-bold primary--text my-2"
+    <div>
+        <page-header
+            :title="$t('users.edit.title')"
+            :subtitle="user.username"
+            icon="mdi-account-edit"
+            :breadcrumbs="[$crumb('members'), user.username, $t('users.edit.title')]"
+            back-to="/users/list"
         >
-            <v-icon small color="primary">mdi-security</v-icon>
-            <span class="ma-1">Administrator</span>
-        </div>
+            <template #actions>
+                <v-btn
+                    icon="mdi-refresh"
+                    variant="text"
+                    :aria-label="$t('common.refresh')"
+                    :title="$t('common.refresh')"
+                />
+            </template>
+        </page-header>
 
-        <div class="mb-4">
-            <div class="d-flex">
-                <span class="font-weight-bold">Email</span>
-                <span class="mx-1">
-          <copy-label :text="user.email"/>
-        </span>
+        <v-container fluid>
+            <div v-if="roles.includes('admin')" class="d-flex flex-wrap align-center ga-2 mb-4">
+                <v-chip
+                    color="primary"
+                    variant="tonal"
+                    size="small"
+                    prepend-icon="mdi-security"
+                >
+                    {{ $t('users.edit.administrator') }}
+                </v-chip>
             </div>
-            <div class="d-flex">
-                <span class="font-weight-bold">ID</span>
-                <span class="mx-1">
-          <copy-label :text="user.id + ''"/>
-        </span>
+
+            <div class="mb-4 text-body-2">
+                <div class="d-flex">
+                    <span class="font-weight-bold">{{ $t('users.edit.email') }}</span>
+                    <span class="mx-1">
+                        <copy-label :text="user.email"/>
+                    </span>
+                </div>
+                <div class="d-flex">
+                    <span class="font-weight-bold">{{ $t('users.edit.id') }}</span>
+                    <span class="mx-1">
+                        <copy-label :text="user.id + ''"/>
+                    </span>
+                </div>
             </div>
-        </div>
 
-        <v-tabs v-model="tab" :show-arrows="false" background-color="transparent">
-            <v-tab to="#tabs-account">Account</v-tab>
-            <v-tab to="#tabs-information">Information</v-tab>
-        </v-tabs>
+            <v-tabs
+                v-model="activeTab"
+                bg-color="transparent"
+            >
+                <v-tab value="account">{{ $t('users.edit.tabs.account') }}</v-tab>
+                <v-tab value="info">{{ $t('users.edit.tabs.information') }}</v-tab>
+                <v-tab value="mail">{{ $t('users.edit.tabs.mail') }}</v-tab>
+                <v-tab value="social">{{ $t('users.edit.tabs.socialAccounts') }}</v-tab>
+                <v-tab value="api-keys">{{ $t('users.edit.tabs.apiKeys') }}</v-tab>
+                <v-tab value="legacy">{{ $t('account.legacyClaim.tab') }}</v-tab>
+            </v-tabs>
 
-        <v-tabs-items v-model="tab">
-            <v-tab-item value="tabs-account">
-                <account-tab ref="tabs-account" :user="user"></account-tab>
-            </v-tab-item>
+            <v-card rounded="lg">
+                <v-card-text>
+                    <v-window v-model="activeTab">
+                        <v-window-item value="account">
+                            <account-tab :user="user" :roles="roles"></account-tab>
+                        </v-window-item>
 
-            <v-tab-item value="tabs-information">
-                <information-tab ref="tabs-information" :user="user"></information-tab>
-            </v-tab-item>
-        </v-tabs-items>
+                        <v-window-item value="info">
+                            <information-tab :user="user"></information-tab>
+                        </v-window-item>
+
+                        <v-window-item value="mail">
+                            <mail-preferences-tab></mail-preferences-tab>
+                        </v-window-item>
+
+                        <v-window-item value="social">
+                            <social-accounts-tab :user="user"></social-accounts-tab>
+                        </v-window-item>
+
+                        <v-window-item value="api-keys">
+                            <api-keys-tab></api-keys-tab>
+                        </v-window-item>
+
+                        <v-window-item value="legacy">
+                            <legacy-claim-tab></legacy-claim-tab>
+                        </v-window-item>
+                    </v-window>
+                </v-card-text>
+            </v-card>
+        </v-container>
     </div>
 </template>
 
 <script>
-import CopyLabel from '../../components/common/CopyLabel'
-import AccountTab from './EditUser/AccountTab'
-import InformationTab from './EditUser/InformationTab'
-import {mapGetters} from 'vuex'
+import { ref, computed } from 'vue';
+import { useAuthStore } from '@/store/authStore.js'
+import { useUserStore } from '@/store/userStore.js'
+import CopyLabel from '../../components/common/CopyLabel.vue';
+import PageHeader from '@/components/common/PageHeader.vue';
+import AccountTab from './EditUser/AccountTab.vue';
+import InformationTab from './EditUser/InformationTab.vue';
+import MailPreferencesTab from './EditUser/MailPreferencesTab.vue';
+import SocialAccountsTab from './EditUser/SocialAccountsTab.vue';
+import ApiKeysTab from './EditUser/ApiKeysTab.vue';
+import LegacyClaimTab from './EditUser/LegacyClaimTab.vue';
 
 export default {
     components: {
         CopyLabel,
+        PageHeader,
         AccountTab,
-        InformationTab
+        InformationTab,
+        MailPreferencesTab,
+        SocialAccountsTab,
+        ApiKeysTab,
+        LegacyClaimTab,
     },
-    data() {
+    setup() {
+        const authStore = useAuthStore();
+        const userStore = useUserStore();
+
+        const activeTab = ref(null);
+
+        const authenticated = computed(() => authStore.isLoggedIn);
+        const user = computed(() => userStore.user);
+        const roles = computed(() => userStore.roles);
+
         return {
-            tab: null,
-            breadcrumbs: [
-                {
-                    text: 'Users',
-                    to: '/users/list',
-                    exact: true
-                },
-                {
-                    text: 'Edit User'
-                }
-            ]
-        }
+            activeTab,
+            authenticated,
+            user,
+            roles,
+        };
     },
-    computed: {
-        ...mapGetters({
-            authenticated: 'auth/authenticated',
-            user: 'auth/user',
-            roles: 'auth/roles',
-        })
-    }
-}
+};
 </script>

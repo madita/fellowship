@@ -19,13 +19,21 @@ class Kernel extends ConsoleKernel
     /**
      * Define the application's command schedule.
      *
-     * @param \Illuminate\Console\Scheduling\Schedule $schedule
      *
      * @return void
      */
     protected function schedule(Schedule $schedule)
     {
         // $schedule->command('inspire')->hourly();
+
+        // The activity log grows forever otherwise — nothing was pruning
+        // it. How long is kept is config/activitylog.php.
+        $schedule->command('activitylog:clean')->daily();
+
+        // A mailing scheduled for a time goes out at about that time.
+        // Every minute, and overlapping runs cannot double-send — see the
+        // command, which claims each mailing before starting it.
+        $schedule->command('mailings:send-due')->everyMinute()->withoutOverlapping();
     }
 
     /**
@@ -35,7 +43,7 @@ class Kernel extends ConsoleKernel
      */
     protected function commands()
     {
-        $this->load(__DIR__.'/Commands');
+        $this->load(__DIR__ . '/Commands');
 
         require base_path('routes/console.php');
     }

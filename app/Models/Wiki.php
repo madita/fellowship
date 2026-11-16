@@ -1,0 +1,221 @@
+<?php
+
+namespace App\Models;
+
+use App\Models\Translations\WikiTranslation;
+use App\Services\DiscordWebhookService;
+use App\Support\Achievements;
+use App\Support\DiscordEvents;
+use App\Traits\Approvable;
+use App\Traits\Commentable;
+use App\Traits\HasCache;
+use App\Traits\HasRelateableContent;
+use App\Traits\HasTickets;
+use App\Traits\Watchable;
+use Astrotomic\Translatable\Contracts\Translatable as TranslatableContract;
+use Astrotomic\Translatable\Translatable;
+use Cviebrock\EloquentSluggable\Sluggable;
+use Illuminate\Database\Eloquent\Model;
+
+class Wiki extends Model implements TranslatableContract
+{
+    use Approvable;
+    use Commentable;
+    use HasCache;
+    use HasRelateableContent;
+    use HasTickets;
+    use Sluggable;
+    use Translatable;
+    use Watchable;
+    //    protected $guard_name = 'api';
+
+    public $translatedAttributes = ['title'];
+
+    public $translationForeignKey = 'wiki_id';
+
+    public $translationModel = WikiTranslation::class;
+
+    protected $table = 'wikiables';
+
+    protected $cacheTag = 'wikiables';
+
+    /**
+     * The attributes that are mass assignable.
+     *
+     * @var array
+     */
+    protected $fillable = [
+        'slug', 'status', 'parent_id', 'wikiable_type', 'wikiable_id',
+    ];
+
+    /**
+     * Whether the member may read this page.
+     *
+     * A page awaiting approval cannot be opened by anyone but the author
+     * who wrote it and whoever will approve it — the same rule the
+     * mention notifications wait on. Watching honours it, so a page that
+     * goes back to pending stops appearing in other people's lists.
+     *
+     * "Whoever will approve it" was an admin and nobody else. It is now
+     * whoever holds approve-wiki, or view-wiki for somebody who looks
+     * after the wiki without judging what goes into it; an admin holds
+     * both. Without this an approver could be handed a queue of pages
+     * and then be refused every one of them.
+     */
+    public function isVisibleTo(?User $user): bool
+    {
+        if ($this->isApproved()) {
+            return true;
+        }
+
+        if ( ! $user) {
+            return false;
+        }
+
+        $model  = $this->wikiable_type;
+        $author = $model ? $model::find($this->wikiable_id)?->user_id : null;
+
+        return (int) $author === (int) $user->id
+            || $user->can('approve-wiki')
+            || $user->can('view-wiki');
+    }
+
+    /**
+     * How the page reads on the watching list. It has no url accessor of
+     * its own, so the Watchable default has nothing to find.
+     */
+    public function watchUrl(): ?string
+    {
+        return "/wiki/{$this->slug}";
+    }
+
+    /**
+     * Where the page's discussion is read, for a mention to link to.
+     */
+    public function commentUrl(): string
+    {
+        return "/wiki/{$this->slug}?tab=discussion";
+    }
+
+    /**
+     * A pending wiki page cannot be opened, so mentions in its text wait
+     * for the approval. The text lives on the wikiable (a Page).
+     */
+    public function afterApproved(): void
+    {
+        // The morph relation is not declared here; the controllers resolve it the same way
+        $model    = $this->wikiable_type;
+        $wikiable = $model ? $model::find($this->wikiable_id) : null;
+
+        if ($wikiable && method_exists($wikiable, 'notifyMentionedMembers')) {
+            // Credited to whoever wrote the page, not to the admin approving it
+            $wikiable->notifyMentionedMembers($wikiable->user ?? null);
+        }
+
+        // An approved page is the one worth counting: a draft nobody has
+        // read yet is not an achievement. Credited to its author.
+        Achievements::record($wikiable?->user ?? null, 'wiki.page.approved');
+
+        app(DiscordWebhookService::class)->announce(DiscordEvents::WIKI_PAGE_APPROVED, [
+            'title'       => $this->title,
+            'description' => $wikiable?->content,
+            'url'         => "/wiki/{$this->slug}",
+            'author'      => $wikiable?->user?->username,
+        ]);
+    }
+
+    /**
+     * A page waiting for review: the admins can hear about it in Discord.
+     */
+    public function announceSubmission(): void
+    {
+        $model    = $this->wikiable_type;
+        $wikiable = $model ? $model::find($this->wikiable_id) : null;
+
+        app(DiscordWebhookService::class)->announce(DiscordEvents::WIKI_PAGE_SUBMITTED, [
+            'title'       => $this->title,
+            'description' => $wikiable?->content,
+            'url'         => "/wiki/{$this->slug}",
+            'author'      => $wikiable?->user?->username,
+        ]);
+    }
+
+    public function sluggable(): array
+    {
+        return [
+            'slug' => [
+                'source' => 'title',
+            ],
+        ];
+    }
+
+    public function parent()
+    {
+        return $this->belongsTo(Wiki::class, 'parent_id');
+    }
+
+    public function children()
+    {
+        return $this->hasMany(Wiki::class, 'parent_id');
+    }
+
+    public function childrenRecursive()
+    {
+        return $this->children()->with('childrenRecursive');
+    }
+
+    public function getParentsAttribute()
+    {
+        $parents = collect([]);
+
+        $parent = $this->parent;
+
+        while ( ! is_null($parent)) {
+            $parents->push($parent);
+            $parent = $parent->parent;
+        }
+
+        return $parents;
+    }
+
+    /**
+     * A wiki page has no author of its own: the text, and so whoever
+     * wrote it, lives on the wikiable. Asked when somebody marks a
+     * comment in the discussion as the one that helped.
+     */
+    protected function commentOwnerId(): ?int
+    {
+        $model = $this->wikiable_type;
+        $owner = $model ? $model::find($this->wikiable_id)?->user_id : null;
+
+        return $owner === null ? null : (int) $owner;
+    }
+
+    /**
+     * Boot the model.
+     */
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::created(function ($wiki) {
+            // If creator has an auto-approve role, approve immediately (skip ticket)
+            if ($wiki->shouldAutoApprove()) {
+                $wiki->approve(auth()->user());
+
+                return;
+            }
+
+            // Otherwise create approval ticket as before
+            $wiki->autoCreateTicket('wiki_approval', [
+                'title'       => "New Wiki Page: {$wiki->title}",
+                'description' => 'A new wiki page has been created and needs review.',
+                'priority'    => 'normal',
+            ]);
+        });
+    }
+    //
+    //    public function wikiable() {
+    //        return $this->morphTo();
+    //    }
+}

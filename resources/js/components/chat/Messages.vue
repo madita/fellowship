@@ -1,66 +1,105 @@
 <template>
-
-        <div id="messages" ref="messages" class="messages mx-2">
-            <transition-group name="list">
-                <chat-message
-                    v-for="message in messages"
-                    :key="message.id"
-                    :message="message"
-                    class="my-4 d-flex"
-                />
-            </transition-group>
-        </div>
-
+    <div id="messages" ref="messageContainer">
+        <loading-state v-if="loading" />
+        <empty-state
+            v-else-if="!messages.length"
+            icon="mdi-chat-outline"
+            :title="$t('chat.noMessages')"
+        />
+        <template v-else>
+            <chat-message
+                v-for="message in messages"
+                :key="message.id"
+                :message="message"
+                class="my-4 mr-5"
+            />
+        </template>
+    </div>
 </template>
 
 <script>
-    import Bus from '../../bus'
-    import ChatMessage from './Message'
+import {ref, computed, onMounted,onUpdated, watch} from 'vue';
+import { useI18n } from 'vue-i18n';
+import ChatMessage from './Message.vue';
+import EmptyState from '@/components/common/EmptyState.vue';
+import LoadingState from '@/components/common/LoadingState.vue';
+import {useChatStore} from "@/store/chatStore.js";
+import { useDialog } from '@/composables/useDialog.js';
 
-    export default {
-        components: {
-            ChatMessage
-        },
-        data(){
-            return {
-                messages: null
+export default {
+    components: {
+        ChatMessage,
+        EmptyState,
+        LoadingState
+    },
+    setup() {
+        const { t } = useI18n();
+        const dialog = useDialog();
+        const chatStore = useChatStore();
+
+        const messageContainer = ref(null);
+        const loading = ref(true);
+
+        const messages = computed(() => {
+            if (chatStore?.messages === []) {
+                return [];
             }
-        },
-        updated() {
-            this.$nextTick(() => this.scrollToEnd());
-        },
-        methods: {
-            removeMessage(id) {
-                this.messages = this.messages.filter((message) => {
-                    return message.id !== id;
-                });
+            return chatStore.messages;
+        });
+
+        const removeMessage = (id) => {
+            messages.value = messages.value.filter((message) => message.id !== id);
+        };
+
+        const scrollToEnd = () => {
+            if (messageContainer.value) {
+                messageContainer.value.scrollTop = messageContainer.value.scrollHeight;
+            }
+        }
+
+        watch(
+            () => messages.value,
+            () => {
+                if (chatStore.messages !== []) {
+                    scrollToEnd()
+                }
             },
-            scrollToEnd: function () {
-                var content = this.$refs.messages;
-                content.scrollTop = content.scrollHeight
-            },
-        },
-        mounted () {
+            { deep: true }
+        );
+
+        onUpdated( () => {
+            scrollToEnd()
+        })
+
+        onMounted(() => {
+            // Load messages
             axios.get('/api/chat/messages').then((response) => {
-                this.messages = response.data
+                chatStore.setMessages(response.data)
+            }).catch((error) => {
+                dialog.requestError(error, t('chat.loadFailed'));
+            }).finally(() => {
+                loading.value = false;
             });
 
-            Bus.$on('message.added', (message) => {
-                this.messages.push(message);
+            scrollToEnd()
+        });
 
-            }).$on('message.removed', (message) => {
-                this.removeMessage(message.id);
-            });
+        return {
+            messages,
+            loading,
+            messageContainer,
+            scrollToEnd,
+            removeMessage
         }
     }
+}
 </script>
 
 <style lang="scss">
-    .chat {
-        &__messages {
-            height: 400px;
-            max-height: 400px;
-            overflow-y: scroll;
-        }
-    }
+#messages {
+    height: calc(100vh - 360px);
+    min-height: 320px;
+    overflow-y: auto;
+    background: rgb(var(--v-theme-surface)) !important;
+}
 </style>

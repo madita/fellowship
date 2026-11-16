@@ -1,7 +1,7 @@
 <template>
   <v-tooltip bottom>
-    <template v-slot:activator="{ on }">
-      <div ref="copylabel" class="copylabel animate__faster" v-on="on" @click.stop.prevent="copy">{{ text }}</div>
+    <template v-slot:activator="{ props }">
+      <div ref="copylabel" class="copylabel animate__faster" v-bind="props" @click.stop.prevent="copy">{{ text }}</div>
     </template>
     <span>{{ tooltip }}</span>
   </v-tooltip>

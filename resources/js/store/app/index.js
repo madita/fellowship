@@ -1,37 +1,53 @@
-import configs from '../../configs'
+import { defineStore } from 'pinia';
+
 import actions from './actions'
 import mutations from './mutations'
+import configs from '../../configs';
 
-const { product, time, theme  } = configs
+const {
+    product,
+    time,
+    theme: { globalTheme, menuTheme, toolbarTheme, isToolbarDetached, isContentBoxed, isRTL }
+} = configs;
 
-const { globalTheme, menuTheme, toolbarTheme, isToolbarDetached, isContentBoxed, isRTL } = theme
+export const useAppStore = defineStore({
+    id: 'appStore',
 
-// state initial values
-const state = {
-  product,
+    // defining state
+    state: () => ({
+        product,
 
-  time,
+        time,
 
-  // themes and layout configurations
-  globalTheme,
-  menuTheme,
-  toolbarTheme,
-  isToolbarDetached,
-  isContentBoxed,
-  isRTL,
+        // themes and layout configurations
+        globalTheme,
+        menuTheme,
+        toolbarTheme,
+        isToolbarDetached,
+        isContentBoxed,
+        isRTL,
 
-  // App.vue main toast
-  toast: {
-    show: false,
-    color: 'black',
-    message: '',
-    timeout: 3000
-  }
-}
+        // App.vue main toast
+        toast: {
+            show: false,
+            color: 'black',
+            message: '',
+            timeout: 3000
+        }
+    }),
 
-export default {
-  namespaced: true,
-  state,
-  actions,
-  mutations
-}
+    // Getters (if you have any)
+
+    // Converting actions and mutations
+    actions: {
+        ...actions,   // I'm spreading the existing actions here. Depending on their content, you might need to adapt them.
+
+        // Convert mutations to methods directly manipulating state
+        ...Object.keys(mutations).reduce((acc, mutationName) => {
+            acc[mutationName] = function(payload) {
+                mutations[mutationName](this, payload);
+            };
+            return acc;
+        }, {})
+    }
+});

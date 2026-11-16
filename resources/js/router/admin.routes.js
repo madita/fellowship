@@ -1,10 +1,20 @@
 import auth from './middleware/auth'
 import verified from "./middleware/verified";
 import permission from "./middleware/permission";
+import { movedCategories, resolveMovedSetting } from '@/configs/settingsConfig';
 
-export default [{
+export const admin = [{
     path: '/admin',
-    redirect: 'users-list',
+    redirect: { name: 'admin-dashboard' },
+}, {
+    path: '/admin/dashboard',
+    name: 'admin-dashboard',
+    meta: {
+        middleware: [
+            auth, permission, verified
+        ]
+    },
+    component: () => import(/* webpackChunkName: "admin-dashboard" */ '@/pages/admin/AdminDashboard.vue')
 }, {
     path: '/admin/pages',
     name: 'admin-pages',
@@ -24,6 +34,24 @@ export default [{
     },
     component: () => import(/* webpackChunkName: "admin-pages-form" */ '@/pages/admin/PageForm.vue')
 }, {
+    path: '/admin/settings/tools/migrations',
+    name: 'admin-migrations',
+    meta: {
+        middleware: [
+            auth, permission, verified
+        ]
+    },
+    component: () => import(/* webpackChunkName: "admin-migrations" */ '@/pages/admin/MigrationDashboard.vue')
+}, {
+    path: '/admin/related-content',
+    name: 'admin-relations',
+    meta: {
+        middleware: [
+            auth, permission, verified
+        ]
+    },
+    component: () => import(/* webpackChunkName: "admin-relations" */ '@/pages/admin/RelationsDashboard.vue')
+}, {
     path: '/admin/posts',
     name: 'admin-posts',
     meta: {
@@ -32,7 +60,34 @@ export default [{
         ]
     },
     component: () => import(/* webpackChunkName: "admin-posts" */ '@/pages/admin/Post.vue')
-}, {
+},{
+    path: '/admin/events',
+    name: 'admin-events',
+    meta: {
+        middleware: [
+            auth, permission, verified
+        ]
+    },
+    component: () => import(/* webpackChunkName: "admin-events" */ '@/pages/admin/Event.vue')
+},{
+    path: '/admin/events/types',
+    name: 'admin-events-types',
+    meta: {
+        middleware: [
+            auth, permission, verified
+        ]
+    },
+    component: () => import(/* webpackChunkName: "admin-events-types" */ '@/pages/admin/EventType.vue')
+},{
+    path: '/admin/events/profiles',
+    name: 'admin-events-profiles',
+    meta: {
+        middleware: [
+            auth, permission, verified
+        ]
+    },
+    component: () => import(/* webpackChunkName: "admin-events-profiles" */ '@/pages/admin/EventProfile.vue')
+},{
     path: '/admin/users',
     name: 'admin-users',
     meta: {
@@ -42,7 +97,34 @@ export default [{
     },
     component: () => import(/* webpackChunkName: "admin-users" */ '@/pages/admin/User.vue')
 }, {
-    path: '/admin/roles',
+    path: '/admin/gallery',
+    name: 'admin-gallery',
+    meta: {
+        middleware: [
+            auth, permission, verified
+        ]
+    },
+    component: () => import(/* webpackChunkName: "admin-gallery" */ '@/pages/admin/Gallery.vue')
+}, {
+    path: '/admin/media',
+    name: 'admin-media',
+    meta: {
+        middleware: [
+            auth, permission, verified
+        ]
+    },
+    component: () => import(/* webpackChunkName: "admin-media" */ '@/pages/admin/MediaCenter.vue')
+}, {
+    path: '/admin/settings/localization/translations',
+    name: 'admin-translations',
+    meta: {
+        middleware: [
+            auth, permission, verified
+        ]
+    },
+    component: () => import(/* webpackChunkName: "admin-translations" */ '@/pages/admin/TranslationManager.vue')
+}, {
+    path: '/admin/settings/access/roles',
     name: 'admin-roles',
     meta: {
         middleware: [
@@ -51,7 +133,7 @@ export default [{
     },
     component: () => import(/* webpackChunkName: "admin-roles" */ '@/pages/admin/Role.vue')
 }, {
-    path: '/admin/permissions',
+    path: '/admin/settings/access/permissions',
     name: 'admin-permissions',
     meta: {
         middleware: [
@@ -61,24 +143,33 @@ export default [{
     component: () => import(/* webpackChunkName: "admin-permissions" */ '@/pages/admin/Permission.vue')
 },
     {
-        path: '/admin/tags/taxonomie',
+        path: '/admin/settings/taxonomy/taxonomies',
         name: 'admin-taxonomie',
         meta: {
             middleware: [
-                auth, verified
+                auth, permission, verified
             ]
         },
-        component: () => import(/* webpackChunkName: "admin-permissions" */ '@/pages/admin/Taxonomie.vue')
+        component: () => import(/* webpackChunkName: "admin-taxonomie" */ '@/pages/admin/Taxonomie.vue')
     },
     {
-        path: '/admin/tags/terms',
+        path: '/admin/settings/taxonomy/terms',
         name: 'admin-terms',
         meta: {
             middleware: [
-                auth, verified
+                auth, permission, verified
             ]
         },
         component: () => import(/* webpackChunkName: "admin-permissions" */ '@/pages/admin/Terms.vue')
+    }, {
+        path: '/admin/settings/forum/categories',
+        name: 'admin-forums',
+        meta: {
+            middleware: [
+                auth, permission, verified
+            ]
+        },
+        component: () => import(/* webpackChunkName: "admin-forums" */ '@/pages/admin/ForumManager.vue')
     }, {
         path: '/admin/announcements',
         name: 'admin-announcements',
@@ -88,4 +179,160 @@ export default [{
             ]
         },
         component: () => import(/* webpackChunkName: "admin-announcements" */ '@/pages/admin/Announcement.vue')
+    },
+    // Old locations of the tools that now live in the settings overview
+    { path: '/admin/roles', redirect: '/admin/settings/access/roles' },
+    { path: '/admin/permissions', redirect: '/admin/settings/access/permissions' },
+    { path: '/admin/tags/taxonomie', redirect: '/admin/settings/taxonomy/taxonomies' },
+    { path: '/admin/tags/terms', redirect: '/admin/settings/taxonomy/terms' },
+    { path: '/admin/forums', redirect: '/admin/settings/forum/categories' },
+    { path: '/admin/translations', redirect: '/admin/settings/localization/translations' },
+    { path: '/admin/migrations', redirect: to => ({ path: '/admin/settings/tools/migrations', query: to.query }) },
+    // Settings routes - hierarchical structure
+    {
+        path: '/admin/settings',
+        name: 'admin-settings',
+        meta: {
+            middleware: [
+                auth, permission, verified
+            ]
+        },
+        component: () => import(/* webpackChunkName: "admin-settings-overview" */ '@/pages/admin/settings/SettingsOverview.vue')
+    },
+    {
+        // Explicit route declared before the :category wildcard so it wins.
+        path: '/admin/settings/discord',
+        name: 'admin-settings-discord',
+        meta: {
+            middleware: [
+                auth, permission, verified
+            ]
+        },
+        component: () => import(/* webpackChunkName: "admin-discord" */ '@/pages/admin/settings/integrations/DiscordWebhooksPage.vue')
+    },
+    {
+        // Explicit route declared before the :category wildcard so it wins.
+        path: '/admin/settings/menus',
+        name: 'admin-settings-menus',
+        meta: {
+            middleware: [
+                auth, permission, verified
+            ]
+        },
+        component: () => import(/* webpackChunkName: "admin-menus" */ '@/pages/admin/MenuManager.vue')
+    },
+    {
+        path: '/admin/settings/:category',
+        name: 'admin-settings-category',
+        meta: {
+            middleware: [
+                auth, permission, verified
+            ]
+        },
+        // A category that was folded into another still answers, so a
+        // link written down before the regrouping lands where its
+        // settings went instead of on "category not found".
+        beforeEnter: (to) => {
+            const category = movedCategories[to.params.category];
+
+            return category
+                ? { name: 'admin-settings-category', params: { category } }
+                : true;
+        },
+        component: () => import(/* webpackChunkName: "admin-settings-category" */ '@/pages/admin/settings/SettingsCategory.vue')
+    },
+    {
+        path: '/admin/settings/:category/:setting',
+        name: 'admin-settings-page',
+        meta: {
+            middleware: [
+                auth, permission, verified
+            ]
+        },
+        // Same for a single page, which may also have been renamed on
+        // the way into its new category.
+        beforeEnter: (to) => {
+            const params = resolveMovedSetting(to.params.category, to.params.setting);
+
+            return params ? { name: 'admin-settings-page', params } : true;
+        },
+        component: () => import(/* webpackChunkName: "admin-settings-page" */ '@/pages/admin/settings/SettingsPage.vue')
+    },
+    {
+        path: '/admin/tickets',
+        name: 'admin-tickets',
+        meta: {
+            middleware: [
+                auth, permission, verified
+            ]
+        },
+        component: () => import(/* webpackChunkName: "tickets" */ '@/pages/tickets/TicketList.vue')
+    },
+    {
+        path: '/admin/tickets/create',
+        name: 'admin-ticket-create',
+        meta: {
+            middleware: [
+                auth, permission, verified
+            ]
+        },
+        component: () => import(/* webpackChunkName: "ticket-editor" */ '@/pages/tickets/TicketEditor.vue')
+    },
+    {
+        path: '/admin/tickets/:id(\\d+)/edit',
+        name: 'admin-ticket-edit',
+        meta: {
+            middleware: [
+                auth, permission, verified
+            ]
+        },
+        component: () => import(/* webpackChunkName: "ticket-editor" */ '@/pages/tickets/TicketEditor.vue')
+    },
+    {
+        path: '/admin/tickets/:id(\\d+)',
+        name: 'admin-ticket',
+        meta: {
+            middleware: [
+                auth, permission, verified
+            ]
+        },
+        component: () => import(/* webpackChunkName: "ticket-detail" */ '@/pages/tickets/TicketDetail.vue')
+    },
+    {
+        path: '/admin/polls',
+        name: 'admin-polls',
+        meta: {
+            middleware: [
+                auth, permission, verified
+            ]
+        },
+        component: () => import(/* webpackChunkName: "admin-polls" */ '@/pages/admin/PollsDashboard.vue')
+    },
+    {
+        // Writing to the members, the templates the site sends, and the
+        // kinds of mail somebody can say no to. Guarded by
+        // manage-mailings rather than by being an admin, so whoever
+        // writes the newsletter can be let in on its own.
+        path: '/admin/mailings',
+        name: 'admin-mailings',
+        meta: {
+            middleware: [
+                auth, permission, verified
+            ]
+        },
+        component: () => import(/* webpackChunkName: "admin-mailings" */ '@/pages/admin/MailingManager.vue')
+    },
+    {
+        // Stays reachable with the podcast feature switched off, so an
+        // admin can still get at the episodes to switch it back on.
+        path: '/admin/podcast',
+        name: 'admin-podcast',
+        meta: {
+            middleware: [
+                auth, permission, verified
+            ]
+        },
+        component: () => import(/* webpackChunkName: "admin-podcast" */ '@/pages/admin/PodcastManager.vue')
     }]
+
+export default admin

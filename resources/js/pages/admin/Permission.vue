@@ -1,67 +1,106 @@
 <template>
   <div class="flex-grow-1">
-      <v-simple-table>
-          <template v-slot:default>
-              <thead>
-              <tr>
-                  <th></th>
-                  <th class="text-left"
-                      v-for="role in roles"
-                      :key="role.name">
-                      {{ role.display_name }}
-                  </th>
-              </tr>
-              </thead>
-              <tbody>
-              <tr
-                  v-for="(item, index) in permissions"
-                  :key="item.name"
-              >
-                  <td>{{ item.display_name }}</td>
-                  <td class="text-left"
-                      v-for="role in roles"
-                      :key="role.name+index">
-                      <v-checkbox
-                          v-model="selected"
-                          :value="{role: role.id, permission: item.id}"
-                      ></v-checkbox>
-
-                  </td>
-              </tr>
-              </tbody>
-          </template>
-      </v-simple-table>
-      <v-btn
-          color="blue darken-1"
-          text
-          @click="save"
+      <page-header
+          :title="$t('admin.permissions.title')"
+          icon="mdi-shield-key-outline"
+          :breadcrumbs="[$crumb('admin'), $crumb('settings'), $t('admin.permissions.title')]"
+          :back-to="{ name: 'admin-settings-category', params: { category: 'access' } }"
       >
-          Save
-      </v-btn>
+          <template #actions>
+              <v-btn
+                  color="primary"
+                  variant="elevated"
+                  prepend-icon="mdi-content-save-outline"
+                  :loading="saving"
+                  :disabled="saving || loading"
+                  @click="save"
+              >
+                  {{ $t('common.save') }}
+              </v-btn>
+          </template>
+      </page-header>
+
+      <v-container fluid>
+          <v-card>
+              <loading-state v-if="loading && !permissions.length" />
+
+              <empty-state
+                  v-else-if="!loading && !permissions.length"
+                  icon="mdi-shield-off-outline"
+                  :title="$t('admin.permissions.noPermissions')"
+                  compact
+              />
+
+              <v-table v-else>
+                  <thead>
+                  <tr>
+                      <th></th>
+                      <th class="text-left"
+                          v-for="role in roles"
+                          :key="role.name">
+                          {{ role.display_name }}
+                      </th>
+                  </tr>
+                  </thead>
+                  <tbody>
+                  <tr
+                      v-for="(item, index) in permissions"
+                      :key="item.name"
+                  >
+                      <td>{{ item.display_name }}</td>
+                      <td class="text-left"
+                          v-for="role in roles"
+                          :key="role.name+index">
+                          <v-checkbox
+                              v-model="selected"
+                              :value="{role: role.id, permission: item.id}"
+                              :disabled="saving"
+                              hide-details
+                              density="compact"
+                          ></v-checkbox>
+                      </td>
+                  </tr>
+                  </tbody>
+              </v-table>
+
+              <v-divider />
+
+              <v-card-actions>
+                  <v-spacer />
+                  <v-btn
+                      color="primary"
+                      variant="flat"
+                      :loading="saving"
+                      :disabled="saving || loading"
+                      @click="save"
+                  >
+                      {{ $t('common.save') }}
+                  </v-btn>
+              </v-card-actions>
+          </v-card>
+      </v-container>
   </div>
 </template>
 
 <script>
-// import DataTable from '../../components/common/DataTable'
+import PageHeader from '../../components/common/PageHeader.vue'
+import EmptyState from '../../components/common/EmptyState.vue'
+import LoadingState from '../../components/common/LoadingState.vue'
 
 export default {
     data () {
         return {
             selected: [],
-            roles: {},
-            permissions: {},
-            loading: false,
-            breadcrumbs: [{
-                text: '',
-                disabled: false,
-                href: '#'
-            }, {
-                text: 'List'
-            }],
+            roles: [],
+            permissions: [],
+            loading: true,
+            saving: false,
         }
     },
     components: {
-
+        PageHeader,
+        EmptyState,
+        LoadingState
     },
     methods: {
         getRoles () {
@@ -94,18 +133,17 @@ export default {
                 this.loading = false
             });
         },
-        save () {
-            axios.post('/api/datatable/permissions/roles', this.selected).then(() => {
-                //this.response.records.data.push(this.editedItem)
-                //console.log()
-
-
-            }).catch((error) => {
-                if (error.response.status === 422) {
-                    // this.creating.errors = error.response.data
-                    this.editing.errors = error.response.data
-                }
-            })
+        async save () {
+            if (this.saving) return
+            this.saving = true
+            try {
+                await axios.post('/api/datatable/permissions/roles', this.selected)
+                this.saving = false
+                this.$dialog.success(this.$t('success.saved'))
+            } catch (error) {
+                this.saving = false
+                this.$dialog.requestError(error)
+            }
         }
     },
     mounted () {

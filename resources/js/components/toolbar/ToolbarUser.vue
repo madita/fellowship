@@ -1,88 +1,122 @@
 <template>
-    <v-menu offset-y left transition="slide-y-transition">
-        <template v-slot:activator="{ on }">
-            <v-btn icon class="elevation-2" v-on="on">
-                <v-badge
-                    color="success"
-                    dot
-                    bordered
-                    offset-x="10"
-                    offset-y="10"
-                >
-                    <user-avatar :user="user"></user-avatar>
+    <v-menu transition="slide-y-transition">
+        <template v-slot:activator="{ props }">
+            <!-- One size for every control in the bar (see _toolbar.scss);
+                 the avatar follows the button down to fit inside it -->
+            <v-btn icon variant="text" size="small" v-bind="props">
+                <v-badge color="success" dot location="bottom end" offset-x="4" offset-y="4">
+                    <user-avatar :user="user" :size="32"></user-avatar>
                 </v-badge>
             </v-btn>
         </template>
 
         <!-- user menu list -->
-        <v-list dense nav>
+        <v-list>
             <v-list-item
                 v-for="(item, index) in menu"
                 :key="index"
-                :to="item.link"
+                :to="item.link || undefined"
                 :exact="item.exact"
                 :disabled="item.disabled"
-                link
+                @click="item.action ? handleAction(item.action) : null"
+                :link="!!item.link || !!item.action"
             >
-                <v-list-item-icon>
-                    <v-icon small :class="{ 'grey--text': item.disabled }">{{ item.icon }}</v-icon>
-                </v-list-item-icon>
-                <v-list-item-content>
-                    <v-list-item-title>{{ item.key ? $t(item.key) : item.text }}</v-list-item-title>
-                </v-list-item-content>
+                <template v-slot:prepend v-if="item.icon">
+                    <v-icon>{{ item.icon }}</v-icon>
+                </template>
+                <v-list-item-title>{{ item.key ? $t(item.key) : item.text }}</v-list-item-title>
             </v-list-item>
+
+            <!-- Administration — clearly separated from the personal links -->
+            <template v-if="isAdmin">
+                <v-divider class="my-1"></v-divider>
+                <v-list-subheader class="text-uppercase text-caption font-weight-bold">
+                    {{ $t('menu.admin') }}
+                </v-list-subheader>
+                <v-list-item to="/admin/settings" link>
+                    <template v-slot:prepend>
+                        <v-icon color="primary">mdi-shield-crown-outline</v-icon>
+                    </template>
+                    <v-list-item-title>{{ $t('menu.adminSettings') }}</v-list-item-title>
+                </v-list-item>
+            </template>
 
             <v-divider class="my-1"></v-divider>
 
-            <v-list-item @click.prevent="signOut">
-                <v-list-item-icon>
-                    <v-icon small>mdi-logout-variant</v-icon>
-                </v-list-item-icon>
-                <v-list-item-content>
-                    <v-list-item-title>{{ $t('menu.logout') }}</v-list-item-title>
-                </v-list-item-content>
+            <v-list-item :disabled="signingOut" @click.prevent="signOut">
+                <template v-slot:prepend>
+                    <v-progress-circular v-if="signingOut" indeterminate size="20" width="2" class="mr-4" />
+                    <v-icon v-else>mdi-logout</v-icon>
+                </template>
+                <v-list-item-title>{{ $t('menu.logout') }}</v-list-item-title>
             </v-list-item>
         </v-list>
     </v-menu>
 </template>
 
 <script>
+import { ref, computed, onMounted } from 'vue';
 import config from '../../configs'
-import UserAvatar from "../common/UserAvatar";
-import {mapActions, mapGetters} from "vuex";
-/*
-|---------------------------------------------------------------------
-| Toolbar User Component
-|---------------------------------------------------------------------
-|
-| Quickmenu for user menu shortcuts on the toolbar
-|
-*/
+import UserAvatar from "../common/UserAvatar.vue";
+import { useAuthStore } from '@/store/authStore.js'
+import { useUserStore } from '@/store/userStore.js'
+import { useDialog } from '@/composables/useDialog.js'
+import {useRouter} from "vue-router";
+import eventBus from '../common/eventBus.js'
+import permission from '@/utils/permission.js'
+
 export default {
     components: {
         UserAvatar
     },
-    data() {
+    setup() {
+        const authStore = useAuthStore();
+        const userStore = useUserStore();
+        const router = useRouter()
+
+        // Same gate the sidebar uses: items tagged with a feature disappear
+        // when that feature is deactivated.
+        const menu = computed(() => config.toolbar.user.filter(item => permission.applyPermissions(item)));
+        const isAdmin = computed(() => userStore.hasRole('admin'));
+        const dialog = useDialog();
+        // Sign-out request in flight
+        const signingOut = ref(false);
+
+        const signOut = async () => {
+            if (signingOut.value) return;
+            signingOut.value = true;
+            try {
+                await authStore.logout();
+                await authStore.resetStore();
+                await userStore.resetStore();
+                router.replace({name: 'home'});
+            } catch (error) {
+                await dialog.requestError(error);
+            } finally {
+                signingOut.value = false;
+            }
+        }
+
+        const handleAction = (action) => {
+            if (action === 'settings') {
+                eventBus.emit('toolbar.settings.open')
+            }
+        }
+
+        onMounted(() => {
+
+            //console.log(userStore.user);
+        });
+
         return {
-            menu: config.toolbar.user
-        }
-    },
-    methods: {
-        ...mapActions({
-            signOutAction: 'auth/signOut'
-        }),
-
-        async signOut() {
-            await this.signOutAction()
-
-            this.$router.replace({name: 'home'})
-        }
-    },
-    computed: {
-        ...mapGetters({
-            authenticated: 'auth/authenticated',
-            user: 'auth/user',
-        })
+            menu,
+            isAdmin,
+            signingOut,
+            signOut,
+            handleAction,
+            user: userStore.user,
+            authenticated: authStore.isLoggedIn
+        };
     }
 }
 </script>

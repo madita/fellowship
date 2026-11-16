@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\Setting;
 use App\Models\User;
 use App\Providers\RouteServiceProvider;
 use Illuminate\Foundation\Auth\RegistersUsers;
@@ -44,33 +45,49 @@ class RegisterController extends Controller
     /**
      * Get a validator for an incoming registration request.
      *
-     * @param array $data
      *
      * @return \Illuminate\Contracts\Validation\Validator
      */
     protected function validator(array $data)
     {
-        return Validator::make($data, [
-            'username'     => ['required', 'string', 'max:255'],
-            'email'        => ['required', 'string', 'email', 'max:255', 'unique:users'],
-            'password'     => ['required', 'string', 'min:8', 'confirmed'],
+        $rules = [
+            'username' => ['required', 'string', 'max:255'],
+            'email'    => ['required', 'string', 'email', 'max:255', 'unique:users'],
+            'password' => ['required', 'string', 'min:8', 'confirmed'],
+        ];
+
+        // Check if age confirmation is required
+        $ageConfirmationRequired = Setting::get('age_confirmation_required', false);
+        if ($ageConfirmationRequired === 'true' || $ageConfirmationRequired === true || $ageConfirmationRequired === '1') {
+            $ageMinimum             = Setting::get('age_minimum', 18);
+            $rules['age_confirmed'] = ['required', 'accepted'];
+        }
+
+        return Validator::make($data, $rules, [
+            'age_confirmed.required' => 'You must confirm your age to register.',
+            'age_confirmed.accepted' => "You must confirm that you are at least {$ageMinimum} years old.",
         ]);
     }
 
     /**
      * Create a new user instance after a valid registration.
      *
-     * @param array $data
      *
-     * @return \App\Models\User
+     * @return User
      */
     protected function create(array $data)
     {
-        return User::create([
-            'name'         => $data['name'],
-            'username'     => $data['username'],
-            'email'        => $data['email'],
-            'password'     => Hash::make($data['password']),
+        $user = User::create([
+            'name'     => $data['name'],
+            'username' => $data['username'],
+            'email'    => $data['email'],
+            'password' => Hash::make($data['password']),
         ]);
+
+        // What any member may do is the `user` role's to carry, and it
+        // only carries it for people who actually hold it
+        $user->assignDefaultRole();
+
+        return $user;
     }
 }

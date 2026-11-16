@@ -1,15 +1,18 @@
 import auth from './middleware/auth'
 import guest from './middleware/guest'
 
-export default [{
+export const pages  = [{
     path: '/auth/signin',
     name: 'auth-signin',
     component: () => import(/* webpackChunkName: "auth-signin" */ '@/pages/auth/SigninPage.vue'),
     meta: {
         layout: 'auth',
+        requiresAuth: false,
+        allowUnauthenticated: true,
         middleware: [
             guest
-        ]
+        ],
+
     }
 }, {
     path: '/auth/signup',
@@ -77,4 +80,19 @@ export default [{
     path: '/utility/help',
     name: 'utility-help',
     component: () => import(/* webpackChunkName: "utility-help" */ '@/pages/utility/HelpPage.vue')
+}, {
+    // The link at the bottom of every mail. No middleware on purpose:
+    // somebody who wants the mail to stop should not have to sign in
+    // first, and the random token in the link is what stands in for a
+    // password.
+    path: '/mail/unsubscribe/:token',
+    name: 'mail-unsubscribe',
+    component: () => import(/* webpackChunkName: "mail-unsubscribe" */ '@/pages/utility/MailUnsubscribe.vue'),
+    meta: {
+        layout: 'auth',
+        requiresAuth: false,
+        allowUnauthenticated: true
+    }
 }]
+
+export default pages

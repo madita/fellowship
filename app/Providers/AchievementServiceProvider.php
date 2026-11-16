@@ -1,0 +1,222 @@
+<?php
+
+namespace App\Providers;
+
+use App\Models\Comment;
+use App\Models\Event\Event;
+use App\Models\Event\EventGuest;
+use App\Models\Forum\ForumPost;
+use App\Models\Forum\ForumThread;
+use App\Models\Like;
+use App\Models\Page;
+use App\Models\Podcast\PodcastEpisode;
+use App\Models\Poll\PollOption;
+use App\Models\Revision;
+use App\Models\Status\Status;
+use App\Models\Ticket\Ticket;
+use App\Models\Ticket\TicketComment;
+use App\Models\User;
+use App\Models\Vote;
+use App\Models\Wiki;
+use App\Support\Achievements;
+use Illuminate\Support\ServiceProvider;
+
+/**
+ * Where the site counts what members do.
+ *
+ * Every tracked action is wired here rather than scattered through the
+ * models, so the whole of what achievements watch can be read in one place,
+ * and adding an action is one line plus its entry in AchievementMetrics.
+ *
+ * Recording never throws, so none of this can break the thing that
+ * triggered it — see AchievementService.
+ */
+class AchievementServiceProvider extends ServiceProvider
+{
+    public function boot(): void
+    {
+        $this->watchForum();
+        $this->watchEvents();
+        $this->watchTickets();
+        $this->watchWiki();
+        $this->watchPodcast();
+        $this->watchContent();
+    }
+
+    private function watchWiki(): void
+    {
+        // A page becomes a wiki page when its Wiki row appears; the text
+        // lives on the Page it points at, and so does its author.
+        Wiki::created(function (Wiki $wiki) {
+            $model = $wiki->wikiable_type;
+            $page  = $model ? $model::find($wiki->wikiable_id) : null;
+
+            Achievements::record($page?->user, 'wiki.page.created');
+        });
+
+        // Approval is counted where the approving happens — see
+        // Wiki::afterApproved(), which credits the author rather than the
+        // admin who approved it.
+
+        // Every later revision of a wiki page is an edit
+        Revision::created(function (Revision $revision) {
+            if ($revision->revisionable_type !== Page::class || $revision->action === 'created') {
+                return;
+            }
+
+            Achievements::record($this->userFor($revision->user_id), 'wiki.page.edited');
+        });
+    }
+
+    private function watchForum(): void
+    {
+        // The forum calls the member behind a thread or post its author
+        ForumThread::created(fn (ForumThread $thread) => Achievements::record(
+            $thread->author,
+            'forum.thread.created'
+        ));
+
+        ForumPost::created(fn (ForumPost $post) => Achievements::record(
+            $post->author,
+            'forum.post.created'
+        ));
+
+        // Being marked helpful is the author's achievement, not the
+        // marker's, and it counts the once — when the flag goes up.
+        ForumPost::updated(function (ForumPost $post) {
+            if ($post->wasChanged('helpful_at') && $post->is_helpful) {
+                Achievements::record($post->author, 'forum.post.solution');
+            }
+        });
+
+        // A like counts for whoever wrote the post, not the liker. Likes
+        // are one table now, shared with the timeline, so the kind has to
+        // be checked — and the timeline has no achievement of its own for
+        // a stray status like to land in.
+        Like::created(function (Like $like): void {
+            if ($like->likeable_type !== ForumPost::class) {
+                return;
+            }
+
+            Achievements::record($like->likeable?->author, 'forum.post.liked');
+        });
+    }
+
+    private function watchEvents(): void
+    {
+        // Not every event is the same amount of work, so both of these
+        // carry the event's type and an achievement can ask for the kinds
+        // that mean something.
+        Event::created(fn (Event $event) => Achievements::record(
+            $this->userFor($event->user_id),
+            'event.organised',
+            $event->event_type_id
+        ));
+
+        EventGuest::created(fn (EventGuest $guest) => Achievements::record(
+            $this->userFor($guest->user_id),
+            'event.joined',
+            $guest->event?->event_type_id
+        ));
+    }
+
+    private function watchTickets(): void
+    {
+        // A ticket records its author as created_by_user_id, reached through
+        // creator() — not the user_id the other models use.
+        Ticket::created(function (Ticket $ticket) {
+            $author = $ticket->creator;
+
+            Achievements::record($author, 'ticket.created');
+
+            // A bug report and a feature request are different things to
+            // have done, so each is counted on its own as well
+            $type = $ticket->ticketType?->slug;
+
+            if ($type === 'bug') {
+                Achievements::record($author, 'feedback.bug');
+            } elseif ($type === 'feature') {
+                Achievements::record($author, 'feedback.feature');
+            }
+        });
+
+        TicketComment::created(fn (TicketComment $comment) => Achievements::record(
+            $comment->user,
+            'ticket.comment'
+        ));
+
+        // Getting a ticket resolved counts for whoever raised it
+        Ticket::updated(function (Ticket $ticket) {
+            if ($ticket->wasChanged('status') && $ticket->status === 'resolved') {
+                Achievements::record($ticket->creator, 'ticket.resolved');
+            }
+        });
+    }
+
+    /**
+     * Publishing an episode counts once, whenever it actually becomes
+     * published — on creation for an episode published straight away, and
+     * on the edit that flips the switch for one that was a draft.
+     *
+     * `updated` also fires for every play, because the counter is an
+     * increment on the row, so the transition has to be read off
+     * wasChanged() rather than the current value.
+     */
+    private function watchPodcast(): void
+    {
+        PodcastEpisode::created(function (PodcastEpisode $episode): void {
+            if ( ! $episode->is_published) {
+                return;
+            }
+
+            Achievements::record($this->userFor($episode->created_by), 'podcast.episode.published');
+        });
+
+        PodcastEpisode::updated(function (PodcastEpisode $episode): void {
+            if ( ! $episode->wasChanged('is_published') || ! $episode->is_published) {
+                return;
+            }
+
+            Achievements::record($this->userFor($episode->created_by), 'podcast.episode.published');
+        });
+    }
+
+    private function watchContent(): void
+    {
+        Status::created(fn (Status $status) => Achievements::record(
+            $this->userFor($status->user_id),
+            'timeline.post.created'
+        ));
+
+        // Comments are one table now, shared with the wiki's discussions,
+        // so the kind has to be checked — commenting on a wiki page is not
+        // commenting on the timeline.
+        Comment::created(function (Comment $comment): void {
+            if ($comment->commentable_type !== Status::class) {
+                return;
+            }
+
+            Achievements::record($this->userFor($comment->user_id), 'timeline.comment');
+        });
+
+        // Votes are one table now, shared with ticket up-votes, so the
+        // metric has to check what was voted for. Without this guard every
+        // ticket up-vote would quietly earn the poll achievement — and the
+        // backfill command would credit the old ones too.
+        Vote::created(function (Vote $vote): void {
+            if ($vote->voteable_type !== PollOption::class) {
+                return;
+            }
+
+            Achievements::record($this->userFor($vote->user_id), 'poll.voted');
+        });
+    }
+
+    /**
+     * The member behind an id, without assuming the relation is loaded.
+     */
+    private function userFor(?int $userId): ?User
+    {
+        return $userId ? User::find($userId) : null;
+    }
+}

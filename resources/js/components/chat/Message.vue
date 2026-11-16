@@ -1,57 +1,58 @@
 <template>
-    <div class="d-flex flex-grow-1" :class="{ 'flex-row-reverse': message.selfOwned}">
-        <!--            <user-avatar :user="message.user.id" />-->
-        {{ message.user.username }}
+    <div v-if="message?.selfOwned" class="justify-end d-flex text-end mb-1">
+        <div>
+            <small class="text-medium-emphasis text-subtitle-2" v-if="message.created_at">
+                {{ formatDistanceToNow(message?.created_at) }}
+            </small>
 
-        <div class="mx-2">
-            <v-tooltip bottom>
-                <template v-slot:activator="{ on, attrs }">
-                    <v-card
-                        class="pa-1"
-                        :class="{ 'primary darken-1': message.selfOwned}"
-                        :dark="message.selfOwned"
-                        v-bind="attrs"
-                        v-on="on"
-                    >
-                        <div class="font-weight-bold">{{ message.body }}</div>
-                    </v-card>
-                </template>
-                <span>{{ message.created_at | humanDiff() }}</span>
-            </v-tooltip>
+            <v-sheet class="chat-bubble chat-bubble--own rounded-lg px-3 py-2 mb-1">
+                <p class="text-body-1 mb-0">{{ message?.body }}</p>
+            </v-sheet>
+        </div>
+    </div>
+    <div v-else class="d-flex align-start ga-3 mb-1">
+        <!---User Avatar-->
+        <user-avatar :user="message?.user"></user-avatar>
+        <div>
+            <small class="text-medium-emphasis text-subtitle-2" v-if="message.created_at">
+                {{ message?.user?.username }},
+                {{ formatDistanceToNow(message?.created_at) }}
+            </small>
+
+            <v-sheet class="chat-bubble rounded-lg px-3 py-2 mb-1">
+                <p class="text-body-1 mb-0">{{ message?.body }}</p>
+            </v-sheet>
         </div>
     </div>
 </template>
 
-
 <script>
+import UserAvatar from "@/components/common/UserAvatar.vue";
+import { formatDateDistanceToNow } from "@/plugins/formatDate.js";
+
 export default {
-    props: ['message']
+    methods: {
+        formatDistanceToNow(date) {
+            return formatDateDistanceToNow(date);
+        }
+    },
+    components: {UserAvatar},
+    props: {
+        message: {
+            type: Object,
+            required: true
+        }
+    }
 }
 </script>
 
-
 <style lang="scss">
-.chat {
-    &__message {
-        padding: 15px;
-        border-bottom: 1px solid #eee;
+.chat-bubble {
+    background: rgba(var(--v-theme-on-surface), 0.06) !important;
+    white-space: pre-wrap;
 
-        &--own {
-            background-color: #f0f0f0;
-        }
-
-        &-user {
-            font-weight: 800;
-        }
-
-        &-timestamp {
-            color: #aaa;
-        }
-
-        &-body {
-            margin-bottom: 0;
-            white-space: pre-wrap;
-        }
+    &--own {
+        background: rgba(var(--v-theme-primary), 0.12) !important;
     }
 }
 </style>

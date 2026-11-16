@@ -1,0 +1,40 @@
+preset: laravel
+
+risky: false
+
+enabled:
+  - align_double_arrow
+  - align_equals
+  - concat_with_spaces
+  - not_operator_with_space
+  - ordered_class_elements
+  - phpdoc_order
+
+disabled:
+  - unalign_equals
+  - concat_without_spaces
+  - symfony_phpdoc_order
+
+finder:
+  exclude:
+    - "bootstrap"
+    - "node_modules"
+    - "public"
+    - "resources"
+    - "storage"
+    - "vendor"
+    - "tests"
+  name:
+    - "*.php"
+  not-name:
+    - "*Stub.php"
+    - "*.blade.php"
+  not-path:
+    - "bootstrap/cache"
+    - "database/migrations"
+    - "database/seeds"
+  path:
+    - "app"
+    - "config"
+    - "database"
+    - "routes"

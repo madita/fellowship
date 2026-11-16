@@ -1,0 +1,1189 @@
+<script setup>
+import { ref, watch, computed, nextTick, onMounted, onUnmounted  } from 'vue';
+import { useI18n } from 'vue-i18n';
+import { useRouter } from 'vue-router';
+import CustomDatePicker from "../common/CustomDatePicker.vue";
+
+const { t, te } = useI18n();
+
+const translateTypeName = (name) => {
+    const key = 'events.types.' + name.toLowerCase();
+    return te(key) ? t(key) : name;
+};
+import UserAvatar from "../common/UserAvatar.vue";
+import axios from "axios";
+import { useCalendarStore } from '@/store/calendarStore.js';
+import { useDialog } from '@/composables/useDialog.js';
+import ProfileDialog from '../common/ProfileDialog.vue';
+import DetailsDialog from '../common/DetailsDialog.vue';
+import RelatedContentList from '../common/RelatedContentList.vue';
+import EventLocationField from './EventLocationField.vue';
+import EventLocationDisplay from './EventLocationDisplay.vue';
+import { useUserStore } from "@/store/userStore.js";
+import { useSettingsStore } from "@/store/settingStore.js";
+import { useDateFormat } from '@/plugins/formatDate.js';
+import { mergeTopLevelIntoExtendedProps } from '@/utils/eventLocation.js';
+import { hasEventEnded } from '@/utils/eventTime.js';
+
+const props = defineProps({
+    isDrawerOpen: Boolean,
+    editMode: Boolean,
+    event: Object,
+    // True while the parent is persisting an add/update/remove; the drawer
+    // stays open with a loader until the parent closes it on success.
+    saving: Boolean,
+});
+
+const emit = defineEmits([
+    'update:isDrawerOpen',
+    'addEvent',
+    'updateEvent',
+    'removeEvent',
+]);
+
+const dialog = useDialog();
+const router = useRouter();
+
+const selectedStatus = ref(null);
+const showProfileDialog = ref(false);
+const showDetailsDialog = ref(false);
+const guestResponses = ref({});
+
+const calendarStore = useCalendarStore();
+const userStore = useUserStore();
+const settingsStore = useSettingsStore();
+const { formatDate: formatDateUtil } = useDateFormat();
+const localEditMode = ref(props.editMode);
+
+// Get user's time format preference (without seconds for display)
+const userTimeFormat = computed(() => {
+    const timeFormat = userStore.user?.time_format ||
+                      settingsStore.appSettings?.time_format ||
+                      'H:i:s';
+    // Remove seconds for cleaner display
+    return timeFormat.replace(':s', '').replace(' s', '');
+});
+const refForm = ref();
+const isFocused = ref(true);
+const loadEventDetails = ref(true);
+
+const localEventTypes = computed(() => calendarStore.eventTypes);
+const eventAnswers = ref([]);
+const eventGuests = ref([]);
+const isGoing = ref(null);
+const isStartDateValid = ref(true);
+const isEndDateValid = ref(true);
+const profileAnswer = ref(null);
+
+// Related content section; its "Link content" dialog also opens from the header
+const relatedListRef = ref(null);
+// RSVP answer currently being sent (null when idle)
+const answering = ref(null);
+// Guest whose approval/rejection request is in flight (null when idle)
+const busyGuestId = ref(null);
+
+const localEvent = ref(null);
+const initialSnapshot = ref('');
+watch(
+    () => props.event,
+    (newEvent) => {
+        // Raw API items (list/upcoming views) carry location & co. at top
+        // level; only FullCalendar transposes them into extendedProps.
+        // Merging gives the form and view mode a single shape — and stops
+        // saving a list-opened event from wiping its stored location.
+        localEvent.value = newEvent
+            ? mergeTopLevelIntoExtendedProps(JSON.parse(JSON.stringify(newEvent)))
+            : null;
+        if (localEvent.value?.id) {
+            getEvent(localEvent.value.id);
+        }
+    },
+    { immediate: true }
+);
+
+// Which location modes this event type allows, from options.location
+// (["custom","real","virtual"]). Falls back to custom-only.
+const selectedEventTypeId = computed(() =>
+    localEvent.value?.extendedProps?.event_type_id ?? localEvent.value?.event_type_id ?? null
+);
+const allowedLocationModes = computed(() => {
+    const type = Object.values(localEventTypes.value).find(t => t.id === selectedEventTypeId.value);
+    let opts = type?.options;
+    if (typeof opts === 'string') {
+        try { opts = JSON.parse(opts); } catch (e) { opts = {}; }
+    }
+    const modes = opts?.location;
+    return Array.isArray(modes) && modes.length ? modes : ['custom'];
+});
+
+// Keep the selected mode valid for the chosen event type.
+watch([allowedLocationModes, selectedEventTypeId], () => {
+    const loc = localEvent.value?.extendedProps?.location;
+    if (!loc) return;
+    if (!loc.type || !allowedLocationModes.value.includes(loc.type)) {
+        loc.type = allowedLocationModes.value[0] ?? null;
+    }
+});
+
+/**
+ * Leave the drawer for the event's own page. An event that has never been
+ * saved has no page to go to yet, so it opens the create form instead.
+ */
+const openFullPage = async () => {
+    const id = localEvent.value?.id;
+
+    if (isDirty.value) {
+        const leave = await dialog.confirm({
+            title: t('events.unsavedChanges'),
+            message: t('events.unsavedChangesLeave'),
+            confirmText: t('events.leave'),
+        });
+
+        if (!leave) return;
+    }
+
+    dialogModelValueUpdate(false);
+
+    if (!id) {
+        router.push({ name: 'event-create' });
+        return;
+    }
+
+    router.push(localEditMode.value
+        ? { name: 'event-edit', params: { id } }
+        : { name: 'event-show', params: { id } });
+};
+
+const isDirty = computed(() => {
+    if (!initialSnapshot.value) return false;
+    return JSON.stringify(localEvent.value) !== initialSnapshot.value;
+});
+
+const eventTypeItems = computed(() => Object.values(localEventTypes.value));
+
+const eventType = computed(() => {
+    return Object.values(localEventTypes.value).find(item => item.name === localEvent.value?.extendedProps?.type);
+});
+
+const user = computed(() => {
+    return userStore.user || { id: null };
+});
+
+// Same rule as EventController@update: the owner, or anyone with manage-posts.
+const canEditEvent = computed(() => {
+    if (!localEvent.value?.id || !user.value.id) return false;
+    const ownerId = localEvent.value.extendedProps?.user_id ?? localEvent.value.user_id;
+    const permissions = userStore.permissions || [];
+    return ownerId === user.value.id
+        || !!userStore.user?.isAdmin
+        || permissions.some(permission => (permission?.name ?? permission) === 'manage-posts');
+});
+
+const resetEvent = () => {
+    isStartDateValid.value = true;
+    isEndDateValid.value = true;
+    nextTick(() => refForm.value?.resetValidation());
+};
+
+const canJoinEvent = computed(() => {
+    if (!localEvent.value?.id) return false;
+
+    return !hasEventEnded(localEvent.value);
+});
+
+// Confirms, then hands the delete to the parent. The parent closes the
+// drawer once the request succeeded (and reports failures itself).
+const removeEvent = async () => {
+    if (props.saving) return;
+    const ok = await dialog.confirmDelete(t('events.confirmDeleteEvent'), {
+        title: t('events.deleteEvent'),
+    });
+    if (!ok) return;
+    emit('removeEvent', String(localEvent.value.id));
+};
+
+const openDialog = () => {
+    showDetailsDialog.value = true;
+};
+
+const handleSubmit = () => {
+    if (props.saving) return;
+    validateStartDate();
+    validateEndDate();
+
+    refForm.value?.validate().then(({ valid }) => {
+        if (valid) {
+            // The parent persists the event and closes the drawer on success;
+            // until then the form stays open with the submit button loading.
+            if ('id' in localEvent.value)
+                emit('updateEvent', localEvent.value);
+            else
+                emit('addEvent', localEvent.value);
+        }
+    });
+};
+
+const eventTypeOptions = computed(() => {
+    //the fullcalender uses extendedProps but for all other the values should be accessed directly
+    if(localEvent.value?.extendedProps?.event_type_id) {
+        localEvent.value.event_type_id = localEvent.value?.extendedProps?.event_type_id
+    }
+    const type = Object.values(localEventTypes.value).find(item => item.id === localEvent.value?.event_type_id);
+    return type === undefined ? [] : JSON.parse(JSON.stringify(type.options));
+});
+
+const eventProfile = computed(() => eventTypeOptions.value.profile?.fields || []);
+
+const onCancel = () => {
+    emit('update:isDrawerOpen', false);
+};
+
+const getEvent = async (eventId) => {
+    try {
+        loadEventDetails.value = true;
+        const response = await axios.get(`/api/events/${eventId}`);
+        eventAnswers.value = response.data.answers;
+        eventGuests.value = response.data.guests;
+        isGoing.value = response.data.isGoing;
+    } catch (err) {
+        console.error('Failed to load event details:', err);
+    } finally {
+        loadEventDetails.value = false;
+    }
+};
+
+const approveGuest = async (guestId, action) => {
+    if (busyGuestId.value !== null) return;
+    busyGuestId.value = guestId;
+    try {
+        await axios.post(`/api/events/${localEvent.value.id}/approve-guest`, {
+            guestId,
+            action,
+        });
+
+        // Update the guest's approved status in all answer types
+        const updatedAnswers = {};
+
+        // Process each answer type (going, notgoing, etc.)
+        Object.keys(eventAnswers.value).forEach(answerType => {
+            // Create a new array for this answer type
+            updatedAnswers[answerType] = eventAnswers.value[answerType].map(guest => {
+                // If this is the guest we're approving/rejecting, update their pivot data
+                if (guest.pivot && guest.pivot.user_id === guestId) {
+                    return {
+                        ...guest,
+                        pivot: {
+                            ...guest.pivot,
+                            approved_at: action === "approve" ? new Date().toISOString() : null
+                        }
+                    };
+                }
+                return guest;
+            });
+        });
+
+        // Replace the entire eventAnswers object
+        eventAnswers.value = updatedAnswers;
+
+        // Refresh the event data to ensure we have the latest state
+        getEvent(localEvent.value.id);
+    } catch (error) {
+        await dialog.requestError(error, t('events.guestApprovalError'));
+    } finally {
+        busyGuestId.value = null;
+    }
+};
+
+const filterGuestsByApproval = (answers) => {
+    const guestsRequiringApproval = {};
+    const approvedGuests = {};
+
+    Object.keys(answers).forEach((status) => {
+        guestsRequiringApproval[status] = [];
+        approvedGuests[status] = [];
+        answers[status].forEach((guest) => {
+            if (
+                eventTypeOptions.value.guest &&
+                eventTypeOptions.value.guest.includes("approval") &&
+                !guest.pivot.approved_at
+            ) {
+                guestsRequiringApproval[status].push(guest);
+            } else {
+                approvedGuests[status].push(guest);
+            }
+        });
+    });
+
+    return { guestsRequiringApproval, approvedGuests };
+};
+
+const validateStartDate = () => {
+    isStartDateValid.value = !!localEvent.value.start;
+};
+
+const validateEndDate = () => {
+    isEndDateValid.value = !!localEvent.value.end;
+};
+const joinEvent = (answer) => {
+    const type = eventType.value;
+
+    // One answer request at a time
+    if (answering.value) return;
+
+    // Don't do anything if selecting the same option that's already selected, but do if profile can be changed...
+    if (isGoing.value && isGoing.value.type === answer && !type?.options?.profile?.includes(answer)) {
+        return;
+    }
+
+    // Store previous state for potential rollback
+    const previousGoing = isGoing.value ? { ...isGoing.value } : null;
+    const previousAnswer = previousGoing?.type;
+
+    // Optimistically update the UI for immediate feedback
+    isGoing.value = {
+        ...(isGoing.value || {}),
+        type: answer,
+        profile: isGoing.value?.profile || {}
+    };
+
+    // FIXED: Create a complete copy of the eventAnswers object to work with
+    const updatedAnswers = {};
+
+    // Copy all current answer lists, but filtering out the current user
+    Object.keys(eventAnswers.value).forEach(answerType => {
+        if (Array.isArray(eventAnswers.value[answerType])) {
+            // Create a new array without the current user
+            updatedAnswers[answerType] = eventAnswers.value[answerType].filter(guest =>
+                guest.id !== user.value.id && guest.pivot.user_id !== user.value.id
+            );
+        } else {
+            // If not an array, just copy whatever it is
+            updatedAnswers[answerType] = eventAnswers.value[answerType];
+        }
+    });
+
+    // Ensure the target answer list exists
+    if (!updatedAnswers[answer]) {
+        updatedAnswers[answer] = [];
+    }
+
+    // Check if user is already in this list (shouldn't be after filtering, but check anyway)
+    const userExists = updatedAnswers[answer].some(guest =>
+        guest.id === user.value.id || guest.pivot?.user_id === user.value.id
+    );
+
+    if (!userExists) {
+        // Create a copy of the user with pivot data
+        const userWithPivot = {
+            ...user.value,
+            pivot: {
+                user_id: user.value.id,
+                ...((!type?.options?.profile?.includes(answer)) ? { approved_at: new Date().toISOString() } : {})
+            }
+        };
+
+        updatedAnswers[answer].push(userWithPivot);
+    }
+
+    // FIXED: Replace entire eventAnswers object with our modified copy
+    eventAnswers.value = updatedAnswers;
+
+    if (type?.options?.profile?.includes(answer)) {
+        profileAnswer.value = answer;
+        showProfileDialog.value = true;
+    } else {
+        if (!localEvent.value?.id) {
+            console.error('Event ID is missing');
+            return;
+        }
+
+        answering.value = answer;
+        axios.post(`/api/events/${localEvent.value.id}/answer`, {answer})
+            .then(response => {
+                // Server confirmed the update
+                if (response.data && response.data.going) {
+                    isGoing.value = response.data.going;
+                }
+
+                // Replace entire answers object with server response
+                if (response.data && response.data.answers) {
+                    eventAnswers.value = JSON.parse(JSON.stringify(response.data.answers));
+                }
+            })
+            .catch((error) => {
+                console.error('Error updating event answer:', error);
+
+                // Revert optimistic update on error
+                isGoing.value = previousGoing;
+
+                // FIXED: Create a new object for error recovery
+                const recoveryAnswers = {};
+
+                // Copy all current lists except for the attempted answer
+                Object.keys(eventAnswers.value).forEach(answerType => {
+                    if (answerType !== answer) {
+                        recoveryAnswers[answerType] = [...eventAnswers.value[answerType]];
+                    }
+                });
+
+                // Ensure previous answer type exists if we had one
+                if (previousAnswer && !recoveryAnswers[previousAnswer]) {
+                    recoveryAnswers[previousAnswer] = [];
+                }
+
+                // Add user back to previous answer type if there was one
+                if (previousAnswer) {
+                    // Only add back if not already there
+                    const alreadyExists = recoveryAnswers[previousAnswer].some(guest =>
+                        guest.id === user.value.id || guest.pivot?.user_id === user.value.id
+                    );
+
+                    if (!alreadyExists) {
+                        const userWithPivot = {
+                            ...user.value,
+                            pivot: {
+                                user_id: user.value.id,
+                                approved_at: previousGoing?.pivot?.approved_at || new Date().toISOString()
+                            }
+                        };
+                        recoveryAnswers[previousAnswer].push(userWithPivot);
+                    }
+                }
+
+                // Make sure answer type exists
+                if (!recoveryAnswers[answer]) {
+                    recoveryAnswers[answer] = [];
+                }
+
+                // Replace entire object
+                eventAnswers.value = recoveryAnswers;
+
+                dialog.requestError(error, t('events.rsvpError'));
+            })
+            .finally(() => {
+                answering.value = null;
+            });
+    }
+};
+
+const dialogModelValueUpdate = (val) => {
+    // Block scrim/Esc close when there are unsaved changes; the close/cancel
+    // buttons go through onCancel and bypass this guard.
+    if (!val && isDirty.value) return;
+    emit('update:isDrawerOpen', val);
+};
+
+const rules = {
+    title: [v => !!v || t('events.titleRequired')],
+    date: [v => !!v || t('events.dateRequired')]
+};
+
+const handleProfile = (isConfirmed) => {
+    // Perform the profile save action
+    if (!isConfirmed) {
+        //console.log('AAAcancelprofile')
+    }
+};
+
+const formatDateRange = computed(() => {
+    if (!localEvent.value) return '';
+
+    const startDate = new Date(localEvent.value.start);
+    const endDate = localEvent.value.end ? new Date(localEvent.value.end) : null;
+
+    // Format the date part using user's date format preference
+    let formattedDate = formatDateUtil(startDate);
+
+    // Add time part using user's time format preference (without seconds for display)
+    formattedDate += ' ' + formatDateUtil(startDate, userTimeFormat.value);
+
+    if (endDate) {
+        // If same day, just show end time
+        if (startDate.toDateString() === endDate.toDateString()) {
+            formattedDate += ` - ${formatDateUtil(endDate, userTimeFormat.value)}`;
+        } else {
+            // Different day, show full date and time
+            formattedDate += ` - ${formatDateUtil(endDate)} ${formatDateUtil(endDate, userTimeFormat.value)}`;
+        }
+    }
+
+    return formattedDate;
+});
+
+// Utility function to round a date to the next hour or 15-minute increment
+const roundDateToNextTimeIncrement = (date) => {
+    const now = new Date(date);
+    const minutes = now.getMinutes();
+    const seconds = now.getSeconds();
+    const milliseconds = now.getMilliseconds();
+
+    // Find the next 15-minute increment
+    const minutesToAdd = 15 - (minutes % 15);
+
+    // If already exactly on a 15-minute mark and no seconds/ms, don't increment
+    if (minutesToAdd === 15 && seconds === 0 && milliseconds === 0) {
+        return now;
+    }
+
+    // Round to next 15-minute increment
+    now.setMinutes(minutes + minutesToAdd, 0, 0); // Reset seconds and milliseconds
+
+    return now;
+};
+
+// Handle start date change
+// Handle start date change
+const handleStartDateChange = (newStartDate) => {
+    // First, ensure the start date is properly rounded
+    if (newStartDate && !localEvent.value.allDay) {
+        // Convert to Date object if it's not already
+        const startDate = new Date(newStartDate);
+
+        // Round to next 15-minute increment
+        const roundedStartDate = roundDateToNextTimeIncrement(startDate);
+
+        // Only update if different to avoid loops
+        if (roundedStartDate.getTime() !== startDate.getTime()) {
+            localEvent.value.start = roundedStartDate;
+            newStartDate = roundedStartDate;
+        }
+    }
+
+    if (!localEvent.value.end || new Date(localEvent.value.end) < new Date(newStartDate)) {
+        // For all-day events, set the same date
+        if (localEvent.value.allDay) {
+            localEvent.value.end = newStartDate;
+        } else {
+            // For events with time, set end date 1 hour after start date
+            const endDate = new Date(newStartDate);
+
+            // If the start time was adjusted to the next hour, make sure the end time is still 1 hour later
+            endDate.setHours(endDate.getHours() + 1);
+
+            // Ensure minutes are aligned to 15-minute intervals
+            const minutes = endDate.getMinutes();
+            const roundedMinutes = Math.ceil(minutes / 15) * 15;
+            endDate.setMinutes(roundedMinutes);
+
+            localEvent.value.end = endDate;
+        }
+    }
+}
+
+// Watch for changes in the all-day toggle
+watch(() => localEvent.value.allDay, (isAllDay) => {
+    if (isAllDay && localEvent.value.start && localEvent.value.end) {
+        // If switching to all-day...
+    } else if (!localEvent.value.allDay && localEvent.value.start) {
+        // If switching from all-day to timed, set reasonable defaults
+        // Update start date to next rounded time
+        localEvent.value.start = roundDateToNextTimeIncrement(new Date());
+
+        // Set end date 1 hour after start
+        const endDate = new Date(localEvent.value.start);
+        endDate.setHours(endDate.getHours() + 1);
+        localEvent.value.end = endDate;
+    }
+});
+
+watch(() => props.editMode, () => {
+    localEditMode.value = props.editMode;
+});
+
+watch(() => props.isDrawerOpen, (isOpen) => {
+    resetEvent();
+    if (isOpen) {
+        // Re-sync from the prop on every open. The watcher on props.editMode
+        // alone is not enough: localEditMode is mutated locally (submit, the
+        // view/edit toggle), so the prop can still hold the value the parent
+        // wants while the local copy has drifted — and an unchanged prop
+        // fires no watcher.
+        localEditMode.value = props.editMode;
+
+        // Snapshot after localEvent has been set from props, so it reflects
+        // the unedited starting state.
+        nextTick(() => {
+            initialSnapshot.value = JSON.stringify(localEvent.value);
+        });
+    } else {
+        initialSnapshot.value = '';
+    }
+});
+
+const contentRef = ref(null);
+
+/**
+ * Open every event at its top.
+ *
+ * The drawer is mounted once and only shown and hidden, so the panel keeps
+ * whatever position the last event was left at. This is the element that
+ * scrolls — an earlier attempt reset Vuetify's box instead, which is not.
+ */
+const scrollToTop = async () => {
+    await nextTick();
+
+    if (contentRef.value) contentRef.value.scrollTop = 0;
+};
+
+watch(
+    [() => props.isDrawerOpen, () => props.event],
+    () => {
+        if (props.isDrawerOpen) scrollToTop();
+    }
+);
+
+// Where the member was reading before the drawer took the screen over
+let pageScrollBeforeOpen = 0;
+
+/**
+ * Bring the page to the top, then hold it there while the drawer is open.
+ *
+ * The drawer is positioned against the page rather than the screen, so it
+ * always sits at the very top of the document. Open an event after
+ * scrolling down — past the upcoming events, say — and the drawer opens
+ * above the viewport, out of sight, and has to be scrolled back up to.
+ *
+ * Holding the page still afterwards also settles the two scrollbars down
+ * the right-hand side, leaving the panel inside the drawer with the only
+ * one on screen.
+ */
+const lockPageScroll = (locked) => {
+    const { body, documentElement: root } = document;
+
+    if (!locked) {
+        // Let it move again before putting it back where it was
+        body.classList.remove('event-drawer-open');
+        body.style.removeProperty('--event-drawer-scroll-gap');
+        window.scrollTo(0, pageScrollBeforeOpen);
+        return;
+    }
+
+    // Both of these happen before the lock: a page that cannot scroll
+    // cannot be scrolled to the top either.
+    pageScrollBeforeOpen = window.scrollY;
+    window.scrollTo(0, 0);
+
+    // Standing in for the scrollbar that is about to disappear, so the
+    // page does not jump sideways as it goes
+    const gap = window.innerWidth - root.clientWidth;
+
+    body.style.setProperty('--event-drawer-scroll-gap', `${gap}px`);
+    body.classList.add('event-drawer-open');
+};
+
+watch(() => props.isDrawerOpen, lockPageScroll);
+
+// Leaving the page with the drawer open must not leave it locked
+onUnmounted(() => lockPageScroll(false));
+
+onMounted(() => {
+    if (props.isDrawerOpen) lockPageScroll(true);
+
+    if (!localEvent.value.start) {
+        // Set initial start date with proper timezone handling
+        localEvent.value.start = roundDateToNextTimeIncrement(new Date());
+    } else {
+        // If we already have a date (from editing an event), ensure it's displayed correctly
+        // The date picker handles timezone conversion using user preferences from userStore/settingsStore
+    }
+});
+
+</script>
+
+<template>
+    <VNavigationDrawer
+        temporary
+        :persistent="isDirty || saving"
+        location="end"
+        :model-value="props.isDrawerOpen"
+        width="420"
+        class="event-drawer"
+        @update:model-value="dialogModelValueUpdate"
+    >
+        <!-- Header Section -->
+        <div class="event-drawer-header">
+            <div v-if="localEditMode" class="d-flex align-center py-3 px-4">
+                <h5 class="text-h6">{{ localEvent?.id ? $t('events.updateEvent') : $t('events.addEvent') }}</h5>
+                <VSpacer/>
+                <VBtn
+                    v-if="localEvent?.id"
+                    color="primary"
+                    variant="text"
+                    class="me-2"
+                    @click="localEditMode = !localEditMode"
+                >
+                    {{ localEditMode ? $t('events.view') : $t('events.edit') }}
+                </VBtn>
+
+                <!-- The same event with room to breathe, for anything the
+                     drawer is too narrow for -->
+                <VBtn
+                    icon="mdi-arrow-expand"
+                    variant="text"
+                    density="comfortable"
+                    :title="$t('events.openFullPage')"
+                    @click="openFullPage"
+                />
+            </div>
+
+            <div v-else class="d-flex align-center py-3 px-4">
+                <div>
+                    <h5 class="text-h6 mb-1">{{ localEvent?.title }}</h5>
+                    <div class="text-subtitle-2 text-medium-emphasis">
+                        <v-icon size="small" start>mdi-calendar</v-icon>
+                        {{ formatDateRange }}
+                    </div>
+                </div>
+
+                <VSpacer/>
+
+                <slot name="beforeClose"/>
+
+                <div class="d-flex align-center ga-1">
+                    <v-btn
+                        icon="mdi-arrow-expand"
+                        variant="text"
+                        density="comfortable"
+                        :title="$t('events.openFullPage')"
+                        @click="openFullPage"
+                    />
+
+                    <v-btn
+                        icon="mdi-pencil"
+                        variant="text"
+                        color="primary"
+                        density="comfortable"
+                        @click="localEditMode = true"
+                        :title="$t('events.edit')"
+                    />
+
+                    <v-btn
+                        v-if="canEditEvent"
+                        icon="mdi-link-variant"
+                        variant="text"
+                        color="primary"
+                        density="comfortable"
+                        @click="relatedListRef?.openDialog()"
+                        :title="$t('relatedContent.list.link')"
+                        :aria-label="$t('relatedContent.list.link')"
+                    />
+
+                    <v-btn
+                        icon="mdi-delete"
+                        variant="text"
+                        color="error"
+                        density="comfortable"
+                        :loading="saving"
+                        @click="removeEvent"
+                        :title="$t('events.delete')"
+                    />
+
+                    <v-btn
+                        icon="mdi-close"
+                        variant="text"
+                        density="comfortable"
+                        :disabled="saving"
+                        @click="dialogModelValueUpdate(false)"
+                        :title="$t('common.close')"
+                    />
+                </div>
+            </div>
+        </div>
+
+        <VDivider/>
+
+        <div ref="contentRef" class="event-drawer-content">
+            <!-- Edit Mode Form -->
+            <VCard flat class="px-2" v-if="localEditMode">
+                <VCardText>
+                    <!-- Unsaved changes warning -->
+                    <VAlert
+                        v-if="isDirty"
+                        type="info"
+                        variant="tonal"
+                        density="compact"
+                        icon="mdi-information-outline"
+                        class="mb-4"
+                        :text="$t('events.unsavedChangesWarning')"
+                    />
+
+                    <VForm ref="refForm" @submit.prevent="handleSubmit">
+                        <VRow>
+                            <!-- Event Type Select -->
+                            <VCol cols="12" v-if="eventTypeItems.length > 0">
+                                <VSelect
+                                    v-model="localEvent.extendedProps.event_type_id"
+                                    :label="$t('events.type')"
+                                    :placeholder="$t('events.selectEventType')"
+                                    :items="eventTypeItems"
+                                    :item-title="item => translateTypeName(item.name)"
+                                    :item-value="item => item.id"
+                                    variant="outlined"
+                                    density="comfortable"
+                                >
+                                    <template #selection="{ item }">
+                                        <div class="d-flex align-center">
+                                            <VIcon
+                                                icon="mdi-circle-medium"
+                                                :color="item.raw.color"
+                                                class="me-2"
+                                            />
+                                            <span>{{ translateTypeName(item.raw.name) }}</span>
+                                        </div>
+                                    </template>
+
+                                    <template #item="{ item, props: itemProps }">
+                                        <VListItem v-bind="itemProps">
+                                            <template #prepend>
+                                                <VIcon
+                                                    icon="mdi-circle-medium"
+                                                    :color="item.raw.color"
+                                                />
+                                            </template>
+                                        </VListItem>
+                                    </template>
+                                </VSelect>
+                            </VCol>
+
+                            <template v-if="localEvent?.extendedProps?.event_type_id">
+                                <VCol cols="12">
+                                    <VTextField
+                                        v-model="localEvent.title"
+                                        :label="$t('common.title')"
+                                        :rules="rules.title"
+                                        variant="outlined"
+                                        density="comfortable"
+                                        prepend-inner-icon="mdi-format-title"
+                                    />
+                                </VCol>
+
+                                <VCol cols="12">
+                                    <CustomDatePicker
+                                        :label="$t('events.startDate')"
+                                        v-model="localEvent.start"
+                                        :error="!isStartDateValid"
+                                        :error-messages="[$t('events.startDateRequired')]"
+                                        @date-selected="handleStartDateChange"
+                                        :id="'start-date'"
+                                        :all-day="localEvent.allDay"
+                                    />
+                                </VCol>
+
+                                <VCol cols="12" v-show="eventTypeOptions.showAttributtes?.includes('endDate')">
+                                    <CustomDatePicker
+                                        :label="$t('events.endDate')"
+                                        v-model="localEvent.end"
+                                        :error="!isEndDateValid"
+                                        :error-messages="[$t('events.endDateRequired')]"
+                                        :min-date="localEvent.start"
+                                        :is-end-date="true"
+                                        :id="'end-date'"
+                                        :all-day="localEvent.allDay"
+                                    />
+                                </VCol>
+
+                                <VCol cols="12" v-show="eventTypeOptions.showAttributtes?.includes('allDay')">
+                                    <VSwitch
+                                        color="primary"
+                                        v-model="localEvent.allDay"
+                                        :label="$t('events.allDay')"
+                                    />
+                                </VCol>
+
+                                <VCol cols="12" v-if="localEvent.extendedProps.location">
+                                    <!-- The same field the event page uses -->
+                                    <EventLocationField
+                                        :location="localEvent.extendedProps.location"
+                                        :allowed-modes="allowedLocationModes"
+                                    />
+                                </VCol>
+
+                                <VCol cols="12">
+                                    <VTextarea
+                                        v-model="localEvent.extendedProps.description"
+                                        :label="$t('common.description')"
+                                        variant="outlined"
+                                        density="comfortable"
+                                        rows="4"
+                                        counter
+                                        prepend-inner-icon="mdi-text-box-outline"
+                                    />
+                                </VCol>
+                            </template>
+
+                            <VCol cols="12" class="d-flex justify-end ga-2">
+                                <VBtn
+                                    variant="text"
+                                    :disabled="saving"
+                                    @click="onCancel"
+                                >
+                                    {{ $t('common.cancel') }}
+                                </VBtn>
+                                <VBtn
+                                    type="submit"
+                                    color="primary"
+                                    variant="flat"
+                                    :loading="saving"
+                                >
+                                    {{ $t('events.submit') }}
+                                </VBtn>
+                            </VCol>
+                        </VRow>
+                    </VForm>
+                </VCardText>
+            </VCard>
+
+            <!-- View Mode Content -->
+            <div v-else class="pa-4">
+                <!-- Event Info Section -->
+                <v-card flat rounded="lg" class="mb-4">
+                    <v-card-text>
+                        <!-- Location Info -->
+                        <div class="mb-4">
+                            <div class="d-flex align-center font-weight-medium mb-1">
+                                <v-icon color="primary" start>mdi-map-marker</v-icon>
+                                <span>{{ $t('events.location') }}</span>
+                            </div>
+                            <div class="pl-8">
+                                <event-location-display :location="localEvent?.extendedProps?.location" />
+                            </div>
+                        </div>
+
+                        <!-- Description Info -->
+                        <div v-if="localEvent?.extendedProps?.description">
+                            <div class="d-flex align-center font-weight-medium mb-1">
+                                <v-icon color="primary" start>mdi-text-box-outline</v-icon>
+                                <span>{{ $t('common.description') }}</span>
+                            </div>
+                            <div class="pl-8 description-content"
+                                 v-html="localEvent.extendedProps.description"></div>
+                        </div>
+                    </v-card-text>
+                </v-card>
+
+                <!-- Response Section -->
+                <v-card
+                    v-if="canJoinEvent"
+                    flat
+                    rounded="lg"
+                    class="mb-4"
+                >
+                    <v-card-text>
+                        <h3 class="text-h6 mb-3">{{ $t('events.areYouComing') }}</h3>
+                        <div class="d-flex flex-wrap ga-2">
+                            <VBtn
+                                v-for="(answer, value) in eventTypeOptions.answers"
+                                :key="`answer-${value}`"
+                                :color="['going', 'participant'].includes(answer.key) ? 'success' : answer.key === 'notgoing' ? 'error' : 'primary'"
+                                :variant="isGoing && isGoing.type === value ? 'elevated' : 'tonal'"
+                                class="response-btn"
+                                :loading="answering === answer.key"
+                                :disabled="!!answering && answering !== answer.key"
+                                @click="joinEvent(answer.key)"
+                            >
+                                <v-icon
+                                    v-if="isGoing && isGoing.type === value"
+                                    size="small"
+                                    start
+                                >
+                                    mdi-check-circle
+                                </v-icon>
+                                {{ te('events.rsvp.' + answer.key) ? t('events.rsvp.' + answer.key) : answer.value }}
+                            </VBtn>
+                        </div>
+                    </v-card-text>
+                </v-card>
+
+                <!-- Attendees Section -->
+                <v-card flat rounded="lg" class="mb-4" v-if="Object.keys(eventAnswers).length > 0">
+                    <v-card-text>
+                        <div class="d-flex align-center justify-space-between mb-3">
+                            <h3 class="text-h6">{{ $t('events.attendees') }}</h3>
+                            <v-btn
+                                icon="mdi-information-outline"
+                                variant="text"
+                                color="primary"
+                                density="comfortable"
+                                size="small"
+                                @click="openDialog()"
+                                :title="$t('events.viewDetailedAttendeeList')"
+                            />
+                        </div>
+
+                        <div v-for="(guests, status) in filterGuestsByApproval(eventAnswers).approvedGuests"
+                             :key="`status-${status}`"
+                             class="mb-4">
+                            <div class="d-flex align-center ga-2 mb-2">
+                                <v-chip
+                                    :color="['going', 'participant'].includes(status) ? 'success' : status === 'notgoing' ? 'error' : 'primary'"
+                                    size="small"
+                                    variant="tonal"
+                                >
+                                    {{ te('events.rsvp.' + status) ? t('events.rsvp.' + status) : status }}
+                                </v-chip>
+                                <span class="text-subtitle-2">{{ $t('events.peopleCount', { count: guests.length }) }}</span>
+                            </div>
+
+                            <div class="d-flex flex-wrap ga-1">
+                                <UserAvatar
+                                    v-for="guest in guests"
+                                    :key="guest.id"
+                                    :user="guest"
+                                />
+                            </div>
+                        </div>
+                    </v-card-text>
+                </v-card>
+
+                <!-- Pending Approvals Section TODO only show if creator(done) or admin-->
+                <v-card
+                    flat
+                    rounded="lg"
+                    class="mb-4"
+                    v-if="localEvent?.extendedProps?.user_id === user.id &&
+                         eventTypeOptions.guest &&
+                         eventTypeOptions.guest.includes('approval')"
+                >
+                    <v-card-text>
+                        <h3 class="text-h6 mb-3">{{ $t('events.pendingApprovals') }}</h3>
+
+                        <div v-for="(guests, status) in filterGuestsByApproval(eventAnswers).guestsRequiringApproval"
+                             :key="`pending-${status}`"
+                             class="mb-4">
+                            <v-list-subheader>{{ te('events.rsvp.' + status) ? t('events.rsvp.' + status) : status }}</v-list-subheader>
+
+                            <v-list>
+                                <v-list-item
+                                    v-for="guest in guests"
+                                    :key="guest.id"
+                                    class="pending-guest-item"
+                                >
+                                    <template #prepend>
+                                        <UserAvatar :user="guest"/>
+                                    </template>
+
+                                    <v-list-item-title>{{ guest.name }}</v-list-item-title>
+
+                                    <template #append>
+                                        <div class="d-flex ga-1">
+                                            <v-btn
+                                                size="small"
+                                                color="success"
+                                                variant="text"
+                                                icon="mdi-check"
+                                                :loading="busyGuestId === guest.pivot.user_id"
+                                                :disabled="busyGuestId !== null && busyGuestId !== guest.pivot.user_id"
+                                                @click="approveGuest(guest.pivot.user_id, 'approve')"
+                                            ></v-btn>
+                                            <v-btn
+                                                size="small"
+                                                color="error"
+                                                variant="text"
+                                                icon="mdi-close"
+                                                :loading="busyGuestId === guest.pivot.user_id"
+                                                :disabled="busyGuestId !== null && busyGuestId !== guest.pivot.user_id"
+                                                @click="approveGuest(guest.pivot.user_id, 'reject')"
+                                            ></v-btn>
+                                        </div>
+                                    </template>
+                                </v-list-item>
+                            </v-list>
+                        </div>
+                    </v-card-text>
+                </v-card>
+
+                <!-- Related Content Section -->
+                <related-content-list
+                    v-if="localEvent?.id"
+                    ref="relatedListRef"
+                    class="pa-4"
+                    type="App\Models\Event\Event"
+                    :id="localEvent.id"
+                    :title="localEvent.title"
+                    :can-edit="canEditEvent"
+                    compact
+                />
+            </div>
+        </div>
+    </VNavigationDrawer>
+
+    <!-- Dialogs -->
+    <ProfileDialog
+        v-if="localEvent.id > 0"
+        v-model="showProfileDialog"
+        :event="localEvent"
+        :is-going="isGoing"
+        :answer="profileAnswer"
+        :resolve="handleProfile"
+    />
+
+    <DetailsDialog
+        v-if="localEvent.id > 0"
+        v-model="showDetailsDialog"
+        :eventGuests="eventGuests"
+        :event="localEvent"
+    />
+</template>
+
+<style scoped>
+.event-drawer {
+    max-height: 100%;
+    border-left: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+}
+
+.event-drawer-header {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+/* This panel is the one thing on screen that scrolls, and it needs both
+   halves of that to be true: a height of its own, and an overflow. It had
+   the height before and no overflow, so it never scrolled — a JS
+   scrollbar sat on it instead, which sets overflow: hidden !important on
+   the container and measures the geometry as it mounts, with the drawer
+   still shut. What actually scrolled was Vuetify's box around it, which is
+   where the second scrollbar came from.
+
+   Don't swap the height for flex sizing: the height chain above this
+   element is not bounded, so the panel collapses and scrolling stops. */
+.event-drawer-content {
+    height: calc(100vh - 65px);
+    overflow-y: auto;
+    /* The guests arrive after the drawer opens. Anchoring would hold what
+       is on screen in place as they are inserted, undoing the reset to the
+       top — the JS scrollbar that used to sit here set this too. */
+    overflow-anchor: none;
+}
+
+/* Vuetify's box no longer needs to scroll, and clipping it keeps its
+   scrollbar from appearing beside the panel's */
+.event-drawer :deep(.v-navigation-drawer__content) {
+    overflow: hidden;
+}
+
+.description-content {
+    white-space: pre-line;
+}
+
+.response-btn {
+    flex-grow: 1;
+    max-width: 120px;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+}
+
+.pending-guest-item {
+    border-radius: 8px;
+    margin-bottom: 4px;
+}
+</style>
+
+<!-- Unscoped: the lock goes on <body>, which no scoped rule can reach -->
+<style>
+body.event-drawer-open {
+    overflow: hidden;
+    /* Holds the width the vanished scrollbar was taking up */
+    padding-right: var(--event-drawer-scroll-gap, 0px);
+}
+</style>

@@ -1,34 +1,57 @@
 <template>
     <div>
-        <v-app-bar flat height="80">
+        <v-app-bar app flat :height="$vuetify.display.mobile ? 56 : 80">
             <a class="skip-nav-link" href="#main-content">
-                skip navigation     
+                {{ $t('layout.skipNavigation') }}
             </a>
-            <v-container class="py-0 px-0 px-sm-2 fill-height">
-                <router-link to="/dashboard" class="d-flex align-center text-decoration-none mr-2">
-                    <img :src="require('@/assets/images/logo.png').default" alt="Logo of FellowShip" height="70"/>
+            <v-container class="py-0 px-2 px-sm-3 fill-height d-flex align-center">
+                <router-link to="/dashboard" class="text-decoration-none logo-container">
+                    <div class="d-flex flex-column align-center">
+                        <img :src="appLogo" :alt="`Logo of ${appName}`" class="logo-responsive"/>
+                        <div v-if="siteTagline" class="tagline-text">{{ siteTagline }}</div>
+                    </div>
                 </router-link>
 
                 <v-spacer></v-spacer>
 
-
-                <div class="d-none d-md-block">
-                    <v-btn text class="mx-1" @click="$vuetify.goTo('#feature1');">
-                        Feature 1
+                <div class="toolbar-actions d-flex align-center">
+                    <mega-menu />
+                    <!-- The episode that is playing, one icon wide -->
+                    <podcast-toolbar-player v-if="podcastEnabled" />
+                    <!-- Language Switcher -->
+                    <toolbar-language v-if="languageChangeEnabled" class="d-none d-sm-flex"/>
+                    <!-- Whatever help was written for this page -->
+                    <toolbar-help/>
+                    <v-btn
+                        icon
+                        variant="text"
+                        size="small"
+                        @click="toggleTheme"
+                        :title="isDark ? $t('common.switchToLightMode') : $t('common.switchToDarkMode')"
+                    >
+                        <v-icon>{{ isDark ? 'mdi-weather-sunny' : 'mdi-weather-night' }}</v-icon>
                     </v-btn>
                     <template v-if="!authenticated">
-                        <v-btn text class="mx-1" to="/auth/signin">
-                            Sign In
+                        <v-btn class="d-none d-sm-flex" size="small" variant="text" to="/auth/signin">
+                            {{ $t('layout.signIn') }}
                         </v-btn>
+                        <v-btn icon="mdi-login" size="small" variant="text" class="d-flex d-sm-none" to="/auth/signin" :title="$t('auth.signin')" />
 
-                        <v-btn outlined large to="/auth/signup">
-                            Sign Up
+                        <v-btn variant="outlined" color="primary" class="d-none d-sm-flex" to="/auth/signup">
+                            {{ $t('auth.signup') }}
                         </v-btn>
+                        <v-btn icon="mdi-account-plus" size="small" variant="outlined" color="primary" class="d-flex d-sm-none" to="/auth/signup" :title="$t('auth.signup')" />
                     </template>
 
-                    <v-btn v-else text class="mx-1" @click.prevent="signOut">
-                        Sign Out
-                    </v-btn>
+                    <template v-else>
+                            <toolbar-notifications/>
+                            <sandbox-notifications v-if="sandboxEnabled"/>
+                            <conversations-notification/>
+                            <v-btn icon="mdi-account-group" variant="text" size="small" class="d-none d-md-flex" @click="showUsersDrawer = !showUsersDrawer" :title="$t('toolbar.users')" />
+                            <v-btn icon="mdi-cog" variant="text" size="small" class="d-none d-md-flex" @click="showSettingsDrawer = !showSettingsDrawer" :title="$t('toolbar.settings')" />
+                            <toolbar-user/>
+                    </template>
+
                 </div>
 
 
@@ -37,134 +60,504 @@
         </v-app-bar>
 
         <v-main id="main-content">
-            <router-view :key="$route.fullPath"></router-view>
+            <!-- Maintenance Mode Banner for Admins -->
+            <v-alert
+                v-if="maintenanceMode && authenticated && isAdmin"
+                type="warning"
+                variant="tonal"
+                class="ma-0 rounded-0 px-3 px-sm-4"
+                density="comfortable"
+            >
+                <div class="d-flex align-center justify-space-between flex-wrap ga-2">
+                    <div class="d-flex align-center">
+                        <v-icon class="mr-2" size="small">mdi-wrench</v-icon>
+                        <div>
+                            <strong class="text-body-2 text-sm-body-1">{{ $t('layout.maintenanceModeActive') }}</strong>
+                            <div class="text-caption d-none d-sm-block">{{ $t('layout.nonAdminAccess') }}</div>
+                        </div>
+                    </div>
+                    <v-btn
+                        size="small"
+                        color="warning"
+                        variant="elevated"
+                        :to="{ name: 'admin-settings' }"
+                        class="flex-shrink-0"
+                        prepend-icon="mdi-cog"
+                    >
+                        <span class="d-none d-sm-inline">{{ $t('layout.manageSettings') }}</span>
+                        <span class="d-sm-none">{{ $t('toolbar.settings') }}</span>
+                    </v-btn>
+                </div>
+            </v-alert>
 
-            <v-footer color="transparent">
-                <v-container class="py-5">
-                    <v-row>
-                        <v-col cols="12" md="4">
-                            <div class="text-h6 text-lg-h5 font-weight-bold">Navigation</div>
-                            <div style="width: 80px; height: 2px" class="mb-5 mt-1 primary"/>
-                            <div class="d-flex flex-wrap">
-                                <div v-for="(link, i) in links" :key="i" class="w-half body-1 mb-1">
-                                    <router-link
-                                        v-if="link.to"
-                                        class="text-decoration-none text--primary"
-                                        :to="link.to"
-                                    >{{ link.label }}
-                                    </router-link>
-                                    <a
-                                        v-else
-                                        class="text-decoration-none text--primary"
-                                        :href="link.href"
-                                        :target="link.target || 'blank'"
-                                    >{{ link.label }}</a>
+            <router-view :key="$route.fullPath"></router-view>
+            <v-container></v-container>
+            <!-- Custom Footer (if enabled) -->
+            <div v-if="customFooterEnabled && customFooterHtml" v-html="processedFooterHtml"></div>
+
+            <!-- Default Footer with Widgets -->
+            <v-footer v-else color="transparent">
+                <v-container class="py-3 py-sm-5 px-3 px-sm-4">
+                    <!-- Section-based footer -->
+                    <div v-if="footerSections.length > 0">
+                        <v-row v-for="section in footerSections" :key="section.id" class="mb-4">
+                            <v-col
+                                v-for="columnNumber in getColumnCount(section.layout)"
+                                :key="columnNumber"
+                                cols="12"
+                                :md="getColumnWidth(section.layout, columnNumber)"
+                                class="mb-4 mb-md-0"
+                            >
+                                <div
+                                    v-for="widget in getWidgetsInColumn(section, columnNumber)"
+                                    :key="widget.id"
+                                    class="mb-3"
+                                >
+                                    <footer-widget-renderer :widget="widget" />
                                 </div>
-                            </div>
-                        </v-col>
-                        <v-col cols="12" md="4">
-                            <div class="text-h6 text-lg-h5 font-weight-bold">Contact Information</div>
-                            <div style="width: 80px; height: 2px" class="mb-5 mt-1 primary"/>
-                            <div class="d-flex mb-2 font-weight-bold">
-                                <v-icon color="primary lighten-1" class="mr-2">mdi-map-marker-outline</v-icon>
-                                Musterstraße 11, 00000 Stadt, Germany
-                            </div>
-                            <div class="d-flex mb-2">
-                                <v-icon color="primary lighten-1" class="mr-2">mdi-phone-outline</v-icon>
-                                <a href="#" class="text-decoration-none text--primary">+0x 000 23 00 555 55</a>
-                            </div>
-                            <div class="d-flex mb-2">
-                                <v-icon color="primary lighten-1" class="mr-2">mdi-email-outline</v-icon>
-                                <a href="#" class="text-decoration-none text--primary">hello@loremcommunity.com</a>
-                            </div>
-                        </v-col>
-                        <v-col cols="12" md="4">
-                            <div class="text-h6 text-lg-h5 font-weight-bold">Newsletter</div>
-                            <div style="width: 80px; height: 2px" class="mb-5 mt-1 primary"/>
-                            <div class="d-flex flex-column flex-lg-row w-full">
-                                <v-text-field
-                                    outlined
-                                    solo
-                                    label="Your email"
-                                    dense
-                                    height="44"
-                                    class="mr-lg-2"
-                                ></v-text-field>
-                                <v-btn large color="primary">Subscribe</v-btn>
-                            </div>
-                            <div class="text-center text-md-right mt-4 mt-lg-2">
-                                Connect
-                                <v-btn fab small color="primary" class="ml-2">
-                                    <v-icon>mdi-twitter</v-icon>
-                                </v-btn>
-                                <v-btn fab small color="primary" class="ml-2">
-                                    <v-icon>mdi-facebook</v-icon>
-                                </v-btn>
-                                <v-btn fab small color="primary" class="ml-2">
-                                    <v-icon>mdi-instagram</v-icon>
-                                </v-btn>
-                            </div>
+                            </v-col>
+                        </v-row>
+                    </div>
+
+                    <!-- Flat widgets (no sections) -->
+                    <v-row v-else-if="footerWidgets.length > 0">
+                        <v-col
+                            v-for="widget in footerWidgets"
+                            :key="widget.id"
+                            cols="12"
+                            :md="getColumnSize(footerWidgets.length)"
+                            class="mb-4 mb-md-0"
+                        >
+                            <footer-widget-renderer :widget="widget" />
                         </v-col>
                     </v-row>
-                    <v-divider class="my-3"></v-divider>
-                    <div class="text-center caption">
-                        © Fellowship 2021
+
+                    <!-- No widgets -->
+                    <v-row v-else>
+                        <v-col cols="12" class="text-center text-caption text-medium-emphasis">
+                            {{ $t('layout.noFooterWidgets') }}
+                        </v-col>
+                    </v-row>
+
+                    <v-divider class="my-2 my-sm-3"></v-divider>
+                    <div class="text-center text-caption text-sm-body-2">
+                        {{ appCopyright }}
                     </div>
                 </v-container>
             </v-footer>
+
+            <v-navigation-drawer
+                v-if="showUsersDrawer"
+                v-model="showUsersDrawer"
+                location="right"
+                temporary
+                :width="$vuetify.display.mobile ? '100%' : '320'"
+                class="elevation-2"
+            >
+                <SidebarUsers @close="showUsersDrawer = false"/>
+            </v-navigation-drawer>
+
+            <v-navigation-drawer
+                v-if="showSettingsDrawer"
+                v-model="showSettingsDrawer"
+                location="right"
+                temporary
+                :width="$vuetify.display.mobile ? '100%' : '360'"
+                class="elevation-2"
+            >
+                <UserSettingsSidebar @close="showSettingsDrawer = false"/>
+            </v-navigation-drawer>
+
+            <conversation-box-manager />
         </v-main>
     </div>
 </template>
 
 <script>
+import { useTheme } from 'vuetify'
 import config from '../configs'
-import {mapActions, mapGetters} from 'vuex'
+import logoimg from '@/assets/images/logo.png';
+import {useAuthStore} from "@/store/authStore.js";
+import {useUserStore} from "@/store/userStore.js";
+import {useSettingsStore} from "@/store/settingStore.js";
+import {useFooterStore} from "@/store/footerStore.js";
+import MegaMenu from '../components/navigation/MegaMenu.vue'
+import LocationMenu from '../components/navigation/LocationMenu.vue'
+import ToolbarUser from '../components/toolbar/ToolbarUser.vue'
+import ToolbarApps from '../components/toolbar/ToolbarApps.vue'
+import ToolbarLanguage from '../components/toolbar/ToolbarLanguage.vue'
+import ToolbarHelp from '../components/toolbar/ToolbarHelp.vue'
+import ToolbarNotifications from '../components/toolbar/ToolbarNotifications.vue'
+import ConversationsNotification from '../components/conversation/ConversationsNotification.vue'
+import SandboxNotifications from '../components/sandbox/SandboxNotifications.vue'
+import ConversationBoxManager from '../components/conversation/ConversationBoxManager.vue'
+import SidebarUsers from '../components/conversation/SidebarUsers.vue'
+import UserSettingsSidebar from '../components/settings/UserSettingsSidebar.vue'
+import FooterWidgetRenderer from '../components/footer/FooterWidgetRenderer.vue'
+import PodcastToolbarPlayer from '../components/podcast/PodcastToolbarPlayer.vue'
+import eventBus from '../components/common/eventBus.js'
+
+
+// import {mapActions, mapGetters} from 'vuex'
 
 export default {
+    components: {
+        ToolbarUser,
+        ToolbarLanguage,
+        ToolbarHelp,
+        ToolbarNotifications,
+        ConversationsNotification,
+        SandboxNotifications,
+        ConversationBoxManager,
+        SidebarUsers,
+        UserSettingsSidebar,
+        FooterWidgetRenderer,
+        MegaMenu,
+        LocationMenu,
+        PodcastToolbarPlayer
+    },
+    setup() {
+        const theme = useTheme()
+        return {
+            theme
+        }
+    },
     data() {
         return {
+            logoimg,
             config,
-            links: [{
-                label: 'Overview',
-                to: '#'
-            }, {
-                label: 'Features',
-                to: '#'
-            }, {
-                label: 'Documentation',
-                to: '#'
-            }, {
-                label: 'News',
-                to: '#'
-            }, {
-                label: 'FAQ',
-                to: '#'
-            }, {
-                label: 'About us',
-                to: '#'
-            }, {
-                label: 'Carrers',
-                to: '#'
-            }, {
-                label: 'Press',
-                to: '#'
-            }]
+            showUsersDrawer: false,
+            showSettingsDrawer: false,
+            showMobileMenu: false
         }
     },
-    methods: {
-        ...mapActions({
-            signOutAction: 'auth/signOut'
-        }),
 
+    computed: {
+        authenticated() {
+            const authStore = useAuthStore();
+
+            // console.log('landingauthstore',authStore)
+            return authStore.isLoggedIn ;
+        },
+        user() {
+            const userStore = useUserStore();
+            return userStore.user;
+        },
+        appLogo() {
+            const settingsStore = useSettingsStore();
+            const logoLight = settingsStore.logoLight;
+            const logoDark = settingsStore.logoDark;
+
+            // Switch logo based on current theme
+            if (this.isDark) {
+                // Dark theme: prefer dark logo, fallback to light logo
+                if (logoDark) {
+                    return `/storage/${logoDark}`;
+                } else if (logoLight) {
+                    return `/storage/${logoLight}`;
+                }
+            } else {
+                // Light theme: prefer light logo, fallback to dark logo
+                if (logoLight) {
+                    return `/storage/${logoLight}`;
+                } else if (logoDark) {
+                    return `/storage/${logoDark}`;
+                }
+            }
+
+            // Fallback to default logo
+            return this.logoimg;
+        },
+        podcastEnabled() {
+            return useSettingsStore().isFeatureEnabled('podcast');
+        },
+        appName() {
+            const settingsStore = useSettingsStore();
+            return settingsStore.appName;
+        },
+        appCopyright() {
+            const settingsStore = useSettingsStore();
+            return settingsStore.appCopyright;
+        },
+        siteTagline() {
+            const settingsStore = useSettingsStore();
+            return settingsStore.siteTagline;
+        },
+        languageChangeEnabled() {
+            const settingsStore = useSettingsStore();
+            return settingsStore.languageChangeEnabled;
+        },
+        contactAddress() {
+            const settingsStore = useSettingsStore();
+            return settingsStore.contactAddress;
+        },
+        contactPhone() {
+            const settingsStore = useSettingsStore();
+            return settingsStore.contactPhone;
+        },
+        contactEmail() {
+            const settingsStore = useSettingsStore();
+            return settingsStore.contactEmail;
+        },
+        socialTwitter() {
+            const settingsStore = useSettingsStore();
+            return settingsStore.socialTwitter;
+        },
+        socialFacebook() {
+            const settingsStore = useSettingsStore();
+            return settingsStore.socialFacebook;
+        },
+        socialInstagram() {
+            const settingsStore = useSettingsStore();
+            return settingsStore.socialInstagram;
+        },
+        customFooterEnabled() {
+            const settingsStore = useSettingsStore();
+            return settingsStore.customFooterEnabled;
+        },
+        customFooterHtml() {
+            const settingsStore = useSettingsStore();
+            return settingsStore.customFooterHtml;
+        },
+        isDark() {
+            return this.theme.global.name.value === 'dark';
+        },
+        maintenanceMode() {
+            const settingsStore = useSettingsStore();
+            return settingsStore.maintenanceMode;
+        },
+        sandboxEnabled() {
+            const settingsStore = useSettingsStore();
+            return settingsStore.sandboxEnabled;
+        },
+        isAdmin() {
+            const userStore = useUserStore();
+            const user = userStore.user;
+            return user && (
+                user.isAdmin === true ||
+                user.roles?.some(role => role.name === 'admin')
+            );
+        },
+        processedFooterHtml() {
+            if (!this.customFooterHtml) return '';
+
+            // Replace template variables with actual values
+            let html = this.customFooterHtml;
+
+            const replacements = {
+                'appName': this.appName || '',
+                'appCopyright': this.appCopyright || '',
+                'contactEmail': this.contactEmail || '',
+                'contactPhone': this.contactPhone || '',
+                'contactAddress': this.contactAddress || '',
+                'socialTwitter': this.socialTwitter || '',
+                'socialFacebook': this.socialFacebook || '',
+                'socialInstagram': this.socialInstagram || '',
+            };
+
+            // Replace all {{variable}} patterns
+            Object.keys(replacements).forEach(key => {
+                const pattern = `{{${key}}}`;
+                const regex = new RegExp(pattern.replace(/[{}]/g, '\\$&'), 'g');
+                html = html.replace(regex, replacements[key]);
+            });
+
+            // Handle data-if attributes - hide elements if the referenced value is empty
+            html = html.replace(/data-if="([^"]+)"/g, (match, varName) => {
+                const isEmpty = !replacements[varName] || replacements[varName].trim() === '';
+                return isEmpty ? 'style="display: none;"' : '';
+            });
+
+            // Handle data-if-auth - show only to authenticated users
+            html = html.replace(/data-if-auth/g, () => {
+                return this.authenticated ? '' : 'style="display: none;"';
+            });
+
+            // Handle data-if-guest - show only to non-authenticated users
+            html = html.replace(/data-if-guest/g, () => {
+                return !this.authenticated ? '' : 'style="display: none;"';
+            });
+
+            return html;
+        },
+        footerWidgets() {
+            try {
+                const footerStore = useFooterStore();
+                return footerStore.activeWidgets || [];
+            } catch (error) {
+                console.error('Error getting footer widgets:', error);
+                return [];
+            }
+        },
+        footerSections() {
+            try {
+                const footerStore = useFooterStore();
+                return footerStore.activeSections || [];
+            } catch (error) {
+                console.error('Error getting footer sections:', error);
+                return [];
+            }
+        },
+        links() {
+            const settingsStore = useSettingsStore();
+            const quicklinks = settingsStore.appSettings.footer_quicklinks;
+
+            try {
+                if (quicklinks) {
+                    const parsed = typeof quicklinks === 'string' ? JSON.parse(quicklinks) : quicklinks;
+                    if (Array.isArray(parsed)) {
+                        // Filter links based on authentication status and authOnly property
+                        const filteredLinks = parsed.filter(link => {
+                            // If link requires auth and user is not authenticated, hide it
+                            if (link.authOnly && !this.authenticated) {
+                                return false;
+                            }
+                            return true;
+                        });
+
+                        return filteredLinks.map(link => ({
+                            label: link.label,
+                            to: link.external ? undefined : link.url,
+                            href: link.external ? link.url : undefined,
+                            target: link.external ? '_blank' : undefined
+                        }));
+                    }
+                    return [];
+                }
+            } catch (e) {
+                console.error('Failed to parse footer quicklinks:', e);
+            }
+
+            // Return default links if no custom quicklinks are set
+            return [
+                { label: 'Home', to: '/' },
+                { label: 'Features', to: '/features' },
+                { label: 'About', to: '/about' },
+                { label: 'Contact', to: '/contact' }
+            ];
+        },
+        showNavigationSection() {
+            // Show navigation section if there are links to display
+            return this.links && this.links.length > 0;
+        },
+    },
+
+    mounted() {
+    },
+
+    methods: {
+        getColumnSize(count) {
+            // Calculate responsive column size based on widget count
+            if (count === 1) return 12;
+            if (count === 2) return 6;
+            if (count === 3) return 4;
+            if (count >= 4) return 3;
+            return 4; // default
+        },
+        getColumnCount(layout) {
+            // Return number of columns for this layout
+            const columnMap = {
+                '1-col': 1,
+                '2-col': 2,
+                '3-col': 3,
+                '4-col': 4,
+            };
+            return columnMap[layout] || 1;
+        },
+        getColumnWidth(layout, columnNumber) {
+            // Get column width based on section layout
+            const layoutMap = {
+                '1-col': [12],
+                '2-col': [6, 6],
+                '3-col': [4, 4, 4],
+                '4-col': [3, 3, 3, 3],
+            };
+
+            const widths = layoutMap[layout] || [12];
+            return widths[columnNumber - 1] || 12;
+        },
+        getWidgetsInColumn(section, columnNumber) {
+            // Get all widgets that belong to this column, sorted by order
+            if (!section.widgets || !Array.isArray(section.widgets)) {
+                return [];
+            }
+
+            return section.widgets
+                .filter(widget => {
+                    // Convert both to numbers for comparison
+                    return Number(widget.column) === Number(columnNumber);
+                })
+                .sort((a, b) => (a.order || 0) - (b.order || 0));
+        },
+        getSectionColumnWidth(layout, widgetCount, widgetIndex) {
+            // Legacy function - kept for compatibility
+            // Get column width based on section layout
+            const layoutMap = {
+                '1-col': [12],
+                '2-col': [6, 6],
+                '3-col': [4, 4, 4],
+                '4-col': [3, 3, 3, 3],
+            };
+
+            const widths = layoutMap[layout] || [12];
+
+            // If more widgets than columns, distribute evenly
+            if (widgetIndex >= widths.length) {
+                return Math.floor(12 / widgetCount);
+            }
+
+            return widths[widgetIndex];
+        },
         async signOut() {
-            await this.signOutAction()
+            const auth = useAuthStore()
+            await auth.logout()
+        },
+        applyThemeSettings() {
+            const settingsStore = useSettingsStore()
+            const themeMode = settingsStore.themeMode
+
+            if (themeMode === 'light') {
+                this.theme.global.name.value = 'light'
+            } else if (themeMode === 'dark') {
+                this.theme.global.name.value = 'dark'
+            } else if (themeMode === 'system') {
+                // Detect system preference
+                const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+                this.theme.global.name.value = prefersDark ? 'dark' : 'light'
+            }
+        },
+        toggleTheme() {
+            this.theme.global.name.value = this.theme.global.name.value === 'dark' ? 'light' : 'dark';
+        },
+        openSettingsDrawer() {
+            this.showSettingsDrawer = true
         }
     },
-    computed: {
-        ...mapGetters({
-            authenticated: 'auth/authenticated',
-            user: 'auth/user',
-        })
+    async mounted() {
+        // console.log('test',this.authenticated)
+        const settingsStore = useSettingsStore();
+        if (!settingsStore.settingsLoaded) {
+            await settingsStore.fetchAppSettings();
+        }
+
+        // Apply theme settings after settings are loaded
+        this.applyThemeSettings()
+
+        // Fetch footer widgets and sections (public API)
+        const footerStore = useFooterStore();
+        if (!footerStore.sectionsLoaded) {
+            try {
+                await footerStore.fetchPublicSections();
+            } catch (error) {
+                console.error('Failed to load footer sections:', error);
+            }
+        }
+
+        // Listen for settings drawer open event from toolbar user menu
+        eventBus.on('toolbar.settings.open', this.openSettingsDrawer)
+    },
+    beforeUnmount() {
+        eventBus.off('toolbar.settings.open', this.openSettingsDrawer)
     }
 }
 </script>
@@ -179,4 +572,13 @@ export default {
 .skip-nav-link:focus {
     transform: translateY(-60%);
 }
+
+/* Ensure main content area has minimum viewport height */
+:deep(.v-main) {
+    min-height: 100vh;
+}
+
+/* The header — logo, tagline, toolbar actions — is styled in
+   resources/sass/_toolbar.scss, shared with the other layouts that have
+   an app bar so the three cannot drift apart. */
 </style>

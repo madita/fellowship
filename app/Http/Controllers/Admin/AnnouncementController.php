@@ -2,11 +2,15 @@
 
 namespace App\Http\Controllers\Admin;
 
-//use App\Helpers\WebhookHelper;
+// use App\Support\WebhookHelper;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Notifications\Announcement;
+use App\Services\DiscordWebhookService;
+use App\Support\DiscordEvents;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Notification;
 
 class AnnouncementController extends Controller
@@ -19,11 +23,11 @@ class AnnouncementController extends Controller
     /**
      * Display a listing of the resource.
      *
-     * @param Request $request
      *
-     * @throws \Illuminate\Auth\Access\AuthorizationException
      *
-     * @return \Illuminate\Http\Response
+     * @throws AuthorizationException
+     *
+     * @return Response
      */
     public function index(Request $request)
     {
@@ -32,7 +36,7 @@ class AnnouncementController extends Controller
 
     public function create()
     {
-        //return View('admin.annoucement.create');
+        // return View('admin.annoucement.create');
     }
 
     public function store(Request $request)
@@ -44,10 +48,18 @@ class AnnouncementController extends Controller
         ]);
 
         $message = $request->all();
-        $users = User::all();
+        $users   = User::all();
 
         $announcement = new Announcement($message);
         Notification::send($users, $announcement);
+
+        // The same announcement in the Discord channels that asked for it
+        app(DiscordWebhookService::class)->announce(DiscordEvents::ANNOUNCEMENT_POSTED, [
+            'title'       => $message['subject'],
+            'description' => $message['body'],
+            'url'         => $message['url'] ?? null,
+            'author'      => $request->user()?->username,
+        ]);
 
         return response()->json([
             'success'      => true,

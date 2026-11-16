@@ -1,6 +1,6 @@
 import auth from './middleware/auth'
 
-export default [{
+export const users = [{
     path: '/users',
     redirect: 'users-list'
 }, {
@@ -22,6 +22,15 @@ export default [{
     },
     component: () => import(/* webpackChunkName: "users-edit" */ '@/pages/users/EditUserPage.vue')
 }, {
+    path: '/account/watching',
+    name: 'my-watching',
+    meta: {
+        middleware: [
+            auth
+        ]
+    },
+    component: () => import(/* webpackChunkName: "my-watching" */ '@/pages/users/WatchingPage.vue')
+}, {
     path: '/account/notifications',
     name: 'my-notifications',
     meta: {
@@ -42,4 +51,29 @@ export default [{
             component: () => import(/* webpackChunkName: "my-notifications" */ '@/pages/users/Notifications.vue'),
         }
     ]
+}, {
+    path: '/account/tickets',
+    name: 'my-tickets',
+    meta: {
+        middleware: [
+            auth
+        ]
+    },
+    component: () => import(/* webpackChunkName: "tickets" */ '@/pages/tickets/TicketList.vue')
+}, {
+    path: '/account/tickets/:id(\\d+)',
+    name: 'my-ticket',
+    meta: {
+        middleware: [
+            auth
+        ]
+    },
+    component: () => import(/* webpackChunkName: "ticket-detail" */ '@/pages/tickets/TicketDetail.vue')
+}, {
+    // A member's public page, reached by clicking their name anywhere.
+    // The forum is readable without signing in, so this is too.
+    path: '/members/:username',
+    name: 'member-profile',
+    component: () => import(/* webpackChunkName: "member-profile" */ '@/pages/users/MemberProfilePage.vue')
 }]
+export default users

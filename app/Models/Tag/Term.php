@@ -2,111 +2,83 @@
 
 namespace App\Models\Tag;
 
+use App\Traits\HasCache;
+use Astrotomic\Translatable\Contracts\Translatable as TranslatableContract;
+use Astrotomic\Translatable\Translatable;
 use Cviebrock\EloquentSluggable\Sluggable;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
 
-class Term extends Model
+/**
+ * Class Term.
+ *
+ * @property int $id
+ * @property string $title
+ * @property string|null $slug
+ * @property string|null $content
+ * @property string|null $lead
+ * @property Collection|Taxonomy[] $taxonomies
+ */
+class Term extends Model implements TranslatableContract
 {
+    use HasCache;
     use Sluggable;
     use SoftDeletes;
+    use Translatable;
 
-    protected $table = 'terms';
-    /**
-     * @inheritdoc
-     */
+    public $translatedAttributes = ['title', 'content', 'lead'];
+
+    /** {@inheritdoc} */
     protected $fillable = [
-        'name',
         'slug',
     ];
-    /**
-     * @inheritdoc
-     */
-    protected $dates = ['deleted_at'];
+
+    /** {@inheritdoc} */
+    protected $casts = [
+        'deleted_at' => 'datetime',
+    ];
+
+    /** {@inheritdoc} */
+    public function __construct(array $attributes = [])
+    {
+        parent::__construct($attributes);
+
+        $this->table = 'terms';
+    }
 
     /**
-     * @inheritdoc
+     * Find a term by translated title, or create one.
      */
+    public static function firstOrCreateByTitle(string $title): static
+    {
+        return static::whereTranslation('title', $title)->first()
+            ?? static::create(['title' => $title]);
+    }
+
+    /** {@inheritdoc} */
     public function sluggable(): array
     {
-        return [
-            'slug' => [
-                'source' => 'name',
-            ],
-        ];
+        return ['slug' => ['source' => 'title']];
     }
 
     /**
-     * @return \Illuminate\Database\Eloquent\Relations\MorphMany
+     * Get the taxonomies (categories) this term belongs to.
      */
-    public function taxable()
-    {
-        return $this->morphMany(Taxable::class, 'taxable');
-    }
-
-    /**
-     * Get the taxonomies this term belongs to.
-     *
-     * @return \Illuminate\Database\Eloquent\Relations\HasMany
-     */
-    public function taxonomies()
+    public function taxonomies(): HasMany
     {
         return $this->hasMany(Taxonomy::class);
     }
 
     /**
-     * Get display name.
-     *
-     * @param string $locale
-     * @param int    $limit
-     *
-     * @return mixed
+     * Get display title.
      */
-    public function getDisplayName($locale = '', $limit = 0)
+    public function getDisplayTitle(int $limit = 0): string
     {
-        $locale = $locale ?: app()->getLocale();
-        $property_with_locale = $locale === 'en' ? 'name' : "name_$locale";
-        $name = property_exists($this, $property_with_locale) ? $this->{$property_with_locale} : $this->name;
-
-        return $limit > 0 ? Str::limit($name, $limit) : $name;
-    }
-
-    /**
-     * Get route parameters.
-     *
-     * @param string $taxonomy
-     *
-     * @return mixed
-     */
-    public function getRouteParameters($taxonomy)
-    {
-        $taxonomy = Taxonomy::taxonomy($taxonomy)
-            ->term($this->name)
-            ->with('parent')
-            ->first();
-        $parameters = $this->getParentSlugs($taxonomy);
-        array_push($parameters, $taxonomy->taxonomy);
-
-        return array_reverse($parameters);
-    }
-
-    /**
-     * Get slugs of parent terms.
-     *
-     * @param Taxonomy $taxonomy
-     * @param array    $parameters
-     *
-     * @return array
-     */
-    public function getParentSlugs(Taxonomy $taxonomy, $parameters = [])
-    {
-        array_push($parameters, $taxonomy->term->slug);
-        if (($parents = $taxonomy->parent()) && ($parent = $parents->first())) {
-            /** @var \App\Models\Tag\Taxonomy $parent */
-            return $this->getParentSlugs($parent, $parameters);
-        }
-
-        return $parameters;
+        return $limit > 0
+            ? Str::limit($this->title, $limit)
+            : $this->title;
     }
 }

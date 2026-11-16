@@ -11,7 +11,7 @@
         <div class="text-center">
           <div class="text-h2 text-number font-weight-light">{{ item.value }}</div>
           <v-responsive max-width="300" class="mx-auto">
-            <div class="font-weight-regular my-2">Lorem ipsum dolor sit amet consectetur adipisicing elit. Esse expedita fugit.</div>
+            <div class="font-weight-regular my-2">{{ item.description || 'Lorem ipsum dolor sit amet consectetur adipisicing elit. Esse expedita fugit.' }}</div>
             <div class="text-h6 text-lg-h5">{{ item.title }}</div>
           </v-responsive>
         </div>
@@ -20,24 +20,38 @@
   </v-container>
 </template>
 
-<script>
-export default {
-  data() {
-    return {
+<script setup>
+import { computed } from 'vue';
+
+const props = defineProps({
+  content: {
+    type: Object,
+    required: false,
+    default: () => ({
       stats: [{
         title: 'Projects',
-        value: '4,253'
+        value: '4,253',
+        description: 'Lorem ipsum dolor sit amet'
       }, {
         title: 'API Requests',
-        value: '1,283,787'
+        value: '1,283,787',
+        description: 'Lorem ipsum dolor sit amet'
       }, {
         title: 'Subscribers',
-        value: '1,348'
+        value: '1,348',
+        description: 'Lorem ipsum dolor sit amet'
       }, {
         title: 'Businesses',
-        value: '331,234'
+        value: '331,234',
+        description: 'Lorem ipsum dolor sit amet'
       }]
-    }
+    })
+  },
+  config: {
+    type: Object,
+    default: () => ({})
   }
-}
+});
+
+const stats = computed(() => props.content?.stats || []);
 </script>

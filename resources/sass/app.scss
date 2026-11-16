@@ -1,3 +1,51 @@
+// Import CSS custom properties declarations
+@import 'variables';
+
+// The app bar, shared by every layout that has one
+@import 'toolbar';
+
+/**
+ * Room for the podcast player bar.
+ *
+ * The bar is fixed to the bottom of the viewport — sticky only sticks
+ * within its scrolling ancestor, and inside v-main it slid away on a
+ * short page — so it covers whatever is behind it. The component marks
+ * the document while it is up and the page gives back the height, which
+ * is the one thing a fixed element cannot do for itself.
+ */
+.podcast-bar-visible {
+    .v-main,
+    .v-footer {
+        padding-bottom: 76px;
+    }
+}
+
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+body {
+    background: transparent !important;
+}
+
+/* Make v-application transparent to show custom background */
+.v-application {
+    background: transparent !important;
+}
+
+/* Ensure main content area uses theme background color with semi-transparency to show background image */
+.v-main {
+    background: rgba(var(--v-theme-background), 0.95) !important;
+    min-height: 100vh;
+}
+
+.columns {
+    display: grid;
+    gap: 1em;
+    grid-template-columns: 1fr 1fr 1fr ;
+}
 .cursor-pointer {
     cursor: pointer;
 }
@@ -9,4 +57,50 @@
     border-radius: 0 0 0.25rem 0.25rem;
     position: absolute;
     left: 0.5rem;
+}
+
+/* Brand gradient utilities (see components/common/PageHeader.vue) */
+.bg-gradient {
+    background: linear-gradient(135deg, rgb(var(--v-theme-primary)) 0%, rgb(var(--v-theme-secondary)) 100%);
+    color: rgb(var(--v-theme-on-primary));
+}
+
+.text-gradient {
+    background: linear-gradient(135deg, rgb(var(--v-theme-primary)) 0%, rgb(var(--v-theme-secondary)) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: rgb(var(--v-theme-primary)); /* fallback when background-clip is unsupported */
+}
+
+/* @username mentions in rendered content (editor styles live in the editors) */
+.mention {
+    display: inline-block;
+    background: rgba(var(--v-theme-primary), 0.1);
+    border: 1px solid rgba(var(--v-theme-primary), 0.3);
+    border-radius: 6px;
+    padding: 0 0.35rem;
+    color: rgb(var(--v-theme-primary));
+    font-weight: 500;
+    text-decoration: none;
+    line-height: 1.5;
+}
+
+/* Rich text posted from the simple editor */
+.rich-content p {
+    margin: 0 0 8px;
+}
+
+.rich-content p:last-child {
+    margin-bottom: 0;
+}
+
+.rich-content ul,
+.rich-content ol {
+    padding-left: 20px;
+    margin: 4px 0 8px;
+}
+
+.v-theme--dark .text-gradient {
+    background-image: linear-gradient(135deg, rgb(var(--v-theme-accent)) 0%, rgb(var(--v-theme-secondary)) 100%);
 }

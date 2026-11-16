@@ -1,173 +1,287 @@
 <template>
-    <v-menu offset-y left transition="slide-y-transition">
-        <template v-slot:activator="{ on }">
-            <v-badge
-                bordered
-                :content="notifications.length"
-                :value="notifications.length"
-                offset-x="22"
-                offset-y="22"
-            >
-                <v-btn icon v-on="on">
+    <v-menu transition="slide-y-transition" :close-on-content-click="false">
+        <template v-slot:activator="{ props }">
+            <v-btn icon variant="text" size="small" data-help="toolbar-notifications" v-bind="props" :title="$t('notifications.title')" :aria-label="$t('notifications.title')">
+                <!-- The badge sits on the icon, not the button around it, so it stays close and inside the bar -->
+                <v-badge
+                    :content="notifications.length"
+                    :model-value="notifications.length > 0"
+                    color="error"
+                    max="99"
+                >
                     <v-icon>mdi-bell-outline</v-icon>
-                </v-btn>
-            </v-badge>
+                </v-badge>
+            </v-btn>
         </template>
 
+        <!-- A flat 360 is wider than a 360px phone, so the panel hung off the
+             edge it is anchored to. Ask for 360 where there is room for it. -->
+        <v-card min-width="min(360px, calc(100vw - 24px))" max-width="min(420px, calc(100vw - 24px))">
+            <v-card-title class="d-flex align-center justify-space-between py-2 px-4">
+                <span class="text-subtitle-1 font-weight-bold">{{ $t('notifications.title') }}</span>
+                <v-btn
+                    v-if="notifications.length > 0"
+                    variant="text"
+                    size="x-small"
+                    color="primary"
+                    :loading="busyAll"
+                    :disabled="busy.length > 0"
+                    @click="markAllAsRead"
+                >
+                    {{ $t('notifications.markAllRead') }}
+                </v-btn>
+            </v-card-title>
 
-        <!-- dropdown card -->
-        <v-card>
-            <v-list three-line dense max-width="400">
-                <v-list-item-group>
-                <v-subheader class="pa-2 font-weight-bold">Notifications</v-subheader>
-                <div v-for="(item, index) in notifications" :key="index">
-                    <v-divider v-if="index > 0 && index < notifications.length" inset></v-divider>
+            <v-divider />
 
-                    <v-list-item>
-                        <v-list-item-avatar size="32" color="primary">
-                            <v-icon dark small>mdi-noodles</v-icon>
-                        </v-list-item-avatar>
-                        <v-list-item-content @click="$router.push({name: 'my-notification', params: { id: index },})">
-                            <v-list-item-title v-text="item.data.subject"></v-list-item-title>
-                            <v-list-item-subtitle class="caption" v-text="item.data.body"></v-list-item-subtitle>
-                            <v-btn  :href="item.data.url" target="_blank" depressed small>{{item.data.action}}</v-btn>
-                        </v-list-item-content>
-                        <v-list-item-action class="align-self-center">
-                            <v-list-item-action-text v-text="">{{item.created_at | humanDiff()}}</v-list-item-action-text>
-                            <div class="d-flex">
-                                <v-icon
-                                    class="d-inline-flex"
-                                    @click="markAsRead(item.id)"
-                                    color="grey lighten-1"
-                                >
-                                    mdi-eye
-                                </v-icon>
-                                <v-icon
-                                    class="d-inline-flex"
-                                    @click="deleteNotification(item.id)"
-                                    color="red darken-3"
-                                >
-                                    mdi-delete
-                                </v-icon>
-                            </div>
+            <empty-state
+                v-if="notifications.length === 0"
+                compact
+                icon="mdi-bell-check-outline"
+                :title="$t('notifications.noNotifications')"
+            />
 
-                        </v-list-item-action>
-                    </v-list-item>
-                </div>
-                </v-list-item-group>
+            <v-list v-else density="compact" class="py-0" max-height="400" style="overflow-y: auto;">
+                <v-list-item
+                    v-for="(item, index) in notifications"
+                    :key="item.id || index"
+                    class="notification-item"
+                    :disabled="isBusy(item.id) || busyAll"
+                    @click="goToNotification(item)"
+                >
+                    <template v-slot:prepend>
+                        <v-avatar :color="getNotificationColor(item)" size="36">
+                            <v-icon size="18" color="white">{{ getNotificationIcon(item) }}</v-icon>
+                        </v-avatar>
+                    </template>
+
+                    <v-list-item-title class="text-body-2 font-weight-medium text-wrap">
+                        {{ subjectOf(item) }}
+                    </v-list-item-title>
+                    <v-list-item-subtitle class="text-caption text-wrap">
+                        {{ item.data.body || '' }}
+                    </v-list-item-subtitle>
+                    <v-list-item-subtitle class="text-caption text-disabled mt-1">
+                        {{ formatTime(item.created_at) }}
+                    </v-list-item-subtitle>
+
+                    <template v-slot:append>
+                        <div class="d-flex flex-column ga-1">
+                            <v-btn
+                                icon
+                                variant="text"
+                                size="x-small"
+                                color="medium-emphasis"
+                                :loading="isBusy(item.id, 'read')"
+                                :disabled="(isBusy(item.id) && !isBusy(item.id, 'read')) || busyAll"
+                                @click.stop="markAsRead(item.id)"
+                            >
+                                <v-icon size="16">mdi-eye-check-outline</v-icon>
+                                <v-tooltip activator="parent" location="left">{{ $t('notifications.markRead') }}</v-tooltip>
+                            </v-btn>
+                            <v-btn
+                                icon
+                                variant="text"
+                                size="x-small"
+                                color="error"
+                                :loading="isBusy(item.id, 'delete')"
+                                :disabled="(isBusy(item.id) && !isBusy(item.id, 'delete')) || busyAll"
+                                @click.stop="deleteNotification(item.id)"
+                            >
+                                <v-icon size="16">mdi-close</v-icon>
+                                <v-tooltip activator="parent" location="left">{{ $t('notifications.dismiss') }}</v-tooltip>
+                            </v-btn>
+                        </div>
+                    </template>
+                </v-list-item>
             </v-list>
 
+            <v-divider v-if="notifications.length > 0" />
+
             <div class="text-center py-2">
-                    <v-btn @click="$router.push({name: 'my-notifications', params: { id: 'abc123' },})" small>See all</v-btn>
+                <v-btn
+                    variant="text"
+                    size="small"
+                    color="primary"
+                    @click="$router.push({ name: 'my-notifications' })"
+                >
+                    {{ $t('notifications.viewAll') }}
+                </v-btn>
             </div>
         </v-card>
     </v-menu>
 </template>
 
 <script>
-/*
-|---------------------------------------------------------------------
-| Toolbar Notifications Component
-|---------------------------------------------------------------------
-|
-| Quickmenu to check out notifications
-|
-*/
-import {mapGetters} from "vuex";
+import { ref, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
+import { useApi } from '@/api/useAPI.js'
+import { useAuthStore } from '@/store/authStore.js'
+import { useUserStore } from '@/store/userStore.js'
+import { useDialog } from '@/composables/useDialog.js'
+import axios from 'axios'
+import EmptyState from '@/components/common/EmptyState.vue'
+import { notificationSubject, notificationIcon, notificationColor, notificationUrl } from '@/utils/notifications.js'
+import { onNotification } from '@/composables/useNotificationChannel.js'
 
 export default {
-    data() {
-        return {
-            notifications: [],
-        }
-    },
-    mounted() {
-        Echo.private('users.'+ this.user.id)
-            .notification(() => {
-                this.getNotifications()
-            });
+    components: { EmptyState },
+    setup() {
+        const allNotifications = ref([])
+        const authStore = useAuthStore()
+        const userStore = useUserStore()
+        const router = useRouter()
+        const api = useApi()
+        const { t } = useI18n()
+        // Confirmation and failures of the actions are modal
+        const dialog = useDialog()
 
+        // Notifications with a request in flight: [{ id, action }]
+        const busy = ref([])
+        const busyAll = ref(false)
+        const isBusy = (id, action = null) => busy.value.some(b => b.id === id && (!action || b.action === action))
+        const setBusy = (id, action) => { busy.value = [...busy.value, { id, action }] }
+        const clearBusy = (id) => { busy.value = busy.value.filter(b => b.id !== id) }
 
-        this.getNotifications()
-    }
-    ,
-    methods: {
-        getNotifications() {
+        // Filter out sandbox notifications (they have their own component)
+        const notifications = computed(() =>
+            allNotifications.value.filter(n => !n.data?.type?.startsWith('sandbox_'))
+        )
+
+        const getNotifications = async () => {
             try {
-                axios.get('/api/account/notification').then((data) => {
-                    this.notifications = data.data
-                }).catch(err => {
-                    if (err.response.status === 404) {
-                        throw new Error(`${err.config.url} not found`);
-                    }
-                    throw err;
-                })
-            } catch (error) {
-                console.warn(error)
-            }
-        },
-        goToNotification(id) {
-            try {
-                axios.get('/api/account/notification/markasread/' + id).then(() => {
-                    this.getNotifications();
-                }).catch(err => {
-                    if (err.response.status === 404) {
-                        throw new Error(`${err.config.url} not found`);
-                    }
-                    throw err;
-                })
-            } catch (error) {
-                console.warn(error)
-            }
-        },
-        markAsRead(id) {
-            try {
-                axios.get('/api/account/notification/markasread/' + id).then(() => {
-                    this.getNotifications();
-                }).catch(err => {
-                    if (err.response.status === 404) {
-                        throw new Error(`${err.config.url} not found`);
-                    }
-                    throw err;
-                })
-            } catch (error) {
-                console.warn(error)
-            }
-        },
-        markAllAsRead() {
-            try {
-                axios.get('/api/account/notification/allasread').then(() => {
-                    this.getNotifications();
-                }).catch(err => {
-                    if (err.response.status === 404) {
-                        throw new Error(`${err.config.url} not found`);
-                    }
-                    throw err;
-                })
-            } catch (error) {
-                console.warn(error)
-            }
-        },
-        deleteNotification(id) {
-            try {
-                axios.delete('/api/account/notification/delete/' + id).then(() => {
-                    this.getNotifications();
-                }).catch(err => {
-                    if (err.response.status === 404) {
-                        throw new Error(`${err.config.url} not found`);
-                    }
-                    throw err;
-                })
+                const data = await api.get('/account/notification')
+                allNotifications.value = data.data
             } catch (error) {
                 console.warn(error)
             }
         }
-    },
-    computed: {
-        ...mapGetters({
-            authenticated: 'auth/authenticated',
-            user: 'auth/user',
+
+        // Marks one notification as read; resolves to whether it worked.
+        const markAsRead = async (id) => {
+            if (isBusy(id) || busyAll.value) return false
+            setBusy(id, 'read')
+            try {
+                await axios.get('/api/account/notification/markasread/' + id)
+                await getNotifications()
+                return true
+            } catch (error) {
+                console.warn(error)
+                await dialog.requestError(error, t('notifications.updateFailed'))
+                return false
+            } finally {
+                clearBusy(id)
+            }
+        }
+
+        const goToNotification = async (item) => {
+            if (isBusy(item.id) || busyAll.value) return
+            const marked = await markAsRead(item.id)
+
+            // Navigate based on notification type
+            const url = notificationUrl(item.data)
+            if (url && marked) {
+                router.push(url)
+            }
+        }
+
+        const markAllAsRead = async () => {
+            if (busyAll.value || busy.value.length) return
+            busyAll.value = true
+            try {
+                await axios.get('/api/account/notification/allasread')
+                await getNotifications()
+            } catch (error) {
+                console.warn(error)
+                await dialog.requestError(error, t('notifications.updateFailed'))
+            } finally {
+                busyAll.value = false
+            }
+        }
+
+        const deleteNotification = async (id) => {
+            if (isBusy(id) || busyAll.value) return
+            if (!(await dialog.confirmDelete(t('notifications.confirmDelete')))) return
+
+            setBusy(id, 'delete')
+            try {
+                await axios.delete('/api/account/notification/delete/' + id)
+                await getNotifications()
+            } catch (error) {
+                console.warn(error)
+                await dialog.requestError(error, t('notifications.deleteFailed'))
+            } finally {
+                clearBusy(id)
+            }
+        }
+
+        // How a notification reads is shared with the page and the dashboard widget
+        const subjectOf = (item) => notificationSubject(item.data, t)
+        const getNotificationIcon = (item) => notificationIcon(item.data)
+        const getNotificationColor = (item) => notificationColor(item.data)
+
+        const formatTime = (dateStr) => {
+            if (!dateStr) return ''
+            const date = new Date(dateStr)
+            const now = new Date()
+            const diffMs = now - date
+            const diffMins = Math.floor(diffMs / 60000)
+            const diffHours = Math.floor(diffMs / 3600000)
+            const diffDays = Math.floor(diffMs / 86400000)
+
+            if (diffMins < 1) return t('notifications.justNow')
+            if (diffMins < 60) return t('notifications.minutesAgo', { count: diffMins })
+            if (diffHours < 24) return t('notifications.hoursAgo', { count: diffHours })
+            if (diffDays < 7) return t('notifications.daysAgo', { count: diffDays })
+
+            return date.toLocaleDateString()
+        }
+
+        // The channel itself belongs to NotificationToastHost; the bell is
+        // one of several listeners on it, so it must not subscribe (or
+        // leave) on its own — see composables/useNotificationChannel.js
+        onNotification(() => {
+            getNotifications()
         })
-    }
+
+        onMounted(() => {
+            getNotifications()
+        })
+
+        return {
+            subjectOf,
+            notifications,
+            busy,
+            busyAll,
+            isBusy,
+            user: userStore.user,
+            authenticated: authStore.isLoggedIn,
+            markAllAsRead,
+            markAsRead,
+            getNotifications,
+            deleteNotification,
+            goToNotification,
+            getNotificationIcon,
+            getNotificationColor,
+            formatTime,
+        }
+    },
 }
 </script>
+
+<style lang="scss" scoped>
+.notification-item {
+    cursor: pointer;
+    border-bottom: 1px solid rgb(var(--v-border-color));
+    transition: background 0.15s;
+
+    &:last-child {
+        border-bottom: none;
+    }
+
+    &:hover {
+        background: rgba(var(--v-theme-on-surface), 0.04);
+    }
+}
+</style>

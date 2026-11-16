@@ -1,81 +1,63 @@
 <template>
-    <!-- online users drawer -->
-    <v-navigation-drawer
-        v-model="usersDrawer"
-        width="180"
-        :right="!$vuetify.rtl"
-        app
-    >
-        <v-list dense>
-            <v-subheader class="mx-1 overline">
-                {{ $t('chat.online', { count: users.length }) }}
-            </v-subheader>
-            <v-list-item v-for="item in users" :key="item.id" class="mb-1">
-<!--                <user-avatar :user="item" class="mx-1" />-->
-                <v-list-item-content>
-                    <v-list-item-title :class="{ 'primary--text': item.id === user.id }">{{ item.username }}</v-list-item-title>
-                </v-list-item-content>
+    <v-sheet>
+        <div class="px-4 py-3 text-subtitle-1 font-weight-medium">
+            {{ $t('chat.online', { count: users.length }) }}
+        </div>
+        <v-divider />
+    </v-sheet>
+    <perfect-scrollbar class="lgScroll">
+        <empty-state
+            v-if="!users.length"
+            compact
+            icon="mdi-account-off-outline"
+            :title="$t('chat.noUsersOnline')"
+        />
+        <v-list v-else>
+            <!---Single Item-->
+            <v-list-item
+                :value="user.id"
+                color="primary"
+                class="text-no-wrap chatItem"
+                v-for="user in users" :key="user.id"
+            >
+                <!---Avatar-->
+                <template v-slot:prepend>
+                    <user-avatar :user="user"></user-avatar>
+                </template>
+                <!---Name-->
+                <v-list-item-title class="text-subtitle-1 w-100 font-weight-medium">{{ user.username }}</v-list-item-title>
             </v-list-item>
         </v-list>
-    </v-navigation-drawer>
+    </perfect-scrollbar>
 </template>
 
 <script>
-    // import pluralize from 'pluralize'
-    import Bus from '../../bus'
-    import {mapGetters} from "vuex";
+import {ref, onMounted, computed} from 'vue';
+import { useUserStore } from "@/store/userStore.js";
 
-    export default {
-        data() {
-            return {
-                usersDrawer: true,
-                users:[]
-            }
-        },
-        methods: {
-            // pluralize: pluralize
-        },
-        computed: {
-            ...mapGetters({
-                user: 'auth/user',
-            })
-        },
-        mounted() {
-            Bus.$on('chatUsers.here', (users) => {
-                this.users = users
-            })
-                .$on('chatUsers.joined', (user) => {
-                   this.users.unshift(user)
-                })
-                .$on('chatUsers.left', (user) => {
-                    this.users = this.users.filter((u) => {
-                        return u.id !== user.id
-                    })
-                })
+import {useOnlineUsersStore} from "@/store/onlineUsersStore.js";
+import UserAvatar from "@/components/common/UserAvatar.vue";
+import EmptyState from "@/components/common/EmptyState.vue";
 
-        }
+export default {
+    components: {UserAvatar, EmptyState},
+    setup() {
+        const usersDrawer = ref(true);
+        const searchValue = ref('');
+
+        const userStore = useUserStore();
+        const onlineUsers = useOnlineUsersStore();
+        const user = userStore.user;
+
+        const users = computed(() => {
+            return onlineUsers.users;
+        });
+
+        return {
+            usersDrawer,
+            users,
+            user
+        };
     }
+}
 </script>
-
-<style lang="scss">
-    .users {
-        background-color: #fff;
-        border: 1px solid #d3e0e9;
-        border-radius: 3px;
-
-        &__header {
-            padding:15px;
-            font-weight:800;
-            margin: 0;
-        }
-
-        &__user {
-            padding:0 15px;
-
-            &:last-child {
-                padding-bottom: 15px;
-            }
-        }
-    }
-
-</style>

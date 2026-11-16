@@ -1,0 +1,529 @@
+<?php
+
+namespace App\Models\Ticket;
+
+use App\Models\User;
+use App\Notifications\TicketActivityNotification;
+use App\Notifications\TicketMentionNotification;
+use App\Services\DiscordWebhookService;
+use App\Services\MentionService;
+use App\Support\DiscordEvents;
+use App\Traits\HasPolls;
+use App\Traits\Revisionable;
+use App\Traits\Voteable;
+use App\Traits\Watchable;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Notification as NotificationFacade;
+
+class Ticket extends Model
+{
+    // HasPolls because Ticket has always been listed in
+    // Poll::POLLABLE_TYPES and the polls endpoint accepts it, but without
+    // the trait $ticket->polls() did not exist — a poll could be attached
+    // to a ticket and never read back from it.
+    use HasFactory, HasPolls, Revisionable, SoftDeletes, Voteable, Watchable;
+
+    public const STATUSES = ['open', 'in_progress', 'pending', 'resolved', 'closed'];
+
+    public const OPEN_STATUSES = ['open', 'in_progress', 'pending'];
+
+    /**
+     * Ticket types listed on the public feedback pages.
+     */
+    public const FEEDBACK_TYPES = ['bug', 'feature'];
+
+    /**
+     * Fields whose changes make up the ticket history (who changed what, when).
+     */
+    protected $revisionable = [
+        'ticket_type_id',
+        'title',
+        'description',
+        'status',
+        'priority',
+        'assigned_to_user_id',
+        'due_date',
+        'is_public',
+        'duplicate_of_ticket_id',
+    ];
+
+    protected $fillable = [
+        'ticket_type_id',
+        'ticketable_type',
+        'ticketable_id',
+        'created_by_user_id',
+        'assigned_to_user_id',
+        'title',
+        'description',
+        'status',
+        'priority',
+        'due_date',
+        'resolved_at',
+        'closed_at',
+        'metadata',
+        'is_public',
+        'duplicate_of_ticket_id',
+    ];
+
+    protected $casts = [
+        'metadata'    => 'array',
+        'due_date'    => 'datetime',
+        'resolved_at' => 'datetime',
+        'closed_at'   => 'datetime',
+        'is_public'   => 'boolean',
+    ];
+
+    protected $appends = ['status_label', 'priority_label'];
+
+    /**
+     * Get the ticket type.
+     */
+    public function ticketType(): BelongsTo
+    {
+        return $this->belongsTo(TicketType::class);
+    }
+
+    /**
+     * Get the ticketable entity (polymorphic).
+     */
+    public function ticketable(): MorphTo
+    {
+        return $this->morphTo();
+    }
+
+    /**
+     * Get the user who created the ticket.
+     */
+    public function creator(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'created_by_user_id');
+    }
+
+    /**
+     * Get the assigned user.
+     */
+    public function assignee(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'assigned_to_user_id');
+    }
+
+    /**
+     * Get all comments for this ticket.
+     */
+    public function comments(): HasMany
+    {
+        return $this->hasMany(TicketComment::class)->orderBy('created_at');
+    }
+
+    /**
+     * Get public comments only.
+     */
+    public function publicComments(): HasMany
+    {
+        return $this->hasMany(TicketComment::class)
+            ->where('is_internal', false)
+            ->orderBy('created_at');
+    }
+
+    /**
+     * Get internal comments only.
+     */
+    public function internalComments(): HasMany
+    {
+        return $this->hasMany(TicketComment::class)
+            ->where('is_internal', true)
+            ->orderBy('created_at');
+    }
+
+    /**
+     * Get status label for UI.
+     */
+    public function getStatusLabelAttribute(): string
+    {
+        return match ($this->status) {
+            'open'        => 'Open',
+            'in_progress' => 'In Progress',
+            'pending'     => 'Pending',
+            'resolved'    => 'Resolved',
+            'closed'      => 'Closed',
+            default       => ucfirst($this->status),
+        };
+    }
+
+    /**
+     * Get priority label for UI.
+     */
+    public function getPriorityLabelAttribute(): string
+    {
+        return match ($this->priority) {
+            'low'    => 'Low',
+            'normal' => 'Normal',
+            'high'   => 'High',
+            'urgent' => 'Urgent',
+            default  => ucfirst($this->priority),
+        };
+    }
+
+    /**
+     * Check if ticket is open (not closed).
+     */
+    public function isOpen(): bool
+    {
+        return in_array($this->status, self::OPEN_STATUSES, true);
+    }
+
+    /**
+     * Check if ticket is assigned.
+     */
+    public function isAssigned(): bool
+    {
+        return $this->assigned_to_user_id !== null;
+    }
+
+    /**
+     * Assign ticket to a user.
+     */
+    public function assignTo(User $user): void
+    {
+        $this->update([
+            'assigned_to_user_id' => $user->id,
+            'status'              => $this->status === 'open' ? 'in_progress' : $this->status,
+        ]);
+    }
+
+    /**
+     * Unassign ticket.
+     */
+    public function unassign(): void
+    {
+        $this->update([
+            'assigned_to_user_id' => null,
+            'status'              => $this->status === 'in_progress' ? 'open' : $this->status,
+        ]);
+    }
+
+    /**
+     * Mark ticket as resolved.
+     */
+    public function resolve(): void
+    {
+        $this->update([
+            'status'      => 'resolved',
+            'resolved_at' => now(),
+        ]);
+    }
+
+    /**
+     * Close ticket.
+     */
+    public function close(): void
+    {
+        $this->update([
+            'status'    => 'closed',
+            'closed_at' => now(),
+        ]);
+    }
+
+    /**
+     * Reopen ticket.
+     */
+    public function reopen(): void
+    {
+        $this->update([
+            'status'      => 'open',
+            'resolved_at' => null,
+            'closed_at'   => null,
+        ]);
+    }
+
+    /**
+     * Scope: Open tickets.
+     */
+    public function scopeOpen($query)
+    {
+        return $query->whereIn('status', self::OPEN_STATUSES);
+    }
+
+    /**
+     * Scope: Assigned to user.
+     */
+    public function scopeAssignedTo($query, User $user)
+    {
+        return $query->where('assigned_to_user_id', $user->id);
+    }
+
+    /**
+     * Scope: Created by user.
+     */
+    public function scopeCreatedBy($query, User $user)
+    {
+        return $query->where('created_by_user_id', $user->id);
+    }
+
+    /**
+     * Scope: By ticket type.
+     */
+    public function scopeOfType($query, string $typeSlug)
+    {
+        return $query->whereHas('ticketType', function ($q) use ($typeSlug) {
+            $q->where('slug', $typeSlug);
+        });
+    }
+
+    // ── Public feedback (bug reports and feature requests) ──────────
+
+    // votes(), voters(), vote(), unvote() and toggleVote() come from the
+    // Voteable trait; watches(), watchers(), watch(), unwatch(),
+    // toggleWatch() and notifyWatchers() from Watchable.
+
+    /**
+     * Get the tags of this ticket.
+     */
+    public function tags(): BelongsToMany
+    {
+        return $this->belongsToMany(TicketTag::class);
+    }
+
+    /**
+     * Get the original ticket if this one is a duplicate.
+     */
+    public function duplicateOf(): BelongsTo
+    {
+        return $this->belongsTo(Ticket::class, 'duplicate_of_ticket_id');
+    }
+
+    /**
+     * Get the tickets marked as duplicates of this one.
+     */
+    public function duplicates(): HasMany
+    {
+        return $this->hasMany(Ticket::class, 'duplicate_of_ticket_id');
+    }
+
+    /**
+     * Whether this is a bug report or feature request.
+     */
+    public function isFeedback(): bool
+    {
+        return in_array($this->ticketType?->slug, self::FEEDBACK_TYPES, true);
+    }
+
+    /**
+     * Public tickets are visible to everyone, private ones to their creator and admins.
+     */
+    public function isVisibleTo(?User $user): bool
+    {
+        return $this->is_public
+            || ($user && ((int) $this->created_by_user_id === (int) $user->id || $user->isAdmin()));
+    }
+
+    /**
+     * Whether the member can open the ticket on any page: the ticket admin,
+     * their own tickets (created or assigned) or the public feedback page.
+     */
+    public function canBeOpenedBy(User $user): bool
+    {
+        return $user->isAdmin()
+            || (int) $this->created_by_user_id === (int) $user->id
+            || (int) $this->assigned_to_user_id === (int) $user->id
+            || ($this->is_public && $this->isFeedback());
+    }
+
+    /**
+     * The page on which the member opens the ticket.
+     */
+    public function urlFor(User $user): string
+    {
+        if ($user->isAdmin()) {
+            return "/admin/tickets/{$this->id}";
+        }
+
+        if ((int) $this->created_by_user_id === (int) $user->id || (int) $this->assigned_to_user_id === (int) $user->id) {
+            return "/account/tickets/{$this->id}";
+        }
+
+        return "/feedback/{$this->id}";
+    }
+
+    /**
+     * Notify members newly @mentioned in a description or comment. Mentions
+     * already in the previous version, the author and members who cannot
+     * open the ticket are skipped; internal notes only reach admins.
+     * Returns the ids of the notified members.
+     */
+    public function notifyMentions(?string $html, ?string $previous, ?User $author, ?TicketComment $comment = null): array
+    {
+        if ( ! $author || blank($html)) {
+            return [];
+        }
+
+        // Telling people must not be able to take down the thing it is
+        // about. This runs from the created and updated hooks, so an
+        // unreachable mail server or a malformed mention used to mean the
+        // ticket — somebody's bug report, a wiki page waiting for review
+        // — failed to save at all.
+        try {
+            $recipients = app(MentionService::class)
+                ->newMentions($html, $previous, $author)
+                ->filter(fn (User $user) => $comment?->is_internal ? $user->isAdmin() : $this->canBeOpenedBy($user));
+
+            NotificationFacade::send($recipients, new TicketMentionNotification($this, $author, $comment));
+
+            return $recipients->pluck('id')->all();
+        } catch (\Throwable $e) {
+            Log::warning('[tickets] could not notify mentions on ticket ' . $this->id, [
+                'error' => $e->getMessage(),
+            ]);
+
+            return [];
+        }
+    }
+
+    /**
+     * Tell the Discord channels about a new ticket. Public feedback links to
+     * its own page; everything else to the ticket admin.
+     */
+    public function announceOnDiscord(): void
+    {
+        $feedback = $this->isFeedback() && $this->is_public;
+
+        app(DiscordWebhookService::class)->announce(
+            $feedback ? DiscordEvents::FEEDBACK_CREATED : DiscordEvents::TICKET_CREATED,
+            [
+                'title'       => $this->title,
+                'description' => $this->description,
+                'url'         => $feedback ? "/feedback/{$this->id}" : "/admin/tickets/{$this->id}",
+                'author'      => $this->creator?->username,
+                'fields'      => [
+                    'messages.discord.fields.type'     => $this->ticketType?->name,
+                    'messages.discord.fields.priority' => ["messages.discord.priority.{$this->priority}"],
+                ],
+            ]
+        );
+    }
+
+    /**
+     * Scope: Bug reports and feature requests.
+     */
+    public function scopeFeedback($query)
+    {
+        return $query->whereHas('ticketType', function ($q) {
+            $q->whereIn('slug', self::FEEDBACK_TYPES);
+        });
+    }
+
+    /**
+     * The people who handle tickets, for telling them a new one arrived.
+     *
+     * "Access" here means being able to act on it, not merely being able
+     * to read it: a public feedback ticket is visible to every member,
+     * and notifying the whole membership each time somebody reports a
+     * bug would be noise, not news. Server-side that group is the admin
+     * role — the ticket screens live behind it (see
+     * AdminRoutesAreAdminOnlyTest) — so that is who is told.
+     *
+     * The creator is left out: they are watching it already, and the
+     * arrival of their own ticket is not news to them.
+     */
+    public function staffRecipients(): Collection
+    {
+        return User::whereHas('roles', fn ($query) => $query->where('name', 'admin'))
+            ->when(
+                $this->created_by_user_id,
+                fn ($query) => $query->whereKeyNot($this->created_by_user_id)
+            )
+            ->get();
+    }
+
+    /**
+     * Tell them, unless there is nobody to tell.
+     *
+     * Never throws: a ticket is somebody's actual work — a bug report, a
+     * wiki page waiting for review — and must not fail to exist because
+     * a notification could not be delivered.
+     */
+    public function notifyStaffOfNewTicket(): void
+    {
+        try {
+            $recipients = $this->staffRecipients();
+
+            if ($recipients->isEmpty()) {
+                return;
+            }
+
+            NotificationFacade::send($recipients, new TicketActivityNotification($this, 'created'));
+        } catch (\Throwable $e) {
+            Log::warning('[tickets] could not announce ticket ' . $this->id, ['error' => $e->getMessage()]);
+        }
+    }
+
+    /**
+     * Scope: Tickets the user may see (see isVisibleTo()).
+     */
+    public function scopeVisibleTo($query, ?User $user)
+    {
+        if ($user?->isAdmin()) {
+            return $query;
+        }
+
+        return $query->where(function ($q) use ($user) {
+            $q->where('is_public', true)
+                ->when($user, fn ($q) => $q->orWhere('created_by_user_id', $user->id));
+        });
+    }
+
+    protected static function booted(): void
+    {
+        // resolved_at / closed_at follow the status, whichever way it is changed
+        static::saving(function (Ticket $ticket): void {
+            if ( ! $ticket->isDirty('status')) {
+                return;
+            }
+
+            if ($ticket->status === 'resolved') {
+                $ticket->resolved_at ??= now();
+            } elseif ($ticket->status === 'closed') {
+                $ticket->closed_at ??= now();
+            } elseif (in_array($ticket->status, self::OPEN_STATUSES, true)) {
+                $ticket->resolved_at = null;
+                $ticket->closed_at   = null;
+            }
+        });
+
+        static::created(function (Ticket $ticket): void {
+            // Whoever opened it follows it from the start, however it was
+            // opened. The feedback page did this for the tickets it
+            // creates, but a ticket raised anywhere else — the admin
+            // screen, a legacy claim, an approval ticket a wiki page or a
+            // podcast raised on its author's behalf — left its own author
+            // unsubscribed, so the reply telling them what happens next
+            // reached everyone except them.
+            if ($ticket->creator) {
+                $ticket->watch($ticket->creator);
+            }
+
+            $ticket->notifyStaffOfNewTicket();
+            $ticket->notifyMentions($ticket->description, null, $ticket->creator);
+            $ticket->announceOnDiscord();
+        });
+
+        static::updated(function (Ticket $ticket): void {
+            if ($ticket->wasChanged('status')) {
+                $ticket->notifyWatchers(new TicketActivityNotification($ticket, 'status'), Auth::id());
+            }
+
+            if ($ticket->wasChanged('description')) {
+                $ticket->notifyMentions($ticket->description, $ticket->getOriginal('description'), Auth::user());
+            }
+        });
+    }
+}

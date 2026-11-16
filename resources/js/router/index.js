@@ -1,20 +1,28 @@
-import Vue from 'vue'
-import Router from 'vue-router'
-import store from '../store'
+// import * as Vue from 'vue'
+import { createRouter, createWebHistory } from 'vue-router'
+// import * as store from '../store'
 
-import middlewarePipeline from './middlewarePipeline'
+// import authMiddleware from './middleware/auth-middleware'
+import { middlewarePipeline } from './middlewarePipeline.js';
 
 import auth from './middleware/auth'
 import verified from './middleware/verified'
+import maintenance from './middleware/maintenance'
 
 // Routes
 import ComponentsRoutes from './components.routes'
 import PagesRoutes from './pages.routes'
 import UsersRoutes from './users.routes'
 import LandingRoutes from './landing.routes'
+import WikiRoutes from './wiki.routes'
+import ForumRoutes from './forum.routes'
+import SandboxRoutes from './sandbox.routes'
 import AdminRoutes from './admin.routes'
+import FeedbackRoutes from './feedback.routes'
+import PodcastRoutes from './podcast.routes'
+//import permission from "@/router/middleware/permission.js";
 
-Vue.use(Router)
+//Vue.use(Router)
 
 export const routes = [{
     path: '/dashboard',
@@ -30,19 +38,39 @@ export const routes = [{
     ...PagesRoutes,
     ...UsersRoutes,
     ...LandingRoutes,
+    ...WikiRoutes,
+    ...ForumRoutes,
+    ...SandboxRoutes,
     ...AdminRoutes,
+    ...FeedbackRoutes,
+    ...PodcastRoutes,
     {
-        path: '/blank',
-        name: 'blank',
+        path: '/error',
+        name: 'access-denied',
+        component: () => import(/* webpackChunkName: "error" */ '@/pages/error/NotFoundPage.vue'),
+        meta: {
+            layout: 'error'
+        }
+    },{
+        path: '/timeline',
+        name: 'timeline',
         meta: {
             middleware: [
-                auth
+                auth, verified
             ]
         },
-        component: () => import(/* webpackChunkName: "blank" */ '@/pages/BlankPage.vue')
+        component: () => import(/* webpackChunkName: "timeline" */ '@/pages/timeline/TimelinePage.vue')
     },
     {
-        path: '*',
+        path: '/:slug([\\w-]+)',
+        name: 'page',
+        component: () => import(/* webpackChunkName: "landing-pages" */ '@/pages/landing/Pages.vue'),
+        meta: {
+            layout: 'landing'
+        }
+    },
+    {
+        path: '/:pathMatch(.*)*',
         name: 'error',
         component: () => import(/* webpackChunkName: "error" */ '@/pages/error/NotFoundPage.vue'),
         meta: {
@@ -50,9 +78,8 @@ export const routes = [{
         }
     }]
 
-const router = new Router({
-    mode: 'history',
-    base: process.env.BASE_URL || '/',
+const router = createRouter({
+    history: createWebHistory('/'),  // Explicitly set to '/' instead of using BASE_URL
     scrollBehavior(to, from, savedPosition) {
         if (savedPosition) return savedPosition
 
@@ -61,20 +88,82 @@ const router = new Router({
     routes
 })
 
+let lastLink = null;
+
 /**
  * Before each route update
  */
-router.beforeEach((to, from, next) => {
+router.beforeEach(async (to, from, next) => {
+    lastLink = from.fullPath; // Store the last visited link
+
+    // Ensure settings are loaded before checking maintenance mode
+    const { useSettingsStore } = await import('@/store/settingStore.js')
+    const settingsStore = useSettingsStore()
+
+    if (!settingsStore.settingsLoaded) {
+        await settingsStore.fetchAppSettings()
+    }
+
+    // Check maintenance mode first (global middleware)
+    const maintenanceResult = await new Promise((resolve) => {
+        maintenance({
+            to,
+            from,
+            next: (result) => resolve(result)
+        })
+    })
+
+    // If maintenance middleware redirected, handle it
+    if (maintenanceResult && typeof maintenanceResult === 'object' && maintenanceResult.name) {
+        return next(maintenanceResult)
+    }
+
+    // If maintenance middleware returned false or stopped the flow
+    if (maintenanceResult === false) {
+        return next(false)
+    }
+
+    // Check if sandbox feature is disabled
+    if (to.path.startsWith('/sandbox') && !settingsStore.sandboxEnabled) {
+        return next({ name: 'access-denied' })
+    }
+
+    // Block routes of deactivated features (Admin → Settings → Features)
+    const { FEATURES } = await import('@/configs/features.js')
+    const blockedFeature = FEATURES.find(feature =>
+        feature.routePrefixes.some(prefix => to.path === prefix || to.path.startsWith(prefix + '/'))
+        && !settingsStore.isFeatureEnabled(feature.key)
+    )
+    if (blockedFeature) {
+        return next({ name: 'access-denied' })
+    }
+
+    // Keep the IRC daemon status current so the menu never offers a chat
+    // that cannot connect. Throttled inside the store, and not awaited —
+    // the menu picks the answer up when it arrives.
+    if (settingsStore.isFeatureEnabled('irc')) {
+        const { useAuthStore } = await import('@/store/authStore.js')
+        if (useAuthStore().isAuthenticated) {
+            const { useIrcStore } = await import('@/store/ircStore.js')
+            useIrcStore().fetchStatus()
+        }
+    }
+
+    // Continue with route-specific middleware
     if (!to.meta.middleware) {
         return next()
     }
 
     const middleware = to.meta.middleware
 
+    if (!Array.isArray(middleware) || typeof middleware[0] !== 'function') {
+        console.error('Invalid middleware', middleware);
+        return next();
+    }
+
     const context = {
         to,
         from,
-        store,
         next
     }
 

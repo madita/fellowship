@@ -1,17 +1,17 @@
 <template>
   <div class="py-3 min-w-0 w-full">
-    <div class="display-1">{{ $t('common.faq') }}</div>
-    <v-breadcrumbs :items="breadcrumbs" class="pa-0 py-2"></v-breadcrumbs>
+    <div class="text-h4 font-weight-bold">{{ $t('common.faq') }}</div>
+    <breadcrumbs :items="breadcrumbs" class="py-2" />
 
     <!-- search card -->
     <v-card img="/images/demo/cards/material2.jpg" class="mb-5">
       <div class="pa-4 py-8">
         <v-text-field
           v-model="search"
-          solo
+          variant="solo"
           hide-details
-          append-icon="mdi-magnify"
-          placeholder="Search"
+          append-inner-icon="mdi-magnify"
+          :placeholder="$t('faq.searchPlaceholder')"
         ></v-text-field>
       </div>
     </v-card>
@@ -20,32 +20,32 @@
     <v-row>
       <v-col cols="12" md="3" xl="2">
         <div class="sticky" style="top: 90px">
-          <div class="title mb-2">Contents</div>
+          <div class="text-h6 mb-2">{{ $t('faq.contents') }}</div>
           <div v-for="faq in faqs" :key="faq.id" class="mb-1">
-            <v-btn text color="primary" @click="$vuetify.goTo(`#${faq.id}`, { offset: 30 })">{{ faq.title }}</v-btn>
+            <v-btn variant="text" color="primary" @click="$vuetify.goTo(`#${faq.id}`, { offset: 30 })">{{ faq.title }}</v-btn>
           </div>
         </div>
       </v-col>
 
       <v-col cols="12" md="9" xl="10">
         <div v-for="faq in faqs" :id="faq.id" :key="faq.id">
-          <div id="#general" class="title pb-2">{{ faq.title }}</div>
+          <div id="#general" class="text-h6 pb-2">{{ faq.title }}</div>
           <v-expansion-panels class="mb-4" multiple>
             <v-expansion-panel
               v-for="(item,i) in faq.items"
               :key="i"
             >
-              <v-expansion-panel-header class="font-weight-black">{{ item.title }}</v-expansion-panel-header>
-              <v-expansion-panel-content>
+              <v-expansion-panel-title class="font-weight-black">{{ item.title }}</v-expansion-panel-title>
+              <v-expansion-panel-text>
                 {{ item.content }}
-              </v-expansion-panel-content>
+              </v-expansion-panel-text>
             </v-expansion-panel>
           </v-expansion-panels>
         </div>
       </v-col>
     </v-row>
 
-    <div class="caption mt-2 text-center">
+    <div class="text-caption text-medium-emphasis mt-2 text-center">
       {{ $t('faq.call') }}
       <router-link to="">{{ $t('common.contact') }}</router-link>
     </div>
@@ -61,18 +61,17 @@
 | Template to show frequently asked questions to your users
 |
 */
+import Breadcrumbs from '@/components/common/Breadcrumbs.vue';
+
 export default {
+  components: { Breadcrumbs },
   data() {
     return {
       search: '',
 
-      breadcrumbs: [{
-        text: 'Pages',
-        disabled: false,
-        href: '#'
-      }, {
-        text: 'FAQ'
-      }],
+      // The root step comes from Breadcrumbs; the step that used to sit
+      // here read "Pages" and linked to '#'
+      breadcrumbs: [{ title: this.$t('common.faq') }],
 
       faqs: [{
         id: 'general',

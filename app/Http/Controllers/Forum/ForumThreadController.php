@@ -1,0 +1,284 @@
+<?php
+
+namespace App\Http\Controllers\Forum;
+
+use App\Http\Controllers\Controller;
+use App\Models\Forum\ForumPost;
+use App\Models\Forum\ForumThread;
+use App\Models\Forum\ForumThreadRead;
+use App\Models\Like;
+use App\Models\Tag\Taxonomy;
+use App\Services\PollService;
+use App\Services\SpamDetectionService;
+use App\Traits\ShowsRanks;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Stevebauman\Purify\Facades\Purify;
+
+class ForumThreadController extends Controller
+{
+    use ShowsRanks;
+
+    /**
+     * Get a specific thread with its posts.
+     */
+    public function show(string $forumSlug, string $threadSlug): JsonResponse
+    {
+        $user = Auth::user();
+
+        $thread = ForumThread::where('slug', $threadSlug)
+            ->with([
+                'category.term',
+                'author',
+                'latestPoll.creator',
+                'latestPoll.options',
+                'latestPoll.votes',
+            ])
+            ->firstOrFail();
+
+        // Check access via category properties
+        $category = $thread->category;
+        if ($category->properties['is_private'] ?? false) {
+            $canAccess = $user && ($user->isAdmin() || (
+                ! empty($category->properties['allowed_roles']) && $user->hasAnyRole($category->properties['allowed_roles'])
+            ));
+            if ( ! $canAccess) {
+                abort(403, 'You do not have permission to access this thread.');
+            }
+        }
+
+        // Increment view count (throttle to once per session)
+        $viewedKey = "thread_viewed_{$thread->id}";
+        if ( ! session()->has($viewedKey)) {
+            $thread->incrementViews();
+            session()->put($viewedKey, true);
+        }
+
+        // Mark thread as read for authenticated user
+        if ($user) {
+            ForumThreadRead::updateOrCreate(
+                ['user_id' => $user->id, 'thread_id' => $thread->id],
+                ['read_at' => now()]
+            );
+        }
+
+        // Get all posts flat, ordered by creation date
+        $posts = $thread->posts()
+            ->with(['author'])
+            ->orderBy('created_at')
+            ->paginate(20);
+
+        // The rank shown beside each name. Worked out for the whole page in
+        // one go, rather than a lookup per post.
+        $this->attachRanks(
+            collect($posts->items())->pluck('author')->push($thread->author)->filter()
+        );
+
+        // Batch query liked post IDs for the authenticated user
+        $likedPostIds = [];
+        if ($user) {
+            $postIds      = collect($posts->items())->pluck('id');
+            // Likes are one table now, so the kind has to be named: the
+            // same member may well have liked a status with the same id
+            $likedPostIds = Like::where('user_id', $user->id)
+                ->where('likeable_type', ForumPost::class)
+                ->whereIn('likeable_id', $postIds)
+                ->pluck('likeable_id')
+                ->toArray();
+        }
+
+        // Add is_liked to each post
+        $postsData = $posts->toArray();
+        foreach ($postsData['data'] as &$postData) {
+            $postData['is_liked'] = in_array($postData['id'], $likedPostIds);
+        }
+
+        // Compute forum-level moderation permissions
+        $canModerate     = false;
+        $canDeleteOthers = false;
+        if ($user) {
+            if ($user->isAdmin()) {
+                $canModerate     = true;
+                $canDeleteOthers = true;
+            } else {
+                $moderateRoles   = $category->properties['moderate_roles'] ?? [];
+                $deleteRoles     = $category->properties['delete_roles'] ?? [];
+                $canModerate     = ! empty($moderateRoles) && $user->hasAnyRole($moderateRoles);
+                $canDeleteOthers = ! empty($deleteRoles) && $user->hasAnyRole($deleteRoles);
+            }
+        }
+
+        $threadData         = $thread->toArray();
+        $threadData['poll'] = $thread->latestPoll?->toPayload($user);
+        unset($threadData['latest_poll']);
+
+        // The category the thread is in, named the way the rest of the
+        // forum API names it. The page has always read thread.forum.name
+        // and thread.forum.slug — for its subtitle, its back button and
+        // the redirect after a delete — and nothing ever sent them, so it
+        // fell back to the slug in the address bar. Threads are the one
+        // forum endpoint that handed out the raw category with its term.
+        //
+        // The parent is asked for through the relation rather than read as
+        // $category->parent: the taxonomies table carries a legacy `parent`
+        // integer column beside parent_id, an attribute wins over a
+        // relation of the same name, and eager loading does not change
+        // that — so that property is a number, not a category.
+        $parent = $category->parent()->with('term')->first();
+
+        $threadData['forum'] = $category->term ? [
+            'id'     => $category->id,
+            'name'   => $category->term->title,
+            'slug'   => $category->term->slug,
+            'parent' => $parent?->term ? [
+                'id'   => $parent->id,
+                'name' => $parent->term->title,
+                'slug' => $parent->term->slug,
+            ] : null,
+        ] : null;
+
+        return response()->json([
+            'thread'            => $threadData,
+            'posts'             => $postsData,
+            'can_reply'         => $thread->canReply($user),
+            'can_edit'          => $thread->canEdit($user),
+            'can_delete'        => $thread->canDelete($user),
+            'can_moderate'      => $canModerate,
+            'can_delete_others' => $canDeleteOthers,
+            'is_watching'       => $thread->isWatchedBy($user),
+            'watchers_count'    => $thread->watches()->count(),
+        ]);
+    }
+
+    /**
+     * Create a new thread.
+     */
+    public function store(
+        Request $request,
+        int $id,
+        SpamDetectionService $spamService
+    ): JsonResponse {
+        $user = Auth::user();
+
+        if ( ! $user) {
+            abort(401, 'You must be logged in to create a thread.');
+        }
+
+        $category = Taxonomy::taxonomy('forum_cat')->findOrFail($id);
+
+        // Check access to private forum
+        if ($category->properties['is_private'] ?? false) {
+            $canAccess = $user->isAdmin() || (
+                ! empty($category->properties['allowed_roles']) && $user->hasAnyRole($category->properties['allowed_roles'])
+            );
+            if ( ! $canAccess) {
+                abort(403, 'You do not have permission to post in this forum.');
+            }
+        }
+
+        // Check posting permission in locked forum
+        if ($category->properties['is_locked'] ?? false) {
+            $canPost = $user->isAdmin() || (
+                ! empty($category->properties['post_roles']) && $user->hasAnyRole($category->properties['post_roles'])
+            );
+            if ( ! $canPost) {
+                abort(403, 'This forum is locked.');
+            }
+        }
+
+        $rules = [
+            'title' => 'required|string|max:255',
+            'body'  => 'required|string',
+            'poll'  => 'nullable|array',
+        ];
+
+        // Optional inline poll — same rules as POST /api/polls
+        if (is_array($request->input('poll'))) {
+            $request->merge(['poll' => PollService::normalize($request->input('poll'))]);
+            $rules += PollService::rules('poll.');
+        }
+
+        $validated = $request->validate($rules);
+
+        // Spam check
+        $spamResult = $spamService->checkThreadCreation($user, $validated['body']);
+        if ($spamResult) {
+            abort($spamResult['status'], $spamResult['message']);
+        }
+
+        [$thread, $poll] = DB::transaction(function () use ($category, $user, $validated) {
+            $thread = $category->forumThreads()->create([
+                'user_id' => $user->id,
+                'title'   => $validated['title'],
+                // The 'sandbox' config matches the TipTap editor's output
+                // (tables, code blocks, blockquotes, …) — the default config
+                // would silently strip those elements.
+                'body' => Purify::config('sandbox')->clean($validated['body']),
+            ]);
+
+            $poll = ! empty($validated['poll'])
+                ? PollService::create($thread, $user, $validated['poll'])
+                : null;
+
+            return [$thread, $poll];
+        });
+
+        // The author watches their own thread
+        $thread->watch($user);
+
+        $data         = $thread->load('author')->toArray();
+        $data['poll'] = $poll?->toPayload($user);
+
+        return response()->json($data, 201);
+    }
+
+    /**
+     * Update a thread.
+     */
+    public function update(Request $request, ForumThread $thread): JsonResponse
+    {
+        $user = Auth::user();
+
+        if ( ! $thread->canEdit($user)) {
+            abort(403, 'You do not have permission to edit this thread.');
+        }
+
+        $validated = $request->validate([
+            'title'     => 'string|max:255',
+            'body'      => 'string',
+            'is_pinned' => 'boolean',
+            'is_locked' => 'boolean',
+        ]);
+
+        // Pinning and locking is moderation, not writing
+        if (isset($validated['is_pinned']) || isset($validated['is_locked'])) {
+            $this->authorize('manage-forum');
+        }
+
+        if (isset($validated['body'])) {
+            $validated['body'] = Purify::config('sandbox')->clean($validated['body']);
+        }
+
+        $thread->update($validated);
+
+        return response()->json($thread->load('author'));
+    }
+
+    /**
+     * Delete a thread.
+     */
+    public function destroy(ForumThread $thread): JsonResponse
+    {
+        $user = Auth::user();
+
+        if ( ! $thread->canDelete($user)) {
+            abort(403, 'You do not have permission to delete this thread.');
+        }
+
+        $thread->delete();
+
+        return response()->json(['message' => 'Thread deleted successfully']);
+    }
+}

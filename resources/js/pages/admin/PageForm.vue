@@ -1,96 +1,484 @@
-<template>
-  <div class="flex-grow-1">
-      <v-alert v-if="message" type="success">
-          {{ message }}
-      </v-alert>
+<script setup>
+import { ref, computed, watch } from 'vue';
+import { useRoute } from 'vue-router';
+import { useI18n } from 'vue-i18n';
+import axios from 'axios';
+import Tiptap from '../../components/common/tiptap/Tiptap.vue';
+import PageHeader from '../../components/common/PageHeader.vue';
+import PublishControl from '@/components/common/PublishControl.vue';
+import { useDialog } from '@/composables/useDialog.js';
 
-      <v-text-field
-          v-model="page.title"
-      ></v-text-field>
+const route = useRoute();
+const { t } = useI18n();
+const dialog = useDialog();
 
-      <simple-editor  v-model="page.body" :value="page.body" id="text-body" name="content"></simple-editor>
+// Reactive state
+const loading = ref(true);
+const dataReady = ref(false);
+const saving = ref(false);
+const savingCategory = ref(false);
+const addCategory = ref(false);
+const page = ref({ title: '', content: '', parent: null, taxonomy: [], terms: [], categories: [], published_at: null });
+const pages = ref([]);
+const endpoint = '/api/datatable/pages';
+const form = ref('create');
+const id = ref(null);
+const searchTax = ref(null);
+const searchTerm = ref(null);
+const terms = ref([]);
+const taxonomy = ref(null);
+const taxonomyValue = ref('category');
+const termValue = ref([]);
+const newCategory = ref('');
+const categories = ref([]);
+const categoryValue = ref([]);
+const parents = ref([]);
+const parentValue = ref(null);
+const colors = ['green', 'purple', 'indigo', 'cyan', 'teal', 'orange'];
+let nonce = 1;
 
-      <v-checkbox
-          v-model="page.published"
-          label="Published"
-      ></v-checkbox>
+const rules = {
+    required: value => !!value || t('validation.required'),
+};
 
-      <v-checkbox
-          v-model="page.sign_in_only"
-          label="Sign in only"
-      ></v-checkbox>
+// Computed
+const isDisabled = computed(() => {
+    return id.value > 0 && categoryValue.value.length > 0;
+});
 
+// Watch
+watch(termValue, (val, prev) => {
+    if (!prev || val.length === prev.length) return;
 
-      <v-btn @click="save">{{form}}</v-btn>
-  </div>
-</template>
-
-<script>
-import SimpleEditor from '../../components/common/SimpleEditor'
-
-export default {
-    components: {
-        SimpleEditor
-    },
-    data() {
-        return {
-            loading: true,
-            page: {title:"", body:""},
-            endpoint:'/api/datatable/pages',
-            form:"create"|"edit",
-            id:null,
-            message:""
+    termValue.value = val.map(v => {
+        if (typeof v === 'string') {
+            v = {
+                title: v,
+                color: colors[nonce - 1],
+            };
+            terms.value.push(v);
+            nonce++;
         }
-    },
+        return v;
+    });
+});
 
-    methods: {
-        getPage(){
-            this.loading = true
-            return axios.get(`/api/pages/${this.id}/edit`).then((response) => {
-                this.page = response.data.data
+// Methods
+const getPage = () => {
+    loading.value = true;
+    return axios.get(`/api/pages/${id.value}/edit`).then((response) => {
+        page.value = response.data.page;
+        page.value.parent = response.data.parent;
+        // null = draft, past = live, future = scheduled
+        page.value.published_at = response.data.page?.published_at ?? null;
 
-                this.loading = false
-            });
-        },
-        save () {
-            if (this.form === "edit") {
-                this.update()
-            } else {
-                this.store()
-            }
-        },
-        update () {
-            axios.patch(`${this.endpoint}/${this.id}`, this.page).then(() => {
-                this.message = "Page updated"
-            }).catch((error) => {
-                if (error.response.status === 422) {
-                    this.editing.errors = error.response.data
-                }
-            })
-        },
-        store () {
-            axios.post(`${this.endpoint}`, this.page).then(() => {
-                this.page = {title:"", body:""};
-                this.message = "Page saved ..link"
-            }).catch((error) => {
-                if (error.response.status === 422) {
-                    // this.creating.errors = error.response.data
-                    this.editing.errors = error.response.data
-                }
-            })
-        },
-    },
+        const taxonomies = { ...(response.data.taxonomies || {}) };
 
-    created() {
-        if(this.$route.params.form) {
-            this.form = this.$route.params.form;
+        if (taxonomies.tags) {
+            termValue.value = taxonomies.tags;
+            delete taxonomies.tags;
         }
 
-        if(this.$route.params.id) {
-            this.id = this.$route.params.id;
-            this.getPage();
+        const remainingKeys = Object.keys(taxonomies);
+        if (remainingKeys.length > 0) {
+            taxonomyValue.value = remainingKeys[0];
+            categoryValue.value = taxonomies[remainingKeys[0]];
         }
 
+        return getCategories(getTaxonomyName()).finally(() => {
+            loading.value = false;
+        });
+    });
+};
+
+// Every page for the parent picker; the table API returns at most 100 per request
+const getPages = async () => {
+    const all = [];
+    try {
+        for (let page = 1, last = 1; page <= last && page <= 50; page++) {
+            const { data } = await axios.get('/api/datatable/pages', { params: { page, per_page: 100, sort_by: 'id', sort_dir: 'asc' } });
+            const records = data.data.records;
+            all.push(...(records.data || []));
+            last = records.last_page || 1;
+        }
+        pages.value = all;
+    } finally {
+        loading.value = false;
     }
+};
+
+const getTaxonomy = () => {
+    loading.value = true;
+    return axios.get(`/api/tag/taxonomies`).then((response) => {
+        taxonomy.value = response.data;
+        loading.value = false;
+    });
+};
+
+const getTerms = () => {
+    loading.value = true;
+    return axios.get(`/api/tag/terms/tags`).then((response) => {
+        terms.value = response.data.terms.map(x => x.title);
+        loading.value = false;
+    });
+};
+
+const getTaxonomyName = () => {
+    const val = taxonomyValue.value;
+    if (typeof val === 'object' && val !== null) return val.taxonomy;
+    return val || 'category';
+};
+
+const setTaxonomy = () => {
+    getCategories(getTaxonomyName());
+};
+
+const getCategories = (tax) => {
+    loading.value = true;
+    return axios.get(`/api/tag/terms/${tax}`).then((response) => {
+        categories.value = response.data.terms;
+        parents.value = response.data.terms;
+        loading.value = false;
+    });
+};
+
+const saveCategory = async () => {
+    const term = newCategory.value.trim();
+    if (!term || savingCategory.value) return;
+    const taxName = getTaxonomyName();
+    const data = { term, taxonomy: taxName, parent: parentValue.value };
+    savingCategory.value = true;
+    try {
+        await axios.post(`/api/tag/terms`, data);
+        await getCategories(taxName);
+        categoryValue.value.push(term);
+        newCategory.value = '';
+        addCategory.value = false;
+    } catch (error) {
+        savingCategory.value = false;
+        dialog.requestError(error);
+    } finally {
+        savingCategory.value = false;
+    }
+};
+
+const save = async () => {
+    if (saving.value) return;
+    page.value.terms = termValue.value;
+    page.value.taxonomy = getTaxonomyName();
+    page.value.categories = categoryValue.value.map(x => x.title ?? x);
+
+    // `published_at` is the single source of truth; never send the legacy flag back
+    const payload = { ...page.value, published_at: page.value.published_at ?? null };
+    delete payload.published;
+
+    saving.value = true;
+    try {
+        if (form.value === 'edit') {
+            await axios.patch(`${endpoint}/${id.value}`, payload);
+            saving.value = false;
+            dialog.success(t('pageForm.pageUpdated'));
+        } else {
+            await axios.post(`${endpoint}`, payload);
+            page.value = { title: '', content: '', published_at: null };
+            saving.value = false;
+            dialog.success(t('pageForm.pageSaved'));
+        }
+    } catch (error) {
+        saving.value = false;
+        dialog.requestError(error);
+    }
+};
+
+// Init (equivalent to created())
+if (route.params.form) {
+    form.value = route.params.form;
 }
+
+if (route.params.id) {
+    id.value = route.params.id;
+}
+
+Promise.all([
+    route.params.id ? getPage() : getCategories('category'),
+    getTaxonomy(),
+    getTerms(),
+    getPages(),
+]).finally(() => {
+    dataReady.value = true;
+    loading.value = false;
+});
 </script>
+
+<template>
+    <div class="flex-grow-1">
+        <page-header
+            :title="form === 'edit' ? $t('admin.pages.edit') : $t('admin.pages.create')"
+            :subtitle="page.title"
+            icon="mdi-file-document-edit-outline"
+            :breadcrumbs="[
+                $crumb('admin'),
+                { title: $t('admin.pages.title'), to: { name: 'admin-pages' } },
+                form === 'edit' ? $t('admin.pages.edit') : $t('admin.pages.create'),
+            ]"
+            :back-to="{ name: 'admin-pages' }"
+        />
+
+        <v-container>
+            <v-row>
+                <v-col cols="12" md="8">
+                    <v-text-field
+                        :label="$t('common.title')"
+                        v-model="page.title"
+                    />
+
+                    <tiptap v-model="page.content" :value="page.content" id="text-content" name="content" />
+                </v-col>
+                <v-col cols="12" md="4" v-if="dataReady">
+                    <!-- Parent Page -->
+                    <v-card class="mb-4" elevation="1" rounded="lg">
+                        <v-card-title class="text-subtitle-1 font-weight-medium">
+                            <v-icon class="mr-2" color="info">mdi-file-tree</v-icon>
+                            {{ $t('common.pages') }}
+                        </v-card-title>
+                        <v-card-text>
+                            <v-select
+                                v-model="page.parent"
+                                :items="pages"
+                                :label="$t('common.pages')"
+                                variant="outlined"
+                                density="compact"
+                                prepend-inner-icon="mdi-file-tree"
+                                item-title="title"
+                                item-value="id"
+                                return-object
+                                clearable
+                                :hint="$t('pageForm.parentPageHint')"
+                                persistent-hint
+                            >
+                                <template #selection="{ item }">
+                                    <div class="d-flex align-center">
+                                        <v-icon size="16" class="mr-2">mdi-file-document</v-icon>
+                                        {{ item.raw.title }} ({{ item.raw.slug }})
+                                    </div>
+                                </template>
+                                <template #item="{ item, props }">
+                                    <v-list-item v-bind="props">
+                                        <template #prepend>
+                                            <v-icon>mdi-file-document</v-icon>
+                                        </template>
+                                        <v-list-item-title>{{ item.raw.title }}</v-list-item-title>
+                                        <v-list-item-subtitle>{{ item.raw.slug }}</v-list-item-subtitle>
+                                    </v-list-item>
+                                </template>
+                            </v-select>
+                        </v-card-text>
+                    </v-card>
+
+                    <!-- Taxonomy -->
+                    <v-card class="mb-4" elevation="1" rounded="lg">
+                        <v-card-title class="text-subtitle-1 font-weight-medium">
+                            <v-icon class="mr-2" color="secondary">mdi-shape-outline</v-icon>
+                            {{ $t('pageForm.taxonomy') }}
+                        </v-card-title>
+                        <v-card-text>
+                            <v-combobox
+                                v-model="taxonomyValue"
+                                :items="taxonomy"
+                                item-title="taxonomy"
+                                @update:model-value="setTaxonomy"
+                                v-model:search="searchTax"
+                                hide-selected
+                                :disabled="isDisabled"
+                                :label="$t('pageForm.taxonomy')"
+                                variant="outlined"
+                                density="compact"
+                                prepend-inner-icon="mdi-shape-outline"
+                                chips
+                                persistent-hint
+                            />
+                        </v-card-text>
+                    </v-card>
+
+                    <!-- Categories -->
+                    <v-card class="mb-4" elevation="1" rounded="lg">
+                        <v-card-title class="text-subtitle-1 font-weight-medium">
+                            <v-icon class="mr-2" color="primary">mdi-folder-outline</v-icon>
+                            {{ $t('pageForm.category') }}
+                            <v-spacer />
+                            <v-chip size="small" color="primary" variant="tonal">
+                                {{ categoryValue.length }}
+                            </v-chip>
+                        </v-card-title>
+                        <v-card-text>
+                            <v-combobox
+                                v-model="categoryValue"
+                                :items="categories"
+                                item-title="title"
+                                item-value="id"
+                                :label="$t('pageForm.category')"
+                                variant="outlined"
+                                density="compact"
+                                multiple
+                                chips
+                                closable-chips
+                                clearable
+                                prepend-inner-icon="mdi-folder-plus"
+                                :placeholder="$t('pageForm.typeToSearchCategories')"
+                                :hint="$t('pageForm.categoriesHint')"
+                                persistent-hint
+                            >
+                                <template #chip="{ props, item }">
+                                    <v-chip
+                                        v-bind="props"
+                                        color="primary"
+                                        variant="tonal"
+                                        size="small"
+                                        closable
+                                    >
+                                        <v-icon start size="16">mdi-folder</v-icon>
+                                        {{ item.title || item }}
+                                    </v-chip>
+                                </template>
+                            </v-combobox>
+
+                            <!-- Add New Category -->
+                            <div class="mt-3">
+                                <v-btn
+                                    variant="text"
+                                    size="small"
+                                    :prepend-icon="addCategory ? 'mdi-chevron-up' : 'mdi-plus'"
+                                    @click="addCategory = !addCategory"
+                                >
+                                    {{ $t('pageForm.addNewCategory') }}
+                                </v-btn>
+
+                                <v-expand-transition>
+                                    <div v-if="addCategory" class="mt-2">
+                                        <v-text-field
+                                            v-model="newCategory"
+                                            :label="$t('pageForm.newCategoryName')"
+                                            variant="outlined"
+                                            density="compact"
+                                            :rules="[rules.required]"
+                                            prepend-inner-icon="mdi-folder-plus-outline"
+                                        />
+                                        <v-combobox
+                                            v-model="parentValue"
+                                            :items="parents"
+                                            item-title="title"
+                                            :label="$t('pageForm.parentCategory')"
+                                            variant="outlined"
+                                            density="compact"
+                                            chips
+                                            closable-chips
+                                            clearable
+                                            prepend-inner-icon="mdi-file-tree"
+                                        />
+                                        <v-btn
+                                            color="primary"
+                                            variant="elevated"
+                                            size="small"
+                                            prepend-icon="mdi-plus"
+                                            :loading="savingCategory"
+                                            :disabled="savingCategory"
+                                            @click="saveCategory"
+                                        >
+                                            {{ $t('pageForm.addNewCategoryBtn') }}
+                                        </v-btn>
+                                    </div>
+                                </v-expand-transition>
+                            </div>
+                        </v-card-text>
+                    </v-card>
+
+                    <!-- Tags -->
+                    <v-card class="mb-4" elevation="1" rounded="lg">
+                        <v-card-title class="text-subtitle-1 font-weight-medium">
+                            <v-icon class="mr-2" color="secondary">mdi-tag-outline</v-icon>
+                            {{ $t('pageForm.terms') }}
+                            <v-spacer />
+                            <v-chip size="small" color="secondary" variant="tonal">
+                                {{ termValue.length }}
+                            </v-chip>
+                        </v-card-title>
+                        <v-card-text>
+                            <v-combobox
+                                v-model="termValue"
+                                :items="terms"
+                                item-title="title"
+                                v-model:search="searchTerm"
+                                hide-selected
+                                :label="$t('pageForm.terms')"
+                                variant="outlined"
+                                density="compact"
+                                multiple
+                                chips
+                                closable-chips
+                                clearable
+                                prepend-inner-icon="mdi-tag-plus"
+                                :placeholder="$t('pageForm.typeToSearchTags')"
+                                :hint="$t('pageForm.tagsHint')"
+                                persistent-hint
+                            >
+                                <template #no-data>
+                                    <v-list-item>
+                                        <v-list-item-title>
+                                            {{ $t('pageForm.noResultsMatching', { term: searchTerm }) }}
+                                        </v-list-item-title>
+                                    </v-list-item>
+                                </template>
+                                <template #chip="{ props, item }">
+                                    <v-chip
+                                        v-bind="props"
+                                        :color="item.color || 'secondary'"
+                                        variant="tonal"
+                                        size="small"
+                                        closable
+                                    >
+                                        <v-icon start size="16">mdi-pound</v-icon>
+                                        {{ item.title || item }}
+                                    </v-chip>
+                                </template>
+                            </v-combobox>
+                        </v-card-text>
+                    </v-card>
+
+                    <!-- Settings & Actions -->
+                    <v-card class="mb-4" elevation="1" rounded="lg">
+                        <v-card-title class="text-subtitle-1 font-weight-medium">
+                            <v-icon class="mr-2" color="success">mdi-cog-outline</v-icon>
+                            {{ $t('pageForm.settings') }}
+                        </v-card-title>
+                        <v-card-text>
+                            <publish-control
+                                v-model="page.published_at"
+                                :label="$t('publish.label')"
+                                class="mb-3"
+                            />
+                            <v-checkbox
+                                v-model="page.sign_in_only"
+                                :label="$t('pageForm.signInOnly')"
+                                density="compact"
+                                hide-details
+                            />
+                        </v-card-text>
+                        <v-card-actions class="pa-4 pt-0">
+                            <v-btn
+                                color="primary"
+                                variant="elevated"
+                                block
+                                :prepend-icon="form === 'edit' ? 'mdi-content-save' : 'mdi-plus'"
+                                :loading="saving"
+                                :disabled="saving"
+                                @click="save"
+                            >
+                                {{ form === 'edit' ? $t('common.update') : $t('common.create') }}
+                            </v-btn>
+                        </v-card-actions>
+                    </v-card>
+                </v-col>
+            </v-row>
+        </v-container>
+    </div>
+</template>
