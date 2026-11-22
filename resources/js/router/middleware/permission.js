@@ -32,6 +32,7 @@ export const ADMIN_PERMISSIONS = {
 
     "admin-forums": feature("forum"),
     "admin-taxonomie": "manage-taxonomy",
+    "admin-taxonomie-table": "manage-taxonomy",
     "admin-terms": "manage-taxonomy",
     "admin-relations": "manage-relation",
 

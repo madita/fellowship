@@ -5,6 +5,7 @@ namespace App\Models\Tag;
 use App\Models\Forum\ForumPost;
 use App\Models\Forum\ForumThread;
 use App\Models\Page;
+use App\Services\CacheService;
 use App\Traits\HasCache;
 use App\Traits\NotifiesMentions;
 use Astrotomic\Translatable\Contracts\Translatable as TranslatableContract;
@@ -17,7 +18,6 @@ use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Database\Eloquent\Relations\MorphToMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 
 // use Webpatser\Uuid\Uuid;
@@ -124,6 +124,99 @@ class Taxonomy extends Model implements TranslatableContract
     }
 
     /**
+     * Everything filed under this taxonomy, whatever its model.
+     */
+    public function taxables(): HasMany
+    {
+        return $this->hasMany(Taxable::class, 'taxonomy_id');
+    }
+
+    /**
+     * The name a taxonomy is shown under. A taxonomy row has no name of its
+     * own — it is a term *used as* something, so its name is the term's
+     * translated title. Appended on demand (see the admin controllers)
+     * rather than globally, so the public payloads keep their shape.
+     */
+    public function getTermTitleAttribute(): ?string
+    {
+        return $this->term?->title;
+    }
+
+    /**
+     * The term's slug, for the same reason as the title above.
+     */
+    public function getTermSlugAttribute(): ?string
+    {
+        return $this->term?->slug;
+    }
+
+    /**
+     * The name of the taxonomy this one sits under, so a list can show
+     * "Help & Support" where it would otherwise show a bare parent_id.
+     */
+    public function getParentTitleAttribute(): ?string
+    {
+        return $this->parent?->term?->title;
+    }
+
+    /**
+     * The term titles from the root down to this taxonomy, e.g.
+     * ['Help & Support', 'Technical Issues'].
+     */
+    public function getTitlePath(): array
+    {
+        $titles = [];
+
+        for ($node = $this; $node !== null; $node = $node->parent) {
+            $titles[] = (string) ($node->term?->title ?? '#' . $node->id);
+        }
+
+        return array_reverse($titles);
+    }
+
+    /**
+     * Scope to the rows that may become $taxonomy's parent: the same
+     * vocabulary, minus the row itself and everything beneath it (a
+     * taxonomy that is its own ancestor would loop forever).
+     */
+    public function scopeEligibleParentsFor(Builder $query, self $taxonomy): Builder
+    {
+        $excluded = $taxonomy->exists
+            ? array_merge([$taxonomy->id], $taxonomy->descendantIds())
+            : [];
+
+        return $query->where('taxonomy', $taxonomy->taxonomy)
+            ->when($excluded !== [], fn (Builder $q) => $q->whereNotIn('id', $excluded));
+    }
+
+    /**
+     * The ids of every taxonomy below this one, however deep.
+     */
+    public function descendantIds(): array
+    {
+        if ( ! $this->exists) {
+            return [];
+        }
+
+        $ids   = [];
+        $level = [$this->id];
+
+        // Walked a level at a time so one query per depth is the worst case,
+        // and a parent_id cycle in legacy data cannot spin forever.
+        while ($level !== []) {
+            $level = static::query()
+                ->whereIn('parent_id', $level)
+                ->whereNotIn('id', array_merge($ids, [$this->id]))
+                ->pluck('id')
+                ->all();
+
+            $ids = array_merge($ids, $level);
+        }
+
+        return $ids;
+    }
+
+    /**
      * Get the parent taxonomy (categories).
      */
     public function parent(): BelongsTo
@@ -161,17 +254,17 @@ class Taxonomy extends Model implements TranslatableContract
 
     /**
      * Get the breadcrumbs for this Taxonomy.
+     *
+     * Cached through CacheService rather than Cache::tags() directly: tags
+     * are only supported by some stores, and this threw outright on a file
+     * or database cache.
      */
     public function getBreadcrumbs(bool $exclude_self = true): Collection
     {
         $key = "taxonomies.$this->id.breadcrumbs";
         $key .= $exclude_self ? '.self-excluded' : '';
 
-        return Cache::tags([
-            'taxonomies',
-            'taxonomies:taxonomy',
-            "taxonomies:taxonomy:{$this->id}",
-        ])->rememberForever($key, function () use ($exclude_self) {
+        return CacheService::remember($key, function () use ($exclude_self) {
             $parameters = $this->getParentBreadcrumbs();
 
             if ( ! $exclude_self) {
@@ -179,7 +272,7 @@ class Taxonomy extends Model implements TranslatableContract
             }
 
             return $parameters->reverse()->values();
-        });
+        }, null, $this->trailCacheTags());
     }
 
     /**
@@ -206,13 +299,17 @@ class Taxonomy extends Model implements TranslatableContract
 
     /**
      * Get route parameters.
+     *
+     * This used to call maybe_tagged_cache(), a helper that was never
+     * written — so every caller died with "call to undefined function",
+     * including getParentBreadcrumbs() just above.
      */
     public function getRouteParameters(bool $exclude_taxonomy = true): array
     {
         $key = "taxonomies.$this->id.route-parameters";
         $key .= $exclude_taxonomy ? '.without-taxonomy' : '';
 
-        return maybe_tagged_cache(['taxonomies', 'taxonomies:taxonomy', "taxonomies:taxonomy:$this->id"])->rememberForever($key, function () use ($exclude_taxonomy) {
+        return CacheService::remember($key, function () use ($exclude_taxonomy) {
             $parameters = $this->getParentSlugs();
 
             if ( ! $exclude_taxonomy) {
@@ -220,7 +317,7 @@ class Taxonomy extends Model implements TranslatableContract
             }
 
             return array_reverse($parameters);
-        });
+        }, null, $this->trailCacheTags());
     }
 
     /**
@@ -518,10 +615,21 @@ class Taxonomy extends Model implements TranslatableContract
                 $model->description = $model->term->title;
             }
 
-            if ( ! $model->sort) {
+            // Only an unset sort means "put it last". An explicit 0 is a
+            // position the admin chose, and used to be silently overwritten.
+            if ($model->sort === null) {
                 $sort        = ($siblings = $model->siblings()->get()) ? $siblings->max('sort') : 0;
                 $model->sort = ($sort + 1);
             }
         });
+    }
+
+    /**
+     * The tags the two cached trails are filed under, so saving a taxonomy
+     * drops the trails that run through it.
+     */
+    private function trailCacheTags(): array
+    {
+        return ['taxonomies', 'taxonomies:taxonomy', "taxonomies:taxonomy:{$this->id}"];
     }
 }

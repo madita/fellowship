@@ -210,11 +210,13 @@ return [
 
     // Wiki
     'wiki' => [
-        'created'          => 'Wiki page created successfully',
-        'updated'          => 'Wiki page updated successfully',
-        'create_page'      => 'Create Wiki page',
-        'category_created' => 'Category created successfully',
-        'category_updated' => 'Category updated successfully',
+        'created'               => 'Wiki page created successfully',
+        'updated'               => 'Wiki page updated successfully',
+        'create_page'           => 'Create Wiki page',
+        'category_created'      => 'Category created successfully',
+        'category_updated'      => 'Category updated successfully',
+        'category_exists'       => 'A category with that name already exists. Pick it from the list instead.',
+        'parent_not_a_category' => 'The parent has to be another wiki category.',
     ],
 
     // User
@@ -404,6 +406,19 @@ return [
         'unknown_link'  => 'This link is no longer valid. Sign in and change your mail settings in your account.',
     ],
 
+
+    // Terms and the vocabularies they are used as
+    'taxonomy' => [
+        'saved'                     => 'Saved.',
+        'deleted'                   => 'Removed.',
+        'deleted_with_children'     => 'Removed. :count entry moved up a level.|Removed. :count entries moved up a level.',
+        'parent_other_vocabulary'   => 'A parent has to belong to the same vocabulary.',
+        'parent_descendant'         => 'An entry cannot sit under itself or under one of its own children.',
+        'term_missing'              => 'Pick a name, or type a new one.',
+        'term_taken'                => '":title" is already used as :taxonomy.',
+        'term_exists'               => 'There is already a term called ":title".',
+        'term_in_use'               => 'Still in use and kept: :titles. Remove the entries named by it first.',
+    ],
 
     // SPA
     'spa' => [

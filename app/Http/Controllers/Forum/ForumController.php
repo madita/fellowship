@@ -564,14 +564,14 @@ class ForumController extends Controller
      * The category this one sits under, for the breadcrumb trail and the
      * back button on a sub-forum.
      *
-     * Read through the relation rather than as $cat->parent: the
-     * taxonomies table carries a legacy `parent` integer column beside
-     * parent_id, an Eloquent attribute wins over a relation of the same
-     * name, and eager loading does not change that. So that property is
-     * a number — 0 for a top-level category — and this block used to be
-     * dead code that would have thrown the day the column was filled in.
      * getRelation() reads what was eager loaded, which is why listing
-     * categories does not turn into a query per row.
+     * categories does not turn into a query per row; the fallback is for
+     * the single-category endpoints that do not preload it.
+     *
+     * (Until 2026-11 this had to avoid `$cat->parent` altogether: the
+     * taxonomies table carried a legacy `parent` integer beside
+     * parent_id, and an attribute of that name shadowed the relation.
+     * The column is gone, so the property is safe either way now.)
      */
     private function transformParent(Taxonomy $cat): ?array
     {

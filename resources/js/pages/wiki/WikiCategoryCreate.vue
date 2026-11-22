@@ -41,14 +41,40 @@
                     <tiptap v-model="content" :model-value="content" id="text-content" name="content"/>
                 </v-col>
                 <v-col cols="12" md="4">
-                    <v-combobox
+                    <!-- Indented and with the branch written out, so what a
+                         new category will sit under is readable before it
+                         is saved rather than after -->
+                    <v-autocomplete
                         v-model="parentValue"
                         :items="parents"
                         item-title="title"
+                        item-value="id"
                         :label="$t('wiki.parentCategory')"
-                        chips
+                        :placeholder="$t('wiki.categoryDialog.noParent')"
+                        :hint="$t('wiki.categoryDialog.parentHint')"
+                        persistent-hint
+                        :no-data-text="$t('wiki.categoryDialog.noCategories')"
                         clearable
-                    ></v-combobox>
+                        :disabled="saving"
+                    >
+                        <template #item="{ props: itemProps, item }">
+                            <v-list-item
+                                v-bind="itemProps"
+                                :title="undefined"
+                                :style="{ paddingInlineStart: `${12 + (item.raw.depth || 0) * 18}px` }"
+                            >
+                                <template #prepend>
+                                    <v-icon size="16" class="me-2">
+                                        {{ item.raw.depth ? 'mdi-subdirectory-arrow-right' : 'mdi-folder-outline' }}
+                                    </v-icon>
+                                </template>
+                                <v-list-item-title>{{ item.raw.title }}</v-list-item-title>
+                                <v-list-item-subtitle v-if="item.raw.path && item.raw.path.length > 1">
+                                    {{ item.raw.path.join(' › ') }}
+                                </v-list-item-subtitle>
+                            </v-list-item>
+                        </template>
+                    </v-autocomplete>
                     <v-combobox
                         v-model="colorsValue"
                         :items="colors"
@@ -129,12 +155,12 @@ export default {
         // setTaxonomy() {
         //     this.getCategories(this.taxonomyValue.taxonomy)
         // },
+        // The categories as a tree, each with the path above it: a flat
+        // list of names could not say where a parent actually sits.
         getCategories() {
             this.loading = true
-            return axios.get(`/api/tag/terms/wiki`).then((response) => {
-                //console.log(response)
-
-                this.categories = this.parents = response.data.terms
+            return axios.get(`/api/wiki/category-options`).then((response) => {
+                this.categories = this.parents = response.data?.data || []
 
                 this.loading = false
             });
@@ -143,7 +169,9 @@ export default {
             if (this.saving) return;
             this.saving = true
 
-            let data = {term: this.newCategory, taxonomy: this.taxonomyValue, parent: this.parentValue, content: this.content}
+            // parent_id, not the picked row: the row's own "parent_id" used
+            // to be read as the choice, which it never was.
+            let data = {term: this.newCategory, taxonomy: this.taxonomyValue, parent_id: this.parentValue ?? null, content: this.content}
 
             try {
                 await axios.post(`/api/wiki/category`, data)

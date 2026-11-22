@@ -153,11 +153,13 @@ return [
 
     // Wiki
     'wiki' => [
-        'created'          => 'Wiki-Seite erfolgreich erstellt',
-        'updated'          => 'Wiki-Seite erfolgreich aktualisiert',
-        'create_page'      => 'Wiki-Seite erstellen',
-        'category_created' => 'Kategorie erfolgreich erstellt',
-        'category_updated' => 'Kategorie erfolgreich aktualisiert',
+        'created'               => 'Wiki-Seite erfolgreich erstellt',
+        'updated'               => 'Wiki-Seite erfolgreich aktualisiert',
+        'create_page'           => 'Wiki-Seite erstellen',
+        'category_created'      => 'Kategorie erfolgreich erstellt',
+        'category_updated'      => 'Kategorie erfolgreich aktualisiert',
+        'category_exists'       => 'Eine Kategorie mit diesem Namen gibt es schon. Wähle sie aus der Liste aus.',
+        'parent_not_a_category' => 'Die übergeordnete Kategorie muss eine andere Wiki-Kategorie sein.',
     ],
 
     // User
@@ -310,6 +312,19 @@ return [
         'copy'    => 'Kopie',
     ],
 
+
+    // Begriffe und die Vokabulare, als die sie verwendet werden
+    'taxonomy' => [
+        'saved'                     => 'Gespeichert.',
+        'deleted'                   => 'Entfernt.',
+        'deleted_with_children'     => 'Entfernt. :count Eintrag wurde eine Ebene höher verschoben.|Entfernt. :count Einträge wurden eine Ebene höher verschoben.',
+        'parent_other_vocabulary'   => 'Ein übergeordneter Eintrag muss zum selben Vokabular gehören.',
+        'parent_descendant'         => 'Ein Eintrag kann nicht unter sich selbst oder unter einem seiner eigenen Untereinträge liegen.',
+        'term_missing'              => 'Wähle einen Namen oder gib einen neuen ein.',
+        'term_taken'                => '„:title“ wird bereits als :taxonomy verwendet.',
+        'term_exists'               => 'Es gibt bereits einen Begriff namens „:title“.',
+        'term_in_use'               => 'Wird noch verwendet und bleibt erhalten: :titles. Entferne zuerst die Einträge, die so heißen.',
+    ],
 
     // SPA
     'spa' => [

@@ -1275,9 +1275,10 @@ export default {
             'confirmDelete': 'Are you sure you want to delete this tag?'
         },
         'taxonomies': {
-            'title': 'Taxonomy Management',
+            'title': 'Taxonomies',
+            'subtitle': 'The vocabularies content is filed under — forum categories, kinds of achievement and the rest. Each entry is named by a term.',
             'list': 'Taxonomies List',
-            'create': 'Create Taxonomy',
+            'create': 'New entry',
             'edit': 'Edit Taxonomy',
             'delete': 'Delete Taxonomy',
             'name': 'Taxonomy Name',
@@ -1286,14 +1287,65 @@ export default {
             'hierarchical': 'Hierarchical',
             'terms': 'Terms',
             'termsCount': '{count} terms',
-            'noTaxonomies': 'No taxonomies found',
+            'noTaxonomies': 'Nothing is filed yet',
+            'noTaxonomiesHint': 'Add an entry to start a vocabulary — a forum category, a kind of achievement, anything content is grouped by.',
+            'rawTable': 'All columns',
+            'rawTableTitle': 'Taxonomies — all columns',
+            'rawTableSubtitle': 'Every column of the taxonomies table, including the ones the manager leaves out. The readable screen is the taxonomy manager.',
+            'unnamed': 'Unnamed entry',
+            'noTerm': 'no term',
+            'hidden': 'hidden',
+            'notSearchable': 'not searchable',
+            'usedBy': 'used by {count}',
+            'moveUp': 'Move up',
+            'moveDown': 'Move down',
+            'addChild': 'Add an entry under this one',
+            'addToVocabulary': 'Add to {vocabulary}',
+            'emptyVocabulary': 'This vocabulary has no entries',
+            'saved': 'Saved.',
+            'deleted': 'Removed.',
             'taxonomyCreated': 'Taxonomy created successfully',
             'taxonomyUpdated': 'Taxonomy updated successfully',
             'taxonomyDeleted': 'Taxonomy deleted successfully',
-            'confirmDelete': 'Are you sure you want to delete this taxonomy?'
+            'confirmDelete': 'Remove "{name}"?',
+            'confirmDeleteWithChildren': 'Remove "{name}"? Its {count} sub-entries are kept and moved up a level.',
+            // Proper names for the vocabularies the site ships with; any
+            // other one falls back to its key, humanised.
+            'types': {
+                'forum_cat': 'Forum categories',
+                'achievement_type': 'Kinds of achievement',
+                'game_world': 'Game worlds',
+                'wiki': 'Wiki categories',
+                'tags': 'Tags',
+                'gallery': 'Gallery albums',
+                'event_type': 'Kinds of event'
+            },
+            'dialog': {
+                'createTitle': 'New entry',
+                'editTitle': 'Edit entry',
+                'name': 'Name',
+                'nameHint': 'Pick a term that already exists, or type a new name',
+                'nameRequired': 'Give the entry a name.',
+                'alreadyUsed': 'already used in this vocabulary',
+                'vocabulary': 'Vocabulary',
+                'vocabularyHint': 'Which list this entry belongs to. It cannot be changed later.',
+                'vocabularyRequired': 'Choose a vocabulary.',
+                'parent': 'Sits under',
+                'parentHint': 'Leave empty for a top-level entry. Only entries of the same vocabulary are offered.',
+                'noParent': 'Top level',
+                'noParentOptions': 'Nothing it could sit under yet',
+                'parentCleared': 'The parent was cleared, because it belonged to the vocabulary you moved away from.',
+                'position': 'Position',
+                'positionAuto': 'last',
+                'visible': 'Visible',
+                'searchable': 'Searchable',
+                'description': 'Description',
+                'properties': 'Feature settings kept on save'
+            }
         },
         'terms': {
-            'title': 'Term Management',
+            'title': 'Terms',
+            'subtitle': 'The words the site names things with. What a word is used as — a forum category, a kind of achievement — is set in the taxonomy manager.',
             'list': 'Terms List',
             'create': 'Create Term',
             'edit': 'Edit Term',
@@ -1624,6 +1676,24 @@ export default {
             'startTyping': 'Start typing to search or create',
             'addNew': 'Add new {label}',
             'newLabel': 'New {label}'
+        },
+        'model': {
+            'noOptions': 'Nothing to choose from',
+            'loadFailed': 'The list could not be loaded',
+            'parentHint': 'Only entries of the same vocabulary, and never this one or anything under it',
+            'danglingOption': 'No longer available',
+            'danglingWarning': 'This is set to entry #{id}, which is not on the list — it may belong to another vocabulary or have been removed.'
+        },
+        'term': {
+            'label': 'Name (term)',
+            'hint': 'An entry is named by its term; the same term can be used in several vocabularies',
+            'noMatch': 'No term matches',
+            'alreadyUsed': 'already used here'
+        },
+        'vocabulary': {
+            'label': 'Vocabulary',
+            'hint': 'Pick one in use, or type a new name to start one',
+            'entries': '{count} entries'
         }
     },
     'calendar': {
@@ -6113,6 +6183,22 @@ export default {
         'categoryCreated': 'Category created successfully',
         'categoryUpdated': 'Category updated successfully',
         'errorSavingCategory': 'An error occurred while saving the category. Please try again.',
+        // Adding a category from the page editor, parent and all
+        'categoryDialog': {
+            'open': 'New category',
+            'title': 'New wiki category',
+            'name': 'Category name',
+            'nameHint': 'What pages filed here have in common',
+            'nameRequired': 'Give the category a name',
+            'nameTaken': 'That category already exists ({path}). Pick it in the field instead.',
+            'parent': 'Sits under',
+            'parentHint': 'Leave empty to put it at the top level',
+            'noParent': 'Top level',
+            'noCategories': 'No categories yet — this one starts at the top level',
+            'loadFailed': 'The categories could not be loaded',
+            'description': 'Description (optional)',
+            'create': 'Create category',
+        },
         'editCategory': 'Edit Category',
         'creatingCategory': 'Creating category: "{slug}"',
         'categoriesSubtitle': 'Browse all wiki pages by category',

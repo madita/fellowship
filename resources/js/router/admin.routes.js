@@ -150,7 +150,19 @@ export const admin = [{
                 auth, permission, verified
             ]
         },
-        component: () => import(/* webpackChunkName: "admin-taxonomie" */ '@/pages/admin/Taxonomie.vue')
+        component: () => import(/* webpackChunkName: "admin-taxonomie" */ '@/pages/admin/TaxonomyManager.vue')
+    },
+    {
+        // The raw table of every column, kept as the escape hatch behind
+        // the manager above.
+        path: '/admin/settings/taxonomy/taxonomies/table',
+        name: 'admin-taxonomie-table',
+        meta: {
+            middleware: [
+                auth, permission, verified
+            ]
+        },
+        component: () => import(/* webpackChunkName: "admin-taxonomie-table" */ '@/pages/admin/Taxonomie.vue')
     },
     {
         path: '/admin/settings/taxonomy/terms',

@@ -324,12 +324,25 @@
                                 <v-chip size="small" color="primary" variant="tonal">
                                     {{ categoryValue.length }}
                                 </v-chip>
+                                <!-- Making a category, with a parent, without
+                                     abandoning the page being written -->
+                                <v-btn
+                                    v-if="canManageCategories"
+                                    class="ml-2"
+                                    size="small"
+                                    variant="tonal"
+                                    color="primary"
+                                    prepend-icon="mdi-folder-plus-outline"
+                                    @click="openCategoryDialog"
+                                >
+                                    {{ $t('wiki.categoryDialog.open') }}
+                                </v-btn>
                             </v-card-title>
                             <v-card-text class="pa-4">
                                 <v-combobox
                                     v-model="categoryValue"
+                                    v-model:search="searchTax"
                                     :items="categories"
-                                    :search-input.sync="searchTax"
                                     item-title="title"
                                     item-value="id"
                                     :label="$t('wiki.selectOrCreateCategories')"
@@ -355,6 +368,26 @@
                                             <v-icon start size="16">mdi-folder</v-icon>
                                             {{ item.title || item }}
                                         </v-chip>
+                                    </template>
+
+                                    <!-- Indented, with the branch spelled
+                                         out: two categories may share a name -->
+                                    <template #item="{ props: itemProps, item }">
+                                        <v-list-item
+                                            v-bind="itemProps"
+                                            :title="undefined"
+                                            :style="{ paddingInlineStart: `${12 + (item.raw.depth || 0) * 18}px` }"
+                                        >
+                                            <template #prepend>
+                                                <v-icon size="16" class="me-2">
+                                                    {{ item.raw.depth ? 'mdi-subdirectory-arrow-right' : 'mdi-folder-outline' }}
+                                                </v-icon>
+                                            </template>
+                                            <v-list-item-title>{{ item.raw.title }}</v-list-item-title>
+                                            <v-list-item-subtitle v-if="item.raw.path && item.raw.path.length > 1">
+                                                {{ item.raw.path.join(' › ') }}
+                                            </v-list-item-subtitle>
+                                        </v-list-item>
                                     </template>
                                 </v-combobox>
 
@@ -538,6 +571,12 @@
                 app
             />
         </v-container>
+
+        <wiki-category-dialog
+            v-model="categoryDialog"
+            :name="categoryDialogName"
+            @created="onCategoryCreated"
+        />
     </div>
 </template>
 
@@ -547,8 +586,10 @@ import { useDisplay } from 'vuetify'
 import { useI18n } from 'vue-i18n'
 import Tiptap from '@/components/common/tiptap/Tiptap.vue'
 import PageHeader from '@/components/common/PageHeader.vue'
+import WikiCategoryDialog from '@/components/wiki/WikiCategoryDialog.vue'
 import { section } from '@/utils/crumbs.js'
 import { useAuthStore } from '@/store/authStore.js'
+import { useUserStore } from '@/store/userStore.js'
 import { useRouter } from 'vue-router'
 import { useDialog } from '@/composables/useDialog.js'
 
@@ -556,7 +597,8 @@ export default {
     name: 'WikiCreatePage',
     components: {
         Tiptap,
-        PageHeader
+        PageHeader,
+        WikiCategoryDialog
     },
     setup() {
         const { t } = useI18n()
@@ -592,6 +634,11 @@ export default {
         const terms = ref([])
         const colors = ref(['green', 'purple', 'indigo', 'cyan', 'teal', 'orange'])
         const nonce = ref(1)
+
+        // Adding a category from here, rather than leaving a half-written
+        // page to go and make one.
+        const categoryDialog = ref(false)
+        const categoryDialogName = ref('')
 
         const editing = reactive({
             errors: []
@@ -639,8 +686,16 @@ export default {
         })
 
         const popularCategories = computed(() => {
-            return categories.value.filter(cat => cat.popular).slice(0, 5)
+            return categories.value
+                .filter(cat => cat.popular)
+                .slice()
+                .sort((a, b) => (b.pages_count || 0) - (a.pages_count || 0))
+                .slice(0, 5)
         })
+
+        // Inventing the categories everything is filed under is a separate
+        // trust from writing a page, and the server says so too.
+        const canManageCategories = computed(() => useUserStore().hasPermission('manage-wiki'))
 
         const suggestedTags = computed(() => {
             const content = (wikipage.value.title + ' ' + wikipage.value.content).toLowerCase()
@@ -882,15 +937,41 @@ Answer to the third question.`
             }
         }
 
+        /**
+         * The categories as a tree rather than an alphabetical list of
+         * names: each carries the path above it, so the field can say
+         * which "Characters" is which.
+         */
         const getCategories = async () => {
             try {
-                const response = await axios.get(`/api/tag/terms/wiki`)
-                categories.value = response.data.terms.map(term => ({
-                    ...term,
-                    popular: Math.random() > 0.7 // Simulate popular categories
+                const response = await axios.get(`/api/wiki/category-options`)
+                categories.value = (response.data?.data || []).map(category => ({
+                    ...category,
+                    // Which categories are actually in use, instead of the
+                    // coin toss that used to decide this.
+                    popular: (category.pages_count || 0) > 0
                 }))
             } catch (error) {
                 console.error('Failed to load categories:', error)
+            }
+        }
+
+        const openCategoryDialog = () => {
+            // Whatever is half-typed in the field is the name being asked
+            // for, so it carries into the dialog.
+            categoryDialogName.value = typeof searchTax.value === 'string' ? searchTax.value : ''
+            categoryDialog.value = true
+        }
+
+        const onCategoryCreated = async (category) => {
+            await getCategories()
+
+            if (!category) return
+
+            const created = categories.value.find(item => item.id === category.id) || category
+
+            if (!categoryValue.value.some(item => (item.id ?? item) === (created.id ?? created))) {
+                categoryValue.value.push(created)
             }
         }
 
@@ -1013,11 +1094,14 @@ Answer to the third question.`
             colors,
             nonce,
             editing,
+            categoryDialog,
+            categoryDialogName,
 
             // Computed
             authenticated,
             user,
             canCreate,
+            canManageCategories,
             contentStats,
             completionPercentage,
             popularCategories,
@@ -1040,6 +1124,8 @@ Answer to the third question.`
             addPopularCategory,
             addSuggestedTag,
             handleSubmit,
+            openCategoryDialog,
+            onCategoryCreated,
             getWikiPage,
             getCategories,
             getTerms,
