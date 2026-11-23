@@ -322,8 +322,16 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
 
 Route::get('/tag/taxonomies', '\App\Http\Controllers\TaxonomyController@getTaxonomies');
 Route::get('/tag/terms/{taxonomy?}', '\App\Http\Controllers\TaxonomyController@getTerms');
+// One vocabulary as a tree, which is what the pickers read. Before
+// /tag/{term}, or that route would answer for a term called "options".
+Route::get('/tag/options/{taxonomy}', '\App\Http\Controllers\TaxonomyController@getOptions');
 Route::get('/taxables', '\App\Http\Controllers\TaxonomyController@getTaxables');
-Route::post('/tag/terms/', '\App\Http\Controllers\TaxonomyController@saveTerms');
+
+// Adding to a vocabulary writes to the tree the whole site is filed
+// under, and was open to anyone who could reach the API. The reads above
+// stay public; this asks for the feature whose content is being filed.
+Route::middleware(['auth:sanctum', 'permission.any:manage-taxonomy,manage-page,manage-post,manage-wiki'])
+    ->post('/tag/terms/', '\App\Http\Controllers\TaxonomyController@saveTerms');
 Route::get('/tag/{term}/{taxonomy?}', '\App\Http\Controllers\TaxonomyController@getTermInfo');
 
 Route::get('/pages/{slug}', '\App\Http\Controllers\PageController@view');

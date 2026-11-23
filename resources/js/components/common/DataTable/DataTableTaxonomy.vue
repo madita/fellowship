@@ -1,9 +1,19 @@
 <script setup>
 import { ref, watch, computed, onMounted } from 'vue';
 import axios from 'axios';
-import { useDialog } from '@/composables/useDialog.js';
+import TaxonomyCreateDialog from '@/components/taxonomy/TaxonomyCreateDialog.vue';
 
-const dialog = useDialog();
+/**
+ * The taxonomy fields of the admin drawer: what a page or a post is filed
+ * under.
+ *
+ * Adding one used to be a name in a box and nothing else, which filed the
+ * new entry at the root of the vocabulary with no way to say what it
+ * belongs under - the same gap the wiki editor had. The shared dialog does
+ * that part now, and where a field declares an `options` endpoint the list
+ * itself arrives as a tree, each entry under the branch it sits in.
+ */
+
 const emit = defineEmits(['update:modelValue', 'error']);
 const props = defineProps({
     config: {
@@ -23,9 +33,8 @@ const props = defineProps({
 const items = ref([]);
 const loading = ref(false);
 const search = ref('');
-const showAddInline = ref(false);
-const newCategory = ref('');
-const saving = ref(false);
+const createOpen = ref(false);
+const createName = ref('');
 
 const isTagLike = computed(() => (props.config.taxonomy || '').toLowerCase() === 'tags');
 const chipColor = computed(() => isTagLike.value ? 'secondary' : 'primary');
@@ -36,6 +45,16 @@ const toTitle = (v) => (typeof v === 'string' ? v : (v?.title ?? String(v ?? '')
 const multiple = computed(() => props.config.multiple !== false);
 const fieldLabel = computed(() => props.config.label?.toLowerCase() || 'item');
 const fieldLabelSingular = computed(() => fieldLabel.value.replace(/s$/, ''));
+
+/** What one entry is called in the dialog, e.g. "Category". */
+const entryLabel = computed(() => {
+    const singular = fieldLabelSingular.value;
+
+    return singular.charAt(0).toUpperCase() + singular.slice(1);
+});
+
+/** Tags are a flat vocabulary: there is nothing for one to sit under. */
+const withParent = computed(() => props.config.parent !== false && !isTagLike.value);
 
 const normalizeIn = (val) => {
     if (multiple.value) {
@@ -52,8 +71,21 @@ const selected = ref(normalizeIn(props.modelValue));
 const fetchTerms = async () => {
     loading.value = true;
     try {
-        const { data } = await axios.get(props.config.endpoint);
-        items.value = (data.terms || []).map(t => (typeof t === 'string' ? { title: t } : t));
+        if (props.config.options) {
+            // The vocabulary as a tree, each entry carrying the names above
+            // it, so two entries sharing a word can be told apart.
+            const { data } = await axios.get(props.config.options);
+
+            items.value = (data?.data || []).map(entry => ({
+                title: entry.title,
+                depth: entry.depth || 0,
+                path: entry.path || [entry.title],
+            }));
+        } else {
+            const { data } = await axios.get(props.config.endpoint);
+
+            items.value = (data.terms || []).map(t => (typeof t === 'string' ? { title: t } : t));
+        }
     } catch (err) {
         console.error('Error fetching taxonomy terms:', err);
         emit('error', { source: 'fetchTerms', error: err });
@@ -62,31 +94,28 @@ const fetchTerms = async () => {
     }
 };
 
-const saveCategory = async () => {
-    const title = newCategory.value.trim();
-    if (!title || saving.value) return;
-    saving.value = true;
-    try {
-        await axios.post('/api/tag/terms', {
-            term: title,
-            taxonomy: props.config.taxonomy,
-        });
-        await fetchTerms();
-        if (multiple.value) {
-            if (!selected.value.includes(title)) {
-                selected.value = [...selected.value, title];
-            }
-        } else {
-            selected.value = title;
+const openCreate = () => {
+    createName.value = typeof search.value === 'string' ? search.value : '';
+    createOpen.value = true;
+};
+
+/**
+ * The entry the dialog created, selected right away: it was asked for in
+ * order to be used here.
+ */
+const onCreated = async (entry) => {
+    await fetchTerms();
+
+    const title = toTitle(entry);
+
+    if (!title) return;
+
+    if (multiple.value) {
+        if (!selected.value.includes(title)) {
+            selected.value = [...selected.value, title];
         }
-        newCategory.value = '';
-        showAddInline.value = false;
-    } catch (e) {
-        console.error('Failed to create category:', e);
-        emit('error', { source: 'saveCategory', error: e });
-        dialog.requestError(e);
-    } finally {
-        saving.value = false;
+    } else {
+        selected.value = title;
     }
 };
 
@@ -141,6 +170,20 @@ onMounted(() => {
                 </v-list-item>
             </template>
 
+            <!-- Where the list is a tree, it reads as one -->
+            <template #item="{ props: itemProps, item }">
+                <v-list-item
+                    v-bind="itemProps"
+                    :title="undefined"
+                    :style="{ paddingInlineStart: `${12 + (item.raw.depth || 0) * 18}px` }"
+                >
+                    <v-list-item-title>{{ item.raw.title }}</v-list-item-title>
+                    <v-list-item-subtitle v-if="item.raw.path && item.raw.path.length > 1">
+                        {{ item.raw.path.join(' › ') }}
+                    </v-list-item-subtitle>
+                </v-list-item>
+            </template>
+
             <template #chip="{ props: chipProps, item }">
                 <v-chip
                     v-bind="chipProps"
@@ -159,35 +202,21 @@ onMounted(() => {
             <v-btn
                 variant="text"
                 size="small"
-                :prepend-icon="showAddInline ? 'mdi-chevron-up' : 'mdi-plus'"
-                @click="showAddInline = !showAddInline"
+                prepend-icon="mdi-plus"
+                @click="openCreate"
             >
                 {{ $t('dataTable.taxonomy.addNew', { label: fieldLabelSingular }) }}
             </v-btn>
-
-            <v-expand-transition>
-                <div v-if="showAddInline" class="mt-2 d-flex ga-2 align-start">
-                    <v-text-field
-                        v-model="newCategory"
-                        :label="$t('dataTable.taxonomy.newLabel', { label: fieldLabel })"
-                        variant="outlined"
-                        density="compact"
-                        hide-details
-                        @keyup.enter="saveCategory"
-                    />
-                    <v-btn
-                        color="primary"
-                        variant="elevated"
-                        size="small"
-                        :loading="saving"
-                        :disabled="!newCategory.trim() || saving"
-                        prepend-icon="mdi-plus"
-                        @click="saveCategory"
-                    >
-                        {{ $t('common.add') }}
-                    </v-btn>
-                </div>
-            </v-expand-transition>
         </div>
+
+        <taxonomy-create-dialog
+            v-model="createOpen"
+            :vocabulary="config.taxonomy"
+            :label="entryLabel"
+            :name="createName"
+            :options-endpoint="config.options || ''"
+            :with-parent="withParent"
+            @created="onCreated"
+        />
     </div>
 </template>

@@ -5219,8 +5219,6 @@ export default {
         'taxonomy': 'Taxonomie',
         'category': 'Kategorie',
         'addNewCategory': 'Neue Kategorie hinzufügen',
-        'parentCategory': 'Übergeordnete Kategorie',
-        'addNewCategoryBtn': 'Neue Kategorie hinzufügen',
         'terms': 'Begriffe',
         'noResultsMatching': 'Keine Ergebnisse für "<strong>{term}</strong>". Drücken Sie <kbd>Enter</kbd> um einen neuen zu erstellen',
         'published': 'Veröffentlicht',
@@ -5240,7 +5238,6 @@ export default {
         'parentPageHint': 'Übergeordnete Seite für Verschachtelung wählen',
         'typeToSearchCategories': 'Suchen oder Kategorien erstellen',
         'categoriesHint': 'Bestehende Kategorien wählen oder neue erstellen',
-        'newCategoryName': 'Name der neuen Kategorie',
         'typeToSearchTags': 'Suchen oder Tags erstellen',
         'tagsHint': 'Tags hinzufügen um die Seite zu organisieren',
         'settings': 'Einstellungen'
@@ -6112,6 +6109,27 @@ export default {
             'confirmUnlink': 'Verknüpfung zwischen „{source}“ und „{related}“ entfernen? Die Inhalte selbst bleiben erhalten.'
         }
     },
+    // Der Dialog, der einem Vokabular einen Eintrag hinzufügt — überall,
+    // wo etwas eingeordnet wird: Wiki-Editor, Seitenformular, Admin-Leiste.
+    'taxonomy': {
+        'dialog': {
+            'title': '{label} anlegen',
+            'fallbackLabel': 'Eintrag',
+            'name': 'Name',
+            'nameHint': 'Was die Einträge hier gemeinsam haben',
+            'nameRequired': 'Gib einen Namen ein',
+            'nameTaken': 'Das gibt es schon ({path}). Wähle es stattdessen im Feld aus.',
+            'parent': 'Liegt unter',
+            'parentHint': 'Leer lassen für die oberste Ebene',
+            'noParent': 'Oberste Ebene',
+            'noOptions': 'Noch nichts vorhanden — dieser Eintrag beginnt auf der obersten Ebene',
+            'loadFailed': 'Die Liste konnte nicht geladen werden',
+            'description': 'Beschreibung (optional)',
+            'create': '{label} anlegen',
+            'created': '{label} hinzugefügt',
+            'saveFailed': 'Konnte nicht gespeichert werden'
+        }
+    },
     'wiki': {
         'special': {
             'title': 'Spezialseiten',
@@ -6345,18 +6363,10 @@ export default {
         // Kategorie direkt im Seiten-Editor anlegen, samt übergeordneter
         'categoryDialog': {
             'open': 'Neue Kategorie',
-            'title': 'Neue Wiki-Kategorie',
-            'name': 'Name der Kategorie',
-            'nameHint': 'Was die Seiten hier gemeinsam haben',
-            'nameRequired': 'Gib der Kategorie einen Namen',
-            'nameTaken': 'Diese Kategorie gibt es schon ({path}). Wähle sie stattdessen im Feld aus.',
-            'parent': 'Gehört unter',
+            'label': 'Kategorie',
             'parentHint': 'Leer lassen, um sie auf der obersten Ebene anzulegen',
             'noParent': 'Oberste Ebene',
             'noCategories': 'Noch keine Kategorien — diese beginnt auf der obersten Ebene',
-            'loadFailed': 'Die Kategorien konnten nicht geladen werden',
-            'description': 'Beschreibung (optional)',
-            'create': 'Kategorie erstellen',
         },
         'editCategory': 'Kategorie bearbeiten',
         'creatingCategory': 'Kategorie wird erstellt: „{slug}“',

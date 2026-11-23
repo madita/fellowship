@@ -415,6 +415,7 @@ return [
         'parent_other_vocabulary'   => 'A parent has to belong to the same vocabulary.',
         'parent_descendant'         => 'An entry cannot sit under itself or under one of its own children.',
         'term_missing'              => 'Pick a name, or type a new one.',
+        'vocabulary_required'       => 'Say which vocabulary the entry belongs to.',
         'term_taken'                => '":title" is already used as :taxonomy.',
         'term_exists'               => 'There is already a term called ":title".',
         'term_in_use'               => 'Still in use and kept: :titles. Remove the entries named by it first.',

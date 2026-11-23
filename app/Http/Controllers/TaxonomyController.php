@@ -8,11 +8,12 @@ use App\Models\Tag\Taxonomy;
 
 use App\Models\Tag\Term;
 // use App\Models\Tag\Term;
-use App\Support\TaxonomyHelper;
+use App\Support\TaxonomyTree;
 // use Lecturize\Taxonomies\Models\Taxonomy;
 // use Lecturize\Taxonomies\Models\Term;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
 class TaxonomyController extends Controller
 {
@@ -118,21 +119,128 @@ class TaxonomyController extends Controller
         return response()->json($data);
     }
 
+    /**
+     * One vocabulary as the list every picker reads: parents before their
+     * children, each entry with its depth and the names above it.
+     *
+     * The terms endpoint above answers with the words alone, in
+     * alphabetical order, and with a "parent_id" that is in fact the id of
+     * the entry itself - which is why every screen that offered a parent
+     * offered a flat list that could not say where a choice would land.
+     */
+    public function getOptions($taxonomy)
+    {
+        return response()->json([
+            'data' => TaxonomyTree::options((string) $taxonomy),
+        ]);
+    }
+
+    /**
+     * Add an entry to a vocabulary, under the entry that was chosen.
+     *
+     * The parent used to arrive as the whole picked row under "parent",
+     * whose own "parent_id" key was read as the choice. That shape is
+     * still read, since a client may be an open page, but what the
+     * screens send now is a plain parent_id - and an entry whose name is
+     * already in use is refused rather than quietly skipped, which used to
+     * leave the caller selecting a category it had not created and could
+     * not see.
+     */
     public function saveTerms(Request $request)
     {
-        $term      = $request->get('term');
-        $taxonomy  = $request->get('taxonomy');
-        $parent    = $request->get('parent');
-        $parent_id = 0;
+        $validated = $request->validate([
+            'term'      => ['required', 'string', 'max:255'],
+            'taxonomy'  => ['required'],
+            'parent_id' => ['nullable', 'integer'],
+            'parent'    => ['nullable'],
+            'content'   => ['nullable', 'string'],
+        ]);
 
-        if ($parent !== null) {
-            $parent_id = isset($parent['parent_id']) ? $parent['parent_id'] : 0;
+        $vocabulary = $this->resolveVocabulary($validated['taxonomy']);
+
+        if ($vocabulary === '') {
+            throw ValidationException::withMessages([
+                'taxonomy' => __('messages.taxonomy.vocabulary_required'),
+            ]);
         }
 
-        $tax = isset($taxonomy['taxonomy']) ? $taxonomy['taxonomy'] : $taxonomy;
+        $title    = trim($validated['term']);
+        $parentId = $this->resolveParent($request, $vocabulary);
 
-        TaxonomyHelper::createTaxables($term, $tax, $parent_id);
+        $term = Term::firstOrCreateByTitle($title);
 
-        return response()->json(['success' => true, 'term' => $term]);
+        // One word names one entry per vocabulary: (term_id, taxonomy) is
+        // what the tree is keyed by.
+        if (Taxonomy::where('taxonomy', $vocabulary)->where('term_id', $term->id)->exists()) {
+            throw ValidationException::withMessages([
+                'term' => __('messages.taxonomy.term_taken', ['title' => $title, 'taxonomy' => $vocabulary]),
+            ]);
+        }
+
+        $entry            = new Taxonomy;
+        $entry->taxonomy  = $vocabulary;
+        $entry->term_id   = $term->id;
+        $entry->parent_id = $parentId;
+
+        if (filled($validated['content'] ?? null)) {
+            $entry->description = $validated['content'];
+        }
+
+        $entry->save();
+
+        return response()->json([
+            'success'  => true,
+            'message'  => __('messages.taxonomy.saved'),
+            'term'     => $title,
+            // The created entry in the shape the pickers read, so whoever
+            // asked for it can select it without reloading the list.
+            'category' => TaxonomyTree::payload($entry->load('term')),
+        ], 201);
+    }
+
+    /**
+     * The vocabulary as a name. Some screens send the whole row they
+     * picked it from.
+     */
+    private function resolveVocabulary(mixed $taxonomy): string
+    {
+        if (is_array($taxonomy)) {
+            $taxonomy = $taxonomy['taxonomy'] ?? '';
+        }
+
+        return trim((string) $taxonomy);
+    }
+
+    /**
+     * The chosen parent as an id, or null for the top level.
+     *
+     * input() rather than get(): a JSON body is not in the request bag, so
+     * get() would see nothing of it. The legacy shape is read for its
+     * parent_id key alone - its "id" was the id of a term, not of an
+     * entry, and reading that would file the entry under a stranger.
+     */
+    private function resolveParent(Request $request, string $vocabulary): ?int
+    {
+        $raw = $request->has('parent_id') ? $request->input('parent_id') : $request->input('parent');
+
+        if (is_array($raw)) {
+            $raw = $raw['parent_id'] ?? null;
+        }
+
+        $parentId = is_numeric($raw) ? (int) $raw : 0;
+
+        if ($parentId <= 0) {
+            return null;
+        }
+
+        $parent = Taxonomy::find($parentId);
+
+        if ($parent === null || $parent->taxonomy !== $vocabulary) {
+            throw ValidationException::withMessages([
+                'parent_id' => __('messages.taxonomy.parent_other_vocabulary'),
+            ]);
+        }
+
+        return $parentId;
     }
 }

@@ -5060,8 +5060,6 @@ export default {
         'taxonomy': 'Taxonomy',
         'category': 'Category',
         'addNewCategory': 'Add new category',
-        'parentCategory': 'Parent Category',
-        'addNewCategoryBtn': 'Add New Category',
         'terms': 'Terms',
         'noResultsMatching': 'No results matching "<strong>{term}</strong>". Press <kbd>enter</kbd> to create a new one',
         'published': 'Published',
@@ -5081,7 +5079,6 @@ export default {
         'parentPageHint': 'Select a parent page for nesting',
         'typeToSearchCategories': 'Type to search or create categories',
         'categoriesHint': 'Select existing categories or type to create new ones',
-        'newCategoryName': 'New category name',
         'typeToSearchTags': 'Type to search or create tags',
         'tagsHint': 'Add tags to help organize this page',
         'settings': 'Settings'
@@ -5953,6 +5950,27 @@ export default {
             'confirmUnlink': 'Remove the link between "{source}" and "{related}"? The content itself stays untouched.'
         }
     },
+    // The dialog that adds an entry to a vocabulary, wherever something is
+    // being filed: the wiki editor, the page form, the admin drawer.
+    'taxonomy': {
+        'dialog': {
+            'title': 'New {label}',
+            'fallbackLabel': 'entry',
+            'name': 'Name',
+            'nameHint': 'What the entries filed here have in common',
+            'nameRequired': 'Give it a name',
+            'nameTaken': 'That one already exists ({path}). Pick it in the field instead.',
+            'parent': 'Sits under',
+            'parentHint': 'Leave empty to put it at the top level',
+            'noParent': 'Top level',
+            'noOptions': 'Nothing here yet — this one starts at the top level',
+            'loadFailed': 'The list could not be loaded',
+            'description': 'Description (optional)',
+            'create': 'Create {label}',
+            'created': '{label} added',
+            'saveFailed': 'It could not be saved'
+        }
+    },
     'wiki': {
         'special': {
             'title': 'Special pages',
@@ -6183,21 +6201,15 @@ export default {
         'categoryCreated': 'Category created successfully',
         'categoryUpdated': 'Category updated successfully',
         'errorSavingCategory': 'An error occurred while saving the category. Please try again.',
-        // Adding a category from the page editor, parent and all
+        // Adding a category from the page editor. The dialog itself is the
+        // shared one (taxonomy.dialog); what is left here is what the wiki
+        // calls a category, and the parent field of the category screens.
         'categoryDialog': {
             'open': 'New category',
-            'title': 'New wiki category',
-            'name': 'Category name',
-            'nameHint': 'What pages filed here have in common',
-            'nameRequired': 'Give the category a name',
-            'nameTaken': 'That category already exists ({path}). Pick it in the field instead.',
-            'parent': 'Sits under',
+            'label': 'Category',
             'parentHint': 'Leave empty to put it at the top level',
             'noParent': 'Top level',
             'noCategories': 'No categories yet — this one starts at the top level',
-            'loadFailed': 'The categories could not be loaded',
-            'description': 'Description (optional)',
-            'create': 'Create category',
         },
         'editCategory': 'Edit Category',
         'creatingCategory': 'Creating category: "{slug}"',

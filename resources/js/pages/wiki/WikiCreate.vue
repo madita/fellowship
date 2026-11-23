@@ -572,9 +572,15 @@
             />
         </v-container>
 
-        <wiki-category-dialog
+        <!-- The shared dialog, pointed at the wiki's own endpoints: a
+             category here is gated behind the wiki, not the taxonomies -->
+        <taxonomy-create-dialog
             v-model="categoryDialog"
+            vocabulary="wiki"
+            :label="$t('wiki.categoryDialog.label')"
             :name="categoryDialogName"
+            options-endpoint="/api/wiki/category-options"
+            create-endpoint="/api/wiki/category"
             @created="onCategoryCreated"
         />
     </div>
@@ -586,7 +592,7 @@ import { useDisplay } from 'vuetify'
 import { useI18n } from 'vue-i18n'
 import Tiptap from '@/components/common/tiptap/Tiptap.vue'
 import PageHeader from '@/components/common/PageHeader.vue'
-import WikiCategoryDialog from '@/components/wiki/WikiCategoryDialog.vue'
+import TaxonomyCreateDialog from '@/components/taxonomy/TaxonomyCreateDialog.vue'
 import { section } from '@/utils/crumbs.js'
 import { useAuthStore } from '@/store/authStore.js'
 import { useUserStore } from '@/store/userStore.js'
@@ -598,7 +604,7 @@ export default {
     components: {
         Tiptap,
         PageHeader,
-        WikiCategoryDialog
+        TaxonomyCreateDialog
     },
     setup() {
         const { t } = useI18n()

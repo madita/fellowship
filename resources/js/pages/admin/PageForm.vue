@@ -6,6 +6,7 @@ import axios from 'axios';
 import Tiptap from '../../components/common/tiptap/Tiptap.vue';
 import PageHeader from '../../components/common/PageHeader.vue';
 import PublishControl from '@/components/common/PublishControl.vue';
+import TaxonomyCreateDialog from '@/components/taxonomy/TaxonomyCreateDialog.vue';
 import { useDialog } from '@/composables/useDialog.js';
 
 const route = useRoute();
@@ -16,8 +17,8 @@ const dialog = useDialog();
 const loading = ref(true);
 const dataReady = ref(false);
 const saving = ref(false);
-const savingCategory = ref(false);
-const addCategory = ref(false);
+const categoryDialog = ref(false);
+const categoryDialogName = ref('');
 const page = ref({ title: '', content: '', parent: null, taxonomy: [], terms: [], categories: [], published_at: null });
 const pages = ref([]);
 const endpoint = '/api/datatable/pages';
@@ -29,17 +30,10 @@ const terms = ref([]);
 const taxonomy = ref(null);
 const taxonomyValue = ref('category');
 const termValue = ref([]);
-const newCategory = ref('');
 const categories = ref([]);
 const categoryValue = ref([]);
-const parents = ref([]);
-const parentValue = ref(null);
 const colors = ['green', 'purple', 'indigo', 'cyan', 'teal', 'orange'];
 let nonce = 1;
-
-const rules = {
-    required: value => !!value || t('validation.required'),
-};
 
 // Computed
 const isDisabled = computed(() => {
@@ -133,32 +127,38 @@ const setTaxonomy = () => {
     getCategories(getTaxonomyName());
 };
 
+/**
+ * The vocabulary as a tree, each entry with the branch above it: a flat
+ * list of names could not say which "Characters" a page was being filed
+ * under.
+ */
 const getCategories = (tax) => {
     loading.value = true;
-    return axios.get(`/api/tag/terms/${tax}`).then((response) => {
-        categories.value = response.data.terms;
-        parents.value = response.data.terms;
+    return axios.get(`/api/tag/options/${tax}`).then((response) => {
+        categories.value = response.data?.data || [];
         loading.value = false;
     });
 };
 
-const saveCategory = async () => {
-    const term = newCategory.value.trim();
-    if (!term || savingCategory.value) return;
-    const taxName = getTaxonomyName();
-    const data = { term, taxonomy: taxName, parent: parentValue.value };
-    savingCategory.value = true;
-    try {
-        await axios.post(`/api/tag/terms`, data);
-        await getCategories(taxName);
-        categoryValue.value.push(term);
-        newCategory.value = '';
-        addCategory.value = false;
-    } catch (error) {
-        savingCategory.value = false;
-        dialog.requestError(error);
-    } finally {
-        savingCategory.value = false;
+const openCategoryDialog = () => {
+    categoryDialogName.value = typeof searchTax.value === 'string' ? searchTax.value : '';
+    categoryDialog.value = true;
+};
+
+/**
+ * The category the dialog created, filed under straight away: it was
+ * asked for in order to be used on this page.
+ */
+const onCategoryCreated = async (category) => {
+    await getCategories(getTaxonomyName());
+
+    if (!category) return;
+
+    const created = categories.value.find(item => item.id === category.id) || category;
+    const title = created.title ?? created;
+
+    if (!categoryValue.value.some(item => (item.title ?? item) === title)) {
+        categoryValue.value.push(created);
     }
 };
 
@@ -314,6 +314,7 @@ Promise.all([
                             <v-combobox
                                 v-model="categoryValue"
                                 :items="categories"
+                                v-model:search="searchTax"
                                 item-title="title"
                                 item-value="id"
                                 :label="$t('pageForm.category')"
@@ -328,6 +329,20 @@ Promise.all([
                                 :hint="$t('pageForm.categoriesHint')"
                                 persistent-hint
                             >
+                                <!-- Indented, with the branch spelled out -->
+                                <template #item="{ props: itemProps, item }">
+                                    <v-list-item
+                                        v-bind="itemProps"
+                                        :title="undefined"
+                                        :style="{ paddingInlineStart: `${12 + (item.raw.depth || 0) * 18}px` }"
+                                    >
+                                        <v-list-item-title>{{ item.raw.title }}</v-list-item-title>
+                                        <v-list-item-subtitle v-if="item.raw.path && item.raw.path.length > 1">
+                                            {{ item.raw.path.join(' › ') }}
+                                        </v-list-item-subtitle>
+                                    </v-list-item>
+                                </template>
+
                                 <template #chip="{ props, item }">
                                     <v-chip
                                         v-bind="props"
@@ -342,52 +357,17 @@ Promise.all([
                                 </template>
                             </v-combobox>
 
-                            <!-- Add New Category -->
+                            <!-- Add a category, parent and all, without
+                                 leaving the half-written page -->
                             <div class="mt-3">
                                 <v-btn
                                     variant="text"
                                     size="small"
-                                    :prepend-icon="addCategory ? 'mdi-chevron-up' : 'mdi-plus'"
-                                    @click="addCategory = !addCategory"
+                                    prepend-icon="mdi-folder-plus-outline"
+                                    @click="openCategoryDialog"
                                 >
                                     {{ $t('pageForm.addNewCategory') }}
                                 </v-btn>
-
-                                <v-expand-transition>
-                                    <div v-if="addCategory" class="mt-2">
-                                        <v-text-field
-                                            v-model="newCategory"
-                                            :label="$t('pageForm.newCategoryName')"
-                                            variant="outlined"
-                                            density="compact"
-                                            :rules="[rules.required]"
-                                            prepend-inner-icon="mdi-folder-plus-outline"
-                                        />
-                                        <v-combobox
-                                            v-model="parentValue"
-                                            :items="parents"
-                                            item-title="title"
-                                            :label="$t('pageForm.parentCategory')"
-                                            variant="outlined"
-                                            density="compact"
-                                            chips
-                                            closable-chips
-                                            clearable
-                                            prepend-inner-icon="mdi-file-tree"
-                                        />
-                                        <v-btn
-                                            color="primary"
-                                            variant="elevated"
-                                            size="small"
-                                            prepend-icon="mdi-plus"
-                                            :loading="savingCategory"
-                                            :disabled="savingCategory"
-                                            @click="saveCategory"
-                                        >
-                                            {{ $t('pageForm.addNewCategoryBtn') }}
-                                        </v-btn>
-                                    </div>
-                                </v-expand-transition>
                             </div>
                         </v-card-text>
                     </v-card>
@@ -480,5 +460,13 @@ Promise.all([
                 </v-col>
             </v-row>
         </v-container>
+
+        <taxonomy-create-dialog
+            v-model="categoryDialog"
+            :vocabulary="getTaxonomyName()"
+            :label="$t('pageForm.category')"
+            :name="categoryDialogName"
+            @created="onCategoryCreated"
+        />
     </div>
 </template>

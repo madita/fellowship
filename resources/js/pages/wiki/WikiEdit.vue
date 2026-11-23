@@ -614,9 +614,15 @@
         <!-- Every recorded change of this page, and the diff between any two -->
         <version-history-dialog v-model="showHistory" :history-url="`/api/wiki/${slug}/history`" />
 
-        <wiki-category-dialog
+        <!-- The shared dialog, pointed at the wiki's own endpoints: a
+             category here is gated behind the wiki, not the taxonomies -->
+        <taxonomy-create-dialog
             v-model="categoryDialog"
+            vocabulary="wiki"
+            :label="$t('wiki.categoryDialog.label')"
             :name="categoryDialogName"
+            options-endpoint="/api/wiki/category-options"
+            create-endpoint="/api/wiki/category"
             @created="onCategoryCreated"
         />
     </div>
@@ -631,7 +637,7 @@ import PageHeader from '@/components/common/PageHeader.vue'
 import { section } from '@/utils/crumbs.js'
 import DiffView from '@/components/common/DiffView.vue'
 import VersionHistoryDialog from '@/components/common/VersionHistoryDialog.vue'
-import WikiCategoryDialog from '@/components/wiki/WikiCategoryDialog.vue'
+import TaxonomyCreateDialog from '@/components/taxonomy/TaxonomyCreateDialog.vue'
 import { useAuthStore } from '@/store/authStore.js'
 import { useUserStore } from '@/store/userStore.js'
 import { useRouter } from 'vue-router'
@@ -645,7 +651,7 @@ export default {
         PageHeader,
         DiffView,
         VersionHistoryDialog,
-        WikiCategoryDialog
+        TaxonomyCreateDialog
     },
     setup() {
         const { t } = useI18n()

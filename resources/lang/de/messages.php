@@ -321,6 +321,7 @@ return [
         'parent_other_vocabulary'   => 'Ein übergeordneter Eintrag muss zum selben Vokabular gehören.',
         'parent_descendant'         => 'Ein Eintrag kann nicht unter sich selbst oder unter einem seiner eigenen Untereinträge liegen.',
         'term_missing'              => 'Wähle einen Namen oder gib einen neuen ein.',
+        'vocabulary_required'       => 'Gib an, zu welchem Vokabular der Eintrag gehört.',
         'term_taken'                => '„:title“ wird bereits als :taxonomy verwendet.',
         'term_exists'               => 'Es gibt bereits einen Begriff namens „:title“.',
         'term_in_use'               => 'Wird noch verwendet und bleibt erhalten: :titles. Entferne zuerst die Einträge, die so heißen.',

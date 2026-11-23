@@ -10,6 +10,7 @@ use App\Models\Ticket\Ticket;
 use App\Models\User;
 use App\Models\Wiki;
 use App\Notifications\WikiUpdatedNotification;
+use App\Support\TaxonomyTree;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -571,22 +572,19 @@ class WikiController extends Controller
      */
     public function categoryOptions(): JsonResponse
     {
-        $rows = Taxonomy::where('taxonomy', 'wiki')
-            ->with('term')
+        // The tree itself is the same list every other picker reads; what
+        // the wiki adds is how many pages sit in each category, which the
+        // editor sorts its suggestions by.
+        $pages = Taxonomy::where('taxonomy', 'wiki')
             ->withCount('pages')
-            ->get()
-            ->filter(fn (Taxonomy $taxonomy) => filled($taxonomy->term?->title));
+            ->pluck('pages_count', 'id');
 
-        $ids = $rows->pluck('id')->all();
+        $options = array_map(
+            fn (array $option) => $option + ['pages_count' => (int) ($pages[$option['id']] ?? 0)],
+            TaxonomyTree::options('wiki')
+        );
 
-        // A category whose parent is gone belongs at the root rather than
-        // out of sight, so an unknown parent is grouped under 0 with the
-        // genuine roots.
-        $byParent = $rows->groupBy(fn (Taxonomy $taxonomy) => in_array($taxonomy->parent_id, $ids, true)
-            ? $taxonomy->parent_id
-            : 0);
-
-        return response()->json(['data' => $this->categoryBranch($byParent, 0, 0, [])]);
+        return response()->json(['data' => $options]);
     }
 
     public function storeCategory(Request $request)
@@ -711,55 +709,12 @@ class WikiController extends Controller
     }
 
     /**
-     * One level of the category tree, flattened into the list a picker
-     * reads: the names above a row travel down with it as its path, so
-     * nothing has to walk back up per row.
-     */
-    private function categoryBranch(Collection $byParent, int $parentId, int $depth, array $trail): array
-    {
-        // A loop written by hand straight into the table would otherwise
-        // recurse until the process died.
-        if ($depth > 20) {
-            return [];
-        }
-
-        $options = [];
-
-        foreach ($byParent->get($parentId, collect())->sortBy([['sort', 'asc'], ['id', 'asc']]) as $row) {
-            $path = array_merge($trail, [(string) $row->term->title]);
-
-            $options[] = [
-                'id'          => $row->id,
-                'title'       => (string) $row->term->title,
-                'slug'        => (string) $row->term->slug,
-                'parent_id'   => $parentId === 0 ? null : $parentId,
-                'depth'       => $depth,
-                'path'        => $path,
-                'pages_count' => (int) $row->pages_count,
-            ];
-
-            $options = array_merge($options, $this->categoryBranch($byParent, $row->id, $depth + 1, $path));
-        }
-
-        return $options;
-    }
-
-    /**
-     * A single category in the shape the picker reads.
+     * A single category in the shape the picker reads, with the one thing
+     * the wiki counts differently: pages, not everything filed under it.
      */
     private function categoryPayload(Taxonomy $taxonomy): array
     {
-        $path = $taxonomy->getTitlePath();
-
-        return [
-            'id'          => $taxonomy->id,
-            'title'       => (string) $taxonomy->term?->title,
-            'slug'        => (string) $taxonomy->term?->slug,
-            'parent_id'   => $taxonomy->parent_id,
-            'depth'       => max(count($path) - 1, 0),
-            'path'        => $path,
-            'pages_count' => $taxonomy->pages()->count(),
-        ];
+        return TaxonomyTree::payload($taxonomy) + ['pages_count' => $taxonomy->pages()->count()];
     }
 
     /**
