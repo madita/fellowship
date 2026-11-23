@@ -82,8 +82,8 @@ export const settingsCategories = [
         color: 'amber',
         settings: [
             { id: 'forum-categories', permission: 'manage-forum', title: 'Forum Categories', description: 'Create, order, lock and hide the forum categories', icon: 'mdi-forum', routeName: 'admin-forums' },
-            { id: 'taxonomies', permission: 'manage-taxonomy', title: 'Taxonomies', description: 'Vocabularies such as tags, categories and forum sections', icon: 'mdi-file-tree', routeName: 'admin-taxonomie' },
-            { id: 'terms', permission: 'manage-taxonomy', title: 'Terms', description: 'The entries of each taxonomy', icon: 'mdi-tag-multiple', routeName: 'admin-terms' },
+            { id: 'taxonomies', permission: 'manage-taxonomy', title: 'Taxonomies', description: 'The vocabularies content is filed under, and how their entries nest', icon: 'mdi-file-tree', routeName: 'admin-taxonomie' },
+            { id: 'terms', permission: 'manage-taxonomy', title: 'Terms', description: 'The words those entries are named by, and where each one is used', icon: 'mdi-tag-multiple', routeName: 'admin-terms' },
             { id: 'achievements', permission: 'manage-achievement', title: 'Achievements', description: 'Set up achievements and award them', icon: 'mdi-trophy-outline', component: 'AchievementsSettingsPage' },
             { id: 'ranks', permission: 'manage-rank', title: 'Ranks', description: 'The ladder members climb with their points', icon: 'mdi-shield-star-outline', component: 'RanksSettingsPage' },
             { id: 'tours', permission: 'manage-help', title: 'Tours & Hints', description: 'Walk members through a page, or put a hint beside the things on it', icon: 'mdi-map-marker-path', component: 'HelpToursPage' },

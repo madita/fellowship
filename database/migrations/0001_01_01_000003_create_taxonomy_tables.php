@@ -53,7 +53,9 @@ return new class extends Migration
 
             $table->string('taxonomy')->default('default');
             $table->text('color')->nullable();
-            $table->unsignedInteger('parent')->default(0);
+            // No second `parent` column beside parent_id: an attribute of
+            // that name shadows the parent() relation, which is what the
+            // 2026_11_18 migration dropped it for.
             $table->unsignedSmallInteger('sort')->default(0);
             $table->boolean('visible')->default(true);
             $table->boolean('searchable')->default(true);

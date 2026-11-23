@@ -98,12 +98,18 @@ class PageController extends DataTableController
                 'label'    => 'Categories',
                 'multiple' => true,
                 'endpoint' => '/api/tag/terms/category',
+                // Categories nest, so the field reads the tree and the
+                // dialog that adds one offers a parent.
+                'options' => '/api/tag/options/category',
+                'parent'  => true,
             ],
             'terms' => [
                 'taxonomy' => 'tags',
                 'label'    => 'Tags',
                 'multiple' => true,
                 'endpoint' => '/api/tag/terms/tags',
+                // Tags are flat: there is nothing for one to sit under.
+                'parent' => false,
             ],
         ];
     }

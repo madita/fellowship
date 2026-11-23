@@ -41,6 +41,11 @@ Route::middleware(['cache.control'])->group(function () {
     Route::get('wiki/special/by-length', "\App\Http\Controllers\WikiSpecialController@pagesByLength");
     Route::get('wiki/special/statistics', "\App\Http\Controllers\WikiSpecialController@statistics");
     Route::get('wiki/special/random', "\App\Http\Controllers\WikiSpecialController@randomPage");
+
+    // The categories as a tree, for whoever is filing a page or adding a
+    // category of their own. Declared above the resource, or wiki/{slug}
+    // would answer it with a missing page.
+    Route::get('wiki/category-options', "\App\Http\Controllers\WikiController@categoryOptions");
     Route::resource('wiki', "\App\Http\Controllers\WikiController")->only(['index', 'show']);
     Route::get('wiki-pages', "\App\Http\Controllers\WikiController@getPages");
     Route::get('wiki/{slug}/history', "\App\Http\Controllers\WikiController@history");
@@ -317,8 +322,16 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
 
 Route::get('/tag/taxonomies', '\App\Http\Controllers\TaxonomyController@getTaxonomies');
 Route::get('/tag/terms/{taxonomy?}', '\App\Http\Controllers\TaxonomyController@getTerms');
+// One vocabulary as a tree, which is what the pickers read. Before
+// /tag/{term}, or that route would answer for a term called "options".
+Route::get('/tag/options/{taxonomy}', '\App\Http\Controllers\TaxonomyController@getOptions');
 Route::get('/taxables', '\App\Http\Controllers\TaxonomyController@getTaxables');
-Route::post('/tag/terms/', '\App\Http\Controllers\TaxonomyController@saveTerms');
+
+// Adding to a vocabulary writes to the tree the whole site is filed
+// under, and was open to anyone who could reach the API. The reads above
+// stay public; this asks for the feature whose content is being filed.
+Route::middleware(['auth:sanctum', 'permission.any:manage-taxonomy,manage-page,manage-post,manage-wiki'])
+    ->post('/tag/terms/', '\App\Http\Controllers\TaxonomyController@saveTerms');
 Route::get('/tag/{term}/{taxonomy?}', '\App\Http\Controllers\TaxonomyController@getTermInfo');
 
 Route::get('/pages/{slug}', '\App\Http\Controllers\PageController@view');
@@ -409,6 +422,29 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     // than the pages' - the forum and the gallery file things under them
     // as much as the wiki does.
     Route::middleware('permission.any:manage-taxonomy')->group(function () {
+        // The readable screen: one tree per vocabulary, rows named by their
+        // term. Registered before the data tables so none of these paths is
+        // swallowed by the resources' {id} routes.
+        Route::prefix('admin/taxonomy')->group(function () {
+            Route::get('/', 'App\Http\Controllers\Admin\\TaxonomyAdminController@index');
+            Route::get('types', 'App\Http\Controllers\Admin\\TaxonomyAdminController@types');
+            Route::get('terms', 'App\Http\Controllers\Admin\\TaxonomyAdminController@terms');
+            Route::get('parent-options', 'App\Http\Controllers\Admin\\TaxonomyAdminController@parentOptions');
+            Route::post('reorder', 'App\Http\Controllers\Admin\\TaxonomyAdminController@reorder');
+            Route::post('/', 'App\Http\Controllers\Admin\\TaxonomyAdminController@store');
+            Route::patch('{taxonomy}', 'App\Http\Controllers\Admin\\TaxonomyAdminController@update');
+            Route::delete('{taxonomy}', 'App\Http\Controllers\Admin\\TaxonomyAdminController@destroy');
+        });
+
+        // The parent picker of the raw tables. Before the resources, or the
+        // resource's show route would read "parent-options" as an id.
+        Route::get('datatable/taxonomies/parent-options', 'App\Http\Controllers\DataTable\\TaxonomyController@parentOptions');
+
+        // A word has no parent of its own; what the term table offers are
+        // the entries of the vocabulary it is being filed into.
+        Route::get('datatable/terms/parent-options', 'App\Http\Controllers\DataTable\\TermController@parentOptions');
+        Route::get('datatable/terms/{id}/taxonomies', 'App\Http\Controllers\DataTable\\TermController@taxonomies');
+
         Route::resource('datatable/taxonomies', 'App\Http\Controllers\DataTable\\TaxonomyController');
         Route::resource('datatable/terms', 'App\Http\Controllers\DataTable\\TermController');
     });

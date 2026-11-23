@@ -10,12 +10,14 @@ use App\Models\Ticket\Ticket;
 use App\Models\User;
 use App\Models\Wiki;
 use App\Notifications\WikiUpdatedNotification;
+use App\Support\TaxonomyTree;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
 class WikiController extends Controller
 {
@@ -559,6 +561,32 @@ class WikiController extends Controller
         return response()->json(['message' => 'Wiki page approval revoked.', 'wiki' => $wiki->fresh()]);
     }
 
+    /**
+     * The wiki's categories, in the order a reader of the tree would meet
+     * them, each with its depth and the names of the categories above it.
+     *
+     * Picking a parent used to mean picking from a flat alphabetical list
+     * of names, which says nothing about where a category would land - and
+     * two branches may well hold the same word. The whole vocabulary is
+     * small enough to send at once and arrange in memory.
+     */
+    public function categoryOptions(): JsonResponse
+    {
+        // The tree itself is the same list every other picker reads; what
+        // the wiki adds is how many pages sit in each category, which the
+        // editor sorts its suggestions by.
+        $pages = Taxonomy::where('taxonomy', 'wiki')
+            ->withCount('pages')
+            ->pluck('pages_count', 'id');
+
+        $options = array_map(
+            fn (array $option) => $option + ['pages_count' => (int) ($pages[$option['id']] ?? 0)],
+            TaxonomyTree::options('wiki')
+        );
+
+        return response()->json(['data' => $options]);
+    }
+
     public function storeCategory(Request $request)
     {
         // The shape of the wiki rather than an article in it, so it asks
@@ -569,28 +597,44 @@ class WikiController extends Controller
             abort(403, __('messages.error.permission_required'));
         }
 
-        // Input validation
+        // Input validation. The parent arrives either as a plain id from
+        // the page editor or, from the older category screens, as the
+        // whole row that was picked - resolveCategoryParent() reads both.
         $validated = $request->validate([
-            'term'    => 'required|string|max:255',
-            'content' => 'nullable|string',
-            'parent'  => 'nullable|array',
+            'term'      => 'required|string|max:255',
+            'content'   => 'nullable|string',
+            'parent'    => 'nullable',
+            'parent_id' => 'nullable',
         ]);
 
-        $term = Term::firstOrCreateByTitle($validated['term']);
+        $parentId = $this->resolveCategoryParent($request);
+        $term     = Term::firstOrCreateByTitle(trim($validated['term']));
 
-        $taxonomy = Taxonomy::firstOrNew(['taxonomy' => 'wiki', 'term_id' => $term->id]);
-        $parent   = $request->get('parent');
-
-        if ($parent['parent_id']) {
-            $taxonomy->parent_id = $parent['parent_id'];
+        // One word names one category. This used to be firstOrNew(), so
+        // re-entering a name quietly rewrote the category already there,
+        // moving everything filed under it to another parent.
+        if (Taxonomy::where('taxonomy', 'wiki')->where('term_id', $term->id)->exists()) {
+            throw ValidationException::withMessages(['term' => __('messages.wiki.category_exists')]);
         }
 
-        if ($request->get('content')) {
-            $taxonomy->description = $request->get('content');
+        $taxonomy            = new Taxonomy;
+        $taxonomy->taxonomy  = 'wiki';
+        $taxonomy->term_id   = $term->id;
+        $taxonomy->parent_id = $parentId;
+
+        if (filled($validated['content'] ?? null)) {
+            $taxonomy->description = $validated['content'];
         }
+
         $taxonomy->save();
 
-        return response()->json(['message' => __('messages.wiki.category_created'), 'taxonomy' => $taxonomy]);
+        return response()->json([
+            'message'  => __('messages.wiki.category_created'),
+            'taxonomy' => $taxonomy,
+            // The shape the picker speaks, so a category just made can be
+            // selected without reloading the list.
+            'category' => $this->categoryPayload($taxonomy->load('term')),
+        ], 201);
     }
 
     public function updateCategory(Request $request, $slug)
@@ -604,15 +648,13 @@ class WikiController extends Controller
         $validated = $request->validate([
             'category' => 'required|array',
             'old'      => 'required|array',
-            'parent'   => 'nullable|array',
+            'parent'   => 'nullable',
             'term'     => 'nullable|string',
             'content'  => 'nullable|string',
         ]);
 
         $termNew = $validated['category'];
         $termOld = $validated['old'];
-        $parent  = $request->get('parent');
-        $title   = $request->get('term');
 
         $term = Term::find($termNew['term']['id']);
         if ($term->title != $termOld['term']['title']) {
@@ -621,15 +663,18 @@ class WikiController extends Controller
             $term->update();
         }
 
-        $taxonomy = Taxonomy::where('term_id', $term->id)->where('taxonomy', 'wiki')->first();
-        //        $parent = $termNew['parent'];
+        $taxonomy = Taxonomy::where('term_id', $term->id)->where('taxonomy', 'wiki')->firstOrFail();
 
-        if ($parent['parent_id']) {
-            $taxonomy->parent_id = $parent['parent_id'];
+        // Only touched when the request actually names a parent, so a
+        // screen that does not send one leaves the category where it is;
+        // sending an empty one now moves it back to the root, which no
+        // amount of clearing the field used to achieve.
+        if ($request->has('parent_id') || $request->has('parent')) {
+            $taxonomy->parent_id = $this->resolveCategoryParent($request, $taxonomy);
         }
 
-        if ($request->get('content')) {
-            $taxonomy->description = $request->get('content');
+        if (filled($request->input('content'))) {
+            $taxonomy->description = $request->input('content');
         }
         $taxonomy->update();
 
@@ -661,6 +706,65 @@ class WikiController extends Controller
         $wiki->delete();
 
         return response()->json(['message' => __('messages.wiki.deleted')]);
+    }
+
+    /**
+     * A single category in the shape the picker reads, with the one thing
+     * the wiki counts differently: pages, not everything filed under it.
+     */
+    private function categoryPayload(Taxonomy $taxonomy): array
+    {
+        return TaxonomyTree::payload($taxonomy) + ['pages_count' => $taxonomy->pages()->count()];
+    }
+
+    /**
+     * The category a category sits under.
+     *
+     * Every screen now sends a plain parent_id. The older shape - the
+     * whole picked row under "parent", whose "parent_id" key was in fact
+     * the id of the category it named - is still read, because a client
+     * that has not reloaded would otherwise move a category to the root
+     * without being asked. Its "id" key deliberately is not read: in that
+     * shape it was the id of the term, not of the category.
+     *
+     * An empty choice means the root, and a parent that would put a branch
+     * inside itself is refused rather than written - everything under it
+     * would then be unreachable from anywhere.
+     *
+     * input() rather than get(): get() reads the query string and the form
+     * body only, so a JSON body - which is all the editor sends - is
+     * invisible to it unless the request happens to have been built by the
+     * kernel's own factory.
+     */
+    private function resolveCategoryParent(Request $request, ?Taxonomy $self = null): ?int
+    {
+        $raw = $request->has('parent_id') ? $request->input('parent_id') : $request->input('parent');
+
+        if (is_array($raw)) {
+            $raw = $raw['parent_id'] ?? null;
+        }
+
+        $parentId = is_numeric($raw) ? (int) $raw : 0;
+
+        if ($parentId <= 0) {
+            return null;
+        }
+
+        $parent = Taxonomy::find($parentId);
+
+        if ($parent === null || $parent->taxonomy !== 'wiki') {
+            throw ValidationException::withMessages([
+                'parent_id' => __('messages.wiki.parent_not_a_category'),
+            ]);
+        }
+
+        if ($self !== null && ($parentId === $self->id || in_array($parentId, $self->descendantIds(), true))) {
+            throw ValidationException::withMessages([
+                'parent_id' => __('messages.taxonomy.parent_descendant'),
+            ]);
+        }
+
+        return $parentId;
     }
 
     /**

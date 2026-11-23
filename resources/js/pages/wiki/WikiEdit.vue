@@ -347,12 +347,25 @@
                                 <v-chip size="small" color="primary" variant="tonal">
                                     {{ categoryValue.length }}
                                 </v-chip>
+                                <!-- Making a category, with a parent, without
+                                     abandoning the page being edited -->
+                                <v-btn
+                                    v-if="canManageCategories"
+                                    class="ml-2"
+                                    size="small"
+                                    variant="tonal"
+                                    color="primary"
+                                    prepend-icon="mdi-folder-plus-outline"
+                                    @click="openCategoryDialog"
+                                >
+                                    {{ $t('wiki.categoryDialog.open') }}
+                                </v-btn>
                             </v-card-title>
                             <v-card-text class="pa-4">
                                 <v-combobox
                                     v-model="categoryValue"
+                                    v-model:search="searchTax"
                                     :items="categories"
-                                    :search-input.sync="searchTax"
                                     item-title="title"
                                     item-value="id"
                                     :label="$t('wiki.selectOrCreateCategories')"
@@ -378,6 +391,26 @@
                                             <v-icon start size="16">mdi-folder</v-icon>
                                             {{ item.title || item }}
                                         </v-chip>
+                                    </template>
+
+                                    <!-- Indented, with the branch spelled
+                                         out: two categories may share a name -->
+                                    <template #item="{ props: itemProps, item }">
+                                        <v-list-item
+                                            v-bind="itemProps"
+                                            :title="undefined"
+                                            :style="{ paddingInlineStart: `${12 + (item.raw.depth || 0) * 18}px` }"
+                                        >
+                                            <template #prepend>
+                                                <v-icon size="16" class="me-2">
+                                                    {{ item.raw.depth ? 'mdi-subdirectory-arrow-right' : 'mdi-folder-outline' }}
+                                                </v-icon>
+                                            </template>
+                                            <v-list-item-title>{{ item.raw.title }}</v-list-item-title>
+                                            <v-list-item-subtitle v-if="item.raw.path && item.raw.path.length > 1">
+                                                {{ item.raw.path.join(' › ') }}
+                                            </v-list-item-subtitle>
+                                        </v-list-item>
                                     </template>
                                 </v-combobox>
 
@@ -580,6 +613,18 @@
 
         <!-- Every recorded change of this page, and the diff between any two -->
         <version-history-dialog v-model="showHistory" :history-url="`/api/wiki/${slug}/history`" />
+
+        <!-- The shared dialog, pointed at the wiki's own endpoints: a
+             category here is gated behind the wiki, not the taxonomies -->
+        <taxonomy-create-dialog
+            v-model="categoryDialog"
+            vocabulary="wiki"
+            :label="$t('wiki.categoryDialog.label')"
+            :name="categoryDialogName"
+            options-endpoint="/api/wiki/category-options"
+            create-endpoint="/api/wiki/category"
+            @created="onCategoryCreated"
+        />
     </div>
 </template>
 
@@ -592,7 +637,9 @@ import PageHeader from '@/components/common/PageHeader.vue'
 import { section } from '@/utils/crumbs.js'
 import DiffView from '@/components/common/DiffView.vue'
 import VersionHistoryDialog from '@/components/common/VersionHistoryDialog.vue'
+import TaxonomyCreateDialog from '@/components/taxonomy/TaxonomyCreateDialog.vue'
 import { useAuthStore } from '@/store/authStore.js'
+import { useUserStore } from '@/store/userStore.js'
 import { useRouter } from 'vue-router'
 import { formatDate } from '@/plugins/formatDate.js'
 import { useDialog } from '@/composables/useDialog.js'
@@ -603,7 +650,8 @@ export default {
         Tiptap,
         PageHeader,
         DiffView,
-        VersionHistoryDialog
+        VersionHistoryDialog,
+        TaxonomyCreateDialog
     },
     setup() {
         const { t } = useI18n()
@@ -646,7 +694,6 @@ export default {
         const searchTax = ref('')
         const loading = ref(true)
         const saving = ref(false)
-        const savingCategory = ref(false)
         const titleError = ref(false)
         const titleErrorMessage = ref('')
         const lastSaved = ref('')
@@ -655,9 +702,11 @@ export default {
         const terms = ref([])
         const colors = ref(['green', 'purple', 'indigo', 'cyan', 'teal', 'orange'])
         const nonce = ref(1)
-        const addCategory = ref(false)
-        const newCategory = ref('')
-        const parentValue = ref(null)
+
+        // Adding a category from here, rather than leaving a half-edited
+        // page to go and make one.
+        const categoryDialog = ref(false)
+        const categoryDialogName = ref('')
 
         const editing = reactive({
             errors: []
@@ -735,8 +784,16 @@ export default {
         })
 
         const popularCategories = computed(() => {
-            return categories.value.filter(cat => cat.popular).slice(0, 5)
+            return categories.value
+                .filter(cat => cat.popular)
+                .slice()
+                .sort((a, b) => (b.pages_count || 0) - (a.pages_count || 0))
+                .slice(0, 5)
         })
+
+        // Inventing the categories everything is filed under is a separate
+        // trust from editing a page, and the server says so too.
+        const canManageCategories = computed(() => useUserStore().hasPermission('manage-wiki'))
 
         const suggestedTags = computed(() => {
             const content = (wikipage.value.title + ' ' + wikipage.value.content).toLowerCase()
@@ -937,14 +994,20 @@ export default {
             }
         }
 
+        /**
+         * The categories as a tree rather than an alphabetical list of
+         * names: each carries the path above it, so the field can say
+         * which "Characters" is which.
+         */
         const getCategories = async () => {
             try {
-                const response = await axios.get(`/api/tag/terms/wiki`)
-                categories.value = response.data.terms.map(term => ({
-                    ...term,
-                    popular: Math.random() > 0.7 // Simulate popular categories
+                const response = await axios.get(`/api/wiki/category-options`)
+                categories.value = (response.data?.data || []).map(category => ({
+                    ...category,
+                    // Which categories are actually in use, instead of the
+                    // coin toss that used to decide this.
+                    popular: (category.pages_count || 0) > 0
                 }))
-                parents.value = response.data.terms
             } catch (error) {
                 console.error('Failed to load categories:', error)
             }
@@ -976,27 +1039,22 @@ export default {
             wikipage.value.content = content
         }
 
-        const saveCategory = async () => {
-            if (!newCategory.value) return
+        const openCategoryDialog = () => {
+            // Whatever is half-typed in the field is the name being asked
+            // for, so it carries into the dialog.
+            categoryDialogName.value = typeof searchTax.value === 'string' ? searchTax.value : ''
+            categoryDialog.value = true
+        }
 
-            savingCategory.value = true
-            const data = {
-                term: newCategory.value,
-                taxonomy: 'wiki',
-                parent: parentValue.value
-            }
+        const onCategoryCreated = async (category) => {
+            await getCategories()
 
-            try {
-                await axios.post(`/api/tag/terms`, data)
-                await getCategories()
-                categoryValue.value.push({ title: newCategory.value })
-                newCategory.value = ''
-                parentValue.value = null
-                addCategory.value = false
-            } catch (error) {
-                console.error('Failed to save category:', error)
-            } finally {
-                savingCategory.value = false
+            if (!category) return
+
+            const created = categories.value.find(item => item.id === category.id) || category
+
+            if (!categoryValue.value.some(item => (item.id ?? item) === (created.id ?? created))) {
+                categoryValue.value.push(created)
             }
         }
 
@@ -1117,7 +1175,6 @@ export default {
             searchTax,
             loading,
             saving,
-            savingCategory,
             titleError,
             titleErrorMessage,
             lastSaved,
@@ -1125,9 +1182,8 @@ export default {
             terms,
             colors,
             nonce,
-            addCategory,
-            newCategory,
-            parentValue,
+            categoryDialog,
+            categoryDialogName,
             editing,
 
             // Computed
@@ -1140,6 +1196,7 @@ export default {
             categoriesChanged,
             tagsChanged,
             canSave,
+            canManageCategories,
             contentStats,
             originalContentStats,
             changePercentage,
@@ -1165,7 +1222,8 @@ export default {
             getCategories,
             getTerms,
             getPages,
-            saveCategory,
+            openCategoryDialog,
+            onCategoryCreated,
             update
         }
     }

@@ -1275,9 +1275,10 @@ export default {
             'confirmDelete': 'Möchten Sie diesen Tag wirklich löschen?'
         },
         'taxonomies': {
-            'title': 'Taxonomie-Verwaltung',
+            'title': 'Taxonomien',
+            'subtitle': 'Die Vokabulare, unter denen Inhalte einsortiert werden – Forenkategorien, Arten von Erfolgen und so weiter. Jeder Eintrag wird durch einen Begriff benannt.',
             'list': 'Taxonomie-Liste',
-            'create': 'Taxonomie erstellen',
+            'create': 'Neuer Eintrag',
             'edit': 'Taxonomie bearbeiten',
             'delete': 'Taxonomie löschen',
             'name': 'Taxonomie-Name',
@@ -1286,14 +1287,65 @@ export default {
             'hierarchical': 'Hierarchisch',
             'terms': 'Begriffe',
             'termsCount': '{count} Begriffe',
-            'noTaxonomies': 'Keine Taxonomien gefunden',
+            'noTaxonomies': 'Es ist noch nichts einsortiert',
+            'noTaxonomiesHint': 'Lege einen Eintrag an, um ein Vokabular zu beginnen – eine Forenkategorie, eine Art von Erfolg, alles, wonach Inhalte gruppiert werden.',
+            'rawTable': 'Alle Spalten',
+            'rawTableTitle': 'Taxonomien – alle Spalten',
+            'rawTableSubtitle': 'Jede Spalte der Taxonomie-Tabelle, auch die, die die Verwaltung weglässt. Die lesbare Ansicht ist die Taxonomie-Verwaltung.',
+            'unnamed': 'Eintrag ohne Namen',
+            'noTerm': 'kein Begriff',
+            'hidden': 'verborgen',
+            'notSearchable': 'nicht durchsuchbar',
+            'usedBy': 'von {count} verwendet',
+            'moveUp': 'Nach oben',
+            'moveDown': 'Nach unten',
+            'addChild': 'Eintrag darunter anlegen',
+            'addToVocabulary': 'Zu {vocabulary} hinzufügen',
+            'emptyVocabulary': 'Dieses Vokabular hat keine Einträge',
+            'saved': 'Gespeichert.',
+            'deleted': 'Entfernt.',
             'taxonomyCreated': 'Taxonomie erfolgreich erstellt',
             'taxonomyUpdated': 'Taxonomie erfolgreich aktualisiert',
             'taxonomyDeleted': 'Taxonomie erfolgreich gelöscht',
-            'confirmDelete': 'Möchten Sie diese Taxonomie wirklich löschen?'
+            'confirmDelete': '„{name}“ entfernen?',
+            'confirmDeleteWithChildren': '„{name}“ entfernen? Die {count} Untereinträge bleiben erhalten und rücken eine Ebene höher.',
+            // Richtige Namen für die mitgelieferten Vokabulare; alle
+            // anderen fallen auf ihren Schlüssel zurück.
+            'types': {
+                'forum_cat': 'Forenkategorien',
+                'achievement_type': 'Arten von Erfolgen',
+                'game_world': 'Spielwelten',
+                'wiki': 'Wiki-Kategorien',
+                'tags': 'Tags',
+                'gallery': 'Galerie-Alben',
+                'event_type': 'Arten von Terminen'
+            },
+            'dialog': {
+                'createTitle': 'Neuer Eintrag',
+                'editTitle': 'Eintrag bearbeiten',
+                'name': 'Name',
+                'nameHint': 'Einen vorhandenen Begriff wählen oder einen neuen Namen eingeben',
+                'nameRequired': 'Gib dem Eintrag einen Namen.',
+                'alreadyUsed': 'in diesem Vokabular schon verwendet',
+                'vocabulary': 'Vokabular',
+                'vocabularyHint': 'Zu welcher Liste dieser Eintrag gehört. Später nicht mehr änderbar.',
+                'vocabularyRequired': 'Wähle ein Vokabular.',
+                'parent': 'Liegt unter',
+                'parentHint': 'Leer lassen für einen Eintrag der obersten Ebene. Angeboten werden nur Einträge desselben Vokabulars.',
+                'noParent': 'Oberste Ebene',
+                'noParentOptions': 'Noch nichts, worunter er liegen könnte',
+                'parentCleared': 'Der übergeordnete Eintrag wurde geleert, weil er zum vorherigen Vokabular gehörte.',
+                'position': 'Position',
+                'positionAuto': 'zuletzt',
+                'visible': 'Sichtbar',
+                'searchable': 'Durchsuchbar',
+                'description': 'Beschreibung',
+                'properties': 'Funktionseinstellungen bleiben beim Speichern erhalten'
+            }
         },
         'terms': {
-            'title': 'Begriff-Verwaltung',
+            'title': 'Begriffe',
+            'subtitle': 'Die Wörter, mit denen die Seite Dinge benennt. Wofür ein Wort verwendet wird – Forenkategorie, Art von Erfolg – legt die Taxonomie-Verwaltung fest.',
             'list': 'Begriff-Liste',
             'create': 'Begriff erstellen',
             'edit': 'Begriff bearbeiten',
@@ -1571,6 +1623,24 @@ export default {
             'startTyping': 'Tippen, um zu suchen oder neu anzulegen',
             'addNew': '{label} hinzufügen',
             'newLabel': 'Neu: {label}'
+        },
+        'model': {
+            'noOptions': 'Keine Auswahl vorhanden',
+            'loadFailed': 'Die Liste konnte nicht geladen werden',
+            'parentHint': 'Nur Einträge desselben Vokabulars – und nie dieser Eintrag selbst oder etwas darunter',
+            'danglingOption': 'Nicht mehr verfügbar',
+            'danglingWarning': 'Hier steht Eintrag #{id}, der nicht in der Liste ist – er gehört vielleicht zu einem anderen Vokabular oder wurde entfernt.'
+        },
+        'term': {
+            'label': 'Name (Begriff)',
+            'hint': 'Ein Eintrag wird durch seinen Begriff benannt; derselbe Begriff kann in mehreren Vokabularen stehen',
+            'noMatch': 'Kein Begriff passt',
+            'alreadyUsed': 'hier schon verwendet'
+        },
+        'vocabulary': {
+            'label': 'Vokabular',
+            'hint': 'Ein vorhandenes wählen oder einen neuen Namen eingeben',
+            'entries': '{count} Einträge'
         }
     },
     'calendar': {
@@ -5149,8 +5219,6 @@ export default {
         'taxonomy': 'Taxonomie',
         'category': 'Kategorie',
         'addNewCategory': 'Neue Kategorie hinzufügen',
-        'parentCategory': 'Übergeordnete Kategorie',
-        'addNewCategoryBtn': 'Neue Kategorie hinzufügen',
         'terms': 'Begriffe',
         'noResultsMatching': 'Keine Ergebnisse für "<strong>{term}</strong>". Drücken Sie <kbd>Enter</kbd> um einen neuen zu erstellen',
         'published': 'Veröffentlicht',
@@ -5170,7 +5238,6 @@ export default {
         'parentPageHint': 'Übergeordnete Seite für Verschachtelung wählen',
         'typeToSearchCategories': 'Suchen oder Kategorien erstellen',
         'categoriesHint': 'Bestehende Kategorien wählen oder neue erstellen',
-        'newCategoryName': 'Name der neuen Kategorie',
         'typeToSearchTags': 'Suchen oder Tags erstellen',
         'tagsHint': 'Tags hinzufügen um die Seite zu organisieren',
         'settings': 'Einstellungen'
@@ -6042,6 +6109,27 @@ export default {
             'confirmUnlink': 'Verknüpfung zwischen „{source}“ und „{related}“ entfernen? Die Inhalte selbst bleiben erhalten.'
         }
     },
+    // Der Dialog, der einem Vokabular einen Eintrag hinzufügt — überall,
+    // wo etwas eingeordnet wird: Wiki-Editor, Seitenformular, Admin-Leiste.
+    'taxonomy': {
+        'dialog': {
+            'title': '{label} anlegen',
+            'fallbackLabel': 'Eintrag',
+            'name': 'Name',
+            'nameHint': 'Was die Einträge hier gemeinsam haben',
+            'nameRequired': 'Gib einen Namen ein',
+            'nameTaken': 'Das gibt es schon ({path}). Wähle es stattdessen im Feld aus.',
+            'parent': 'Liegt unter',
+            'parentHint': 'Leer lassen für die oberste Ebene',
+            'noParent': 'Oberste Ebene',
+            'noOptions': 'Noch nichts vorhanden — dieser Eintrag beginnt auf der obersten Ebene',
+            'loadFailed': 'Die Liste konnte nicht geladen werden',
+            'description': 'Beschreibung (optional)',
+            'create': '{label} anlegen',
+            'created': '{label} hinzugefügt',
+            'saveFailed': 'Konnte nicht gespeichert werden'
+        }
+    },
     'wiki': {
         'special': {
             'title': 'Spezialseiten',
@@ -6272,6 +6360,14 @@ export default {
         'categoryCreated': 'Kategorie erfolgreich erstellt',
         'categoryUpdated': 'Kategorie erfolgreich aktualisiert',
         'errorSavingCategory': 'Beim Speichern der Kategorie ist ein Fehler aufgetreten. Bitte versuche es erneut.',
+        // Kategorie direkt im Seiten-Editor anlegen, samt übergeordneter
+        'categoryDialog': {
+            'open': 'Neue Kategorie',
+            'label': 'Kategorie',
+            'parentHint': 'Leer lassen, um sie auf der obersten Ebene anzulegen',
+            'noParent': 'Oberste Ebene',
+            'noCategories': 'Noch keine Kategorien — diese beginnt auf der obersten Ebene',
+        },
         'editCategory': 'Kategorie bearbeiten',
         'creatingCategory': 'Kategorie wird erstellt: „{slug}“',
         'categoriesSubtitle': 'Alle Wiki-Seiten nach Kategorie durchstöbern',

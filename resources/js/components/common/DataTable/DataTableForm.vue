@@ -8,6 +8,8 @@ import Tiptap from "@/components/common/tiptap/Tiptap.vue";
 import DataTableJson from "@/components/common/DataTable/DataTableJson.vue";
 import DataTableModel from "@/components/common/DataTable/DataTableModel.vue";
 import DataTableTaxonomy from "@/components/common/DataTable/DataTableTaxonomy.vue";
+import DataTableTermPicker from "@/components/common/DataTable/DataTableTermPicker.vue";
+import DataTableVocabularyPicker from "@/components/common/DataTable/DataTableVocabularyPicker.vue";
 import { fieldLabel } from '@/utils/dataTableCells.js';
 import PublishControl from '@/components/common/PublishControl.vue';
 import DataTableRelation from '@/components/common/DataTable/DataTableRelation.vue';
@@ -358,9 +360,11 @@ onMounted(() => {
                         >
                             <VCol cols="12">
                                 <div class="field-container">
-                                    <!-- Field Label -->
+                                    <!-- Field Label. The readable name, not
+                                         the raw column key — the widget below
+                                         already carries the same label. -->
                                     <div class="text-caption text-medium-emphasis mb-1">
-                                        {{ column }}
+                                        {{ labelFor(column) }}
                                     </div>
 
                                     <!-- Object-based field types -->
@@ -441,13 +445,33 @@ onMounted(() => {
                                             :readonly="!localEditMode"
                                         />
 
+                                        <!-- The term a row is named by -->
+                                        <DataTableTermPicker
+                                            v-else-if="response.column_fields?.[column] === 'term'"
+                                            v-model="editedItem[column]"
+                                            :label="labelFor(column)"
+                                            :row="editedItem"
+                                            :readonly="!localEditMode"
+                                        />
+
+                                        <!-- Which vocabulary a row belongs to -->
+                                        <DataTableVocabularyPicker
+                                            v-else-if="response.column_fields?.[column] === 'taxonomy-type'"
+                                            v-model="editedItem[column]"
+                                            :label="labelFor(column)"
+                                            :readonly="!localEditMode"
+                                        />
+
                                         <!-- Model/Parent Relationship -->
                                         <DataTableModel
                                             v-else-if="response.column_fields?.[column] === 'model' || response.column_fields?.[column] === 'parent'"
                                             :column="column"
+                                            :field-type="response.column_fields?.[column]"
+                                            :label="labelFor(column)"
                                             :filter_key="response.filter_fields?.[column]"
                                             :filter_value="editedItem[response.filter_fields?.[column]]"
                                             :endPoint="endpoint"
+                                            :row="editedItem"
                                             v-model:modelValue="editedItem[column]"
                                             :readonly="!localEditMode"
                                         />

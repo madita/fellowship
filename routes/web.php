@@ -33,7 +33,11 @@ Route::get('/auth/{provider}/callback', [SocialLoginController::class, 'callback
 Route::get('/tag/taxonomies', '\App\Http\Controllers\TaxonomyController@getTaxonomies');
 Route::get('/tag/terms/{taxonomy?}', '\App\Http\Controllers\TaxonomyController@getTerms');
 Route::get('/taxables', '\App\Http\Controllers\TaxonomyController@getTaxables');
-Route::post('/tag/terms/', '\App\Http\Controllers\TaxonomyController@saveTerms');
+
+// The same door as in the API, and gated the same way: the SPA calls the
+// API copy, so this one was a way in that nothing was watching.
+Route::middleware(['auth:sanctum', 'permission.any:manage-taxonomy,manage-page,manage-post,manage-wiki'])
+    ->post('/tag/terms/', '\App\Http\Controllers\TaxonomyController@saveTerms');
 
 //
 // Route::group(['prefix' => '/api'], function () {

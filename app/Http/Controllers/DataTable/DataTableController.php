@@ -292,6 +292,47 @@ abstract class DataTableController extends Controller
     }
 
     /**
+     * The rows that may be picked as a parent, already in hierarchy order:
+     * { data: [{ id, title, path, depth, group }] }.
+     *
+     * Generic over any table with a `parent_id`. The row being edited and
+     * everything beneath it are left out, so the drawer cannot offer a
+     * choice that would make a row its own ancestor. Query parameters:
+     *  - exclude: id of the row being edited (absent when creating)
+     *  - everything else is handed to scopeParentOptions() by the subclass
+     */
+    public function parentOptions(Request $request): JsonResponse
+    {
+        $parentColumn = $this->parentColumn();
+
+        if ($parentColumn === null) {
+            return response()->json(['data' => []]);
+        }
+
+        $exclude = $request->integer('exclude') ?: null;
+
+        $builder = $this->scopeParentOptions($this->newQuery(), $request);
+
+        if ($this->isTranslatable()) {
+            $builder->with('translations');
+        }
+
+        $records = $builder->get();
+
+        $excluded = $exclude === null
+            ? []
+            : $this->descendantsOf($records, $parentColumn, $exclude);
+
+        $byParent = $records
+            ->reject(fn (Model $record) => in_array($record->getKey(), $excluded, true))
+            ->groupBy(fn (Model $record) => $record->{$parentColumn} ?? 0);
+
+        return response()->json([
+            'data' => $this->flattenOptions($byParent, 0, 0, []),
+        ]);
+    }
+
+    /**
      * Related records shown in the edit drawer, e.g. a user's event profiles.
      * Each entry has key, title, icon and an endpoint with an {id} placeholder
      * that returns { data: { columns: [{ key, title, type }], rows: [{ id, url,
@@ -508,6 +549,111 @@ abstract class DataTableController extends Controller
     public function getCategories($taxonomy)
     {
         $this->builder->getModel()->getCategories($taxonomy);
+    }
+
+    /**
+     * Walk a flat set of records down from $id, so a row can never be
+     * offered its own descendant as a parent. Includes $id itself.
+     *
+     * @param  Collection<int,Model>  $records
+     * @return array<int,int|string>
+     */
+    protected function descendantsOf(Collection $records, string $parentColumn, int|string $id): array
+    {
+        $children = $records->groupBy(fn (Model $record) => $record->{$parentColumn} ?? 0);
+
+        $excluded = [$id];
+        $queue    = [$id];
+
+        while ($queue !== []) {
+            $current = array_shift($queue);
+
+            foreach ($children->get($current, collect()) as $child) {
+                if ( ! in_array($child->getKey(), $excluded, true)) {
+                    $excluded[] = $child->getKey();
+                    $queue[]    = $child->getKey();
+                }
+            }
+        }
+
+        return $excluded;
+    }
+
+    /**
+     * Depth-first flattening of the grouped records, carrying the ancestor
+     * titles so the frontend can show "Help & Support › Technical Issues"
+     * without a second lookup.
+     *
+     * @param  Collection<int|string,Collection<int,Model>>  $byParent
+     * @param  array<int,string>  $ancestors
+     */
+    protected function flattenOptions(Collection $byParent, int|string $parent, int $depth, array $ancestors): array
+    {
+        $options = [];
+
+        foreach ($byParent->get($parent, collect()) as $record) {
+            $title = $this->optionLabel($record);
+            $path  = array_merge($ancestors, [$title]);
+
+            $options[] = [
+                'id'    => $record->getKey(),
+                'title' => $title,
+                'path'  => $path,
+                'depth' => $depth,
+                'group' => $this->optionGroup($record),
+            ];
+
+            // Guard against a parent_id cycle in legacy data.
+            if ($depth < 20) {
+                $options = array_merge(
+                    $options,
+                    $this->flattenOptions($byParent, $record->getKey(), $depth + 1, $path)
+                );
+            }
+        }
+
+        return $options;
+    }
+
+    /**
+     * The column holding the parent key, or null when the table is flat.
+     */
+    protected function parentColumn(): ?string
+    {
+        return $this->isDatabaseColumn('parent_id') ? 'parent_id' : null;
+    }
+
+    /**
+     * Narrow the rows offered as a parent, e.g. to one vocabulary.
+     */
+    protected function scopeParentOptions(Builder $builder, Request $request): Builder
+    {
+        return $builder;
+    }
+
+    /**
+     * How one row reads in a picker. Overridden where the name of a row
+     * lives somewhere other than the row.
+     */
+    protected function optionLabel(Model $record): string
+    {
+        foreach (['title', 'name', 'label', 'slug'] as $attribute) {
+            $value = $record->getAttribute($attribute);
+
+            if (is_string($value) && trim($value) !== '') {
+                return $value;
+            }
+        }
+
+        return '#' . $record->getKey();
+    }
+
+    /**
+     * Optional subheader a picker may group its options under.
+     */
+    protected function optionGroup(Model $record): ?string
+    {
+        return null;
     }
 
     /**

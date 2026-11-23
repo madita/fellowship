@@ -121,11 +121,8 @@ class ForumThreadController extends Controller
         // fell back to the slug in the address bar. Threads are the one
         // forum endpoint that handed out the raw category with its term.
         //
-        // The parent is asked for through the relation rather than read as
-        // $category->parent: the taxonomies table carries a legacy `parent`
-        // integer column beside parent_id, an attribute wins over a
-        // relation of the same name, and eager loading does not change
-        // that — so that property is a number, not a category.
+        // Asked for with its term in one query, since the category here
+        // was not loaded with its parent.
         $parent = $category->parent()->with('term')->first();
 
         $threadData['forum'] = $category->term ? [
